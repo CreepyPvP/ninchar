@@ -1,14 +1,15 @@
-//
-// Created by stachelbeere1248 on 1/30/24.
-//
-
 #ifndef PROFILER_H
 #define PROFILER_H
-#include <ctime>
+
+#include "include/types.h"
 
 struct Profiler {
-    timespec start;
-    timespec end;
+    double start;
 };
 
-#endif //PROFILER_H
+void start_timestamp(Profiler* profiler);
+
+// NOTE: elapsed time in seconds
+double end_timestamp(Profiler* profiler);
+
+#endif 

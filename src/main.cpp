@@ -12,6 +12,7 @@
 #include "include/arena.h"
 #include "include/renderer.h"
 #include "include/opengl_renderer.h"
+#include "include/profiler.h"
 
 struct GameWindow {
     GLFWwindow* handle;
@@ -70,6 +71,8 @@ i32 main()
     u32 index_cap = 10000;
     u32* index_buffer = (u32*) push_size(&arena, index_cap * sizeof(u32));
 
+    Profiler profiler_main;
+
     Mat4 projection = glm::ortho(
         -960.0f / 2,
         960.0f / 2,
@@ -90,6 +93,8 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
+        start_timestamp(&profiler_main);
+
         cmd = command_buffer(entry_size, entry_buffer,
                              vert_cap, vert_buffer,
                              index_cap, index_buffer,
@@ -98,6 +103,8 @@ i32 main()
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
 
         opengl_render_commands(&cmd);
+
+        double duration = end_timestamp(&profiler_main);
 
         glfwSwapBuffers(global_window.handle);
         glfwPollEvents();
@@ -111,3 +118,4 @@ i32 WinMain() {
     return main();
 }
 #endif
+
