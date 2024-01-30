@@ -18,6 +18,9 @@ struct DrawShader
 
 struct OpenGLContext
 {
+    u32 vertex_buffer;
+    u32 index_buffer;
+
     Arena render_arena;
     DrawShader draw_shader;
 };

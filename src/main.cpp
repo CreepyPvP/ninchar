@@ -101,10 +101,12 @@ i32 main()
                              proj);
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
+        push_quad(&cmd, v2(-100), v2(100), v3(1));
 
         opengl_render_commands(&cmd);
 
         double duration = end_timestamp(&profiler_main);
+        printf("Main loop took %f ms\n", duration * 1000);
 
         glfwSwapBuffers(global_window.handle);
         glfwPollEvents();

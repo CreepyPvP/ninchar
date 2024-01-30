@@ -39,6 +39,16 @@ struct V3
     float z;
 };
 
+inline V2 v2(float x, float y)
+{
+    return { x, y };
+}
+
+inline V2 v2(float x)
+{
+    return { x, x };
+}
+
 inline V3 v3(float x, float y, float z)
 {
     return { x, y, z };

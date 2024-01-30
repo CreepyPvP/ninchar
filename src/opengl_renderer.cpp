@@ -8,6 +8,8 @@
 #include "include/types.h"
 #include "include/util.h"
 
+#define MAX_VERTEX 10000
+#define MAX_INDEX 10000
 
 OpenGLContext opengl;
 
@@ -19,8 +21,9 @@ void APIENTRY debug_output(GLenum source,
                            const char *message, 
                            const void *userParam)
 {
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) 
+    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) {
         return; 
+    }
 
     printf("---------------\n");
     printf("Debug message (%u): %s\n", id, message);
@@ -122,12 +125,64 @@ void opengl_init()
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
+    u32 draw_vao;
+    glGenVertexArrays(1, &draw_vao);
+    glBindVertexArray(draw_vao);
+
+    u32 buffers[2];
+    glGenBuffers(2, buffers);
+
+    opengl.vertex_buffer = buffers[0];
+    opengl.index_buffer = buffers[1];
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opengl.index_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * MAX_INDEX, NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * MAX_VERTEX, NULL, GL_DYNAMIC_DRAW);
+
+    // 0: pos
+    // 1: uv
+    // 2: norm
+    // 3: color
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, pos));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, norm));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, color));
+
     opengl.draw_shader.base = load_program("shader/draw.vert", "shader/draw.frag");
     opengl.draw_shader.proj = glGetUniformLocation(opengl.draw_shader.base.id, "proj");
 }
 
+void copy_to_buffer(u32 slot, u32 size, u32 max_size, void* data)
+{
+    if (size == 0) {
+        return;
+    }
+    if (size > max_size) {
+        printf("Max gpu buffer size exceeded. Max %d\n", max_size);
+        size = max_size;
+    }
+
+    void* map = glMapBufferRange(slot, 0, size, GL_MAP_WRITE_BIT);
+    memcpy(map, data, size);
+    glUnmapBuffer(slot);
+}
+
 void opengl_render_commands(CommandBuffer* buffer)
 {
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(opengl.draw_shader.base.id);
+    glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, &(buffer->proj)[0][0]);
+
+    copy_to_buffer(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->vert_count,
+                   sizeof(Vertex) * MAX_VERTEX, buffer->vert_buffer);
+    copy_to_buffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * buffer->index_count,
+                   sizeof(u32) * MAX_VERTEX, buffer->index_buffer);
+
     u32 offset = 0;
     while (offset < buffer->entry_size) {
         CommandEntryHeader* header = (CommandEntryHeader*) (buffer->entry_buffer + offset);
@@ -139,6 +194,18 @@ void opengl_render_commands(CommandBuffer* buffer)
                 glClearColor(clear->color.x, clear->color.y, clear->color.z, 1);
                 glClear(GL_COLOR_BUFFER_BIT);
             } break;
+
+            case EntryType_Draw: {
+                CommandEntry_Draw* draw = (CommandEntry_Draw*) (buffer->entry_buffer + offset);
+                offset += sizeof(CommandEntry_Draw);
+
+                glDrawElements(GL_TRIANGLES, draw->index_count, GL_UNSIGNED_INT, 
+                               (void*) (draw->index_offset * sizeof(u32)));
+            } break;
+
+            default: {
+                return;
+            }
         }
     }
 }

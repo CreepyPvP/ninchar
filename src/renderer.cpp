@@ -43,3 +43,55 @@ void push_clear(CommandBuffer* buffer, V3 color)
     clear->header.type = EntryType_Clear;
     clear->color = color;
 }
+
+void push_quad(CommandBuffer* buffer, V2 down_left, V2 up_right, V3 color)
+{
+    CommandEntry_Draw* draw = (CommandEntry_Draw*) push_entry(buffer, sizeof(CommandEntry_Draw));
+    if (!draw) {
+        return;
+    }
+    if (buffer->vert_count + 4 > buffer->vert_cap) {
+        printf("Warning: Vertex buffer size exceede\n");
+        return;
+    }
+    if (buffer->index_count + 6 > buffer->index_cap) {
+        printf("Warning: Index buffer size exceede\n");
+        return;
+    }
+
+    draw->header.type = EntryType_Draw;
+    draw->index_offset = buffer->index_count;
+    draw->index_count = 6;
+
+    u32 vcurr = buffer->vert_count;
+    buffer->vert_buffer[vcurr + 0].pos.x = down_left.x;
+    buffer->vert_buffer[vcurr + 0].pos.y = down_left.y;
+    buffer->vert_buffer[vcurr + 0].pos.z = 0;
+    buffer->vert_buffer[vcurr + 0].color = color;
+
+    buffer->vert_buffer[vcurr + 1].pos.x = down_left.x;
+    buffer->vert_buffer[vcurr + 1].pos.y = up_right.y;
+    buffer->vert_buffer[vcurr + 1].pos.z = 0;
+    buffer->vert_buffer[vcurr + 1].color = color;
+
+    buffer->vert_buffer[vcurr + 2].pos.x = up_right.x;
+    buffer->vert_buffer[vcurr + 2].pos.y = up_right.y;
+    buffer->vert_buffer[vcurr + 2].pos.z = 0;
+    buffer->vert_buffer[vcurr + 2].color = color;
+
+    buffer->vert_buffer[vcurr + 3].pos.x = up_right.x;
+    buffer->vert_buffer[vcurr + 3].pos.y = down_left.y;
+    buffer->vert_buffer[vcurr + 3].pos.z = 0;
+    buffer->vert_buffer[vcurr + 3].color = color;
+
+    u32 icurr = buffer->index_count;
+    buffer->index_buffer[icurr + 0] = 0;
+    buffer->index_buffer[icurr + 1] = 1;
+    buffer->index_buffer[icurr + 2] = 2;
+    buffer->index_buffer[icurr + 3] = 0;
+    buffer->index_buffer[icurr + 4] = 2;
+    buffer->index_buffer[icurr + 5] = 3;
+    
+    buffer->index_count += 6;
+    buffer->vert_count += 4;
+}

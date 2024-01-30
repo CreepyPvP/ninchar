@@ -14,6 +14,7 @@ struct Vertex
 enum CommandEntryType
 {
     EntryType_Clear = 0,
+    EntryType_Draw = 1,
 };
 
 struct CommandEntryHeader
@@ -44,6 +45,12 @@ struct CommandEntry_Clear
     V3 color;
 };
 
+struct CommandEntry_Draw
+{
+    CommandEntryHeader header;
+    u32 index_offset;
+    u32 index_count;
+};
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
                              u32 vert_cap, Vertex* vert_buffer, 
@@ -51,6 +58,6 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
                              Mat4 proj);
 
 void push_clear(CommandBuffer* buffer, V3 color);
-void push_quad(CommandBuffer* buffer, V3 color);
+void push_quad(CommandBuffer* buffer, V2 down_left, V2 up_right, V3 color);
 
 #endif
