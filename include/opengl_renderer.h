@@ -14,7 +14,7 @@ struct DrawShader
 {
     Program base;
     u32 proj;
-}
+};
 
 struct OpenGLContext
 {

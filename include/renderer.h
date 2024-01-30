@@ -8,6 +8,7 @@ struct Vertex
     V3 pos;
     V2 uv;
     V3 norm;
+    V3 color;
 };
 
 enum CommandEntryType
@@ -50,5 +51,6 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
                              Mat4 proj);
 
 void push_clear(CommandBuffer* buffer, V3 color);
+void push_quad(CommandBuffer* buffer, V3 color);
 
 #endif
