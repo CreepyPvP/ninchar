@@ -66,25 +66,18 @@ i32 main()
     CommandBuffer cmd;
     u32 entry_size = 10000;
     u8* entry_buffer = (u8*) push_size(&arena, entry_size);
-    u32 vert_cap = 10000;
+    u32 vert_cap = 500000;
     Vertex* vert_buffer = (Vertex*) push_size(&arena, vert_cap * sizeof(Vertex));
-    u32 index_cap = 10000;
+    u32 index_cap = 600000;
     u32* index_buffer = (u32*) push_size(&arena, index_cap * sizeof(u32));
 
     Profiler profiler_main;
 
-    Mat4 projection = glm::ortho(
-        -960.0f / 2,
-        960.0f / 2,
-        -520.0f / 2,
-        520.0f / 2,
-        .1f,
-        1000.0f
-    );
+    Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
     Mat4 view = glm::lookAt(
-        glm::vec3(0, 0, 100),
+        glm::vec3(10, 10, 10),
         glm::vec3(0, 0, 0),
-        glm::vec3(0, 1, 0)
+        glm::vec3(0, 0, 1)
     );
     Mat4 proj = projection * view;
 
@@ -93,19 +86,22 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
-        start_timestamp(&profiler_main);
-
         cmd = command_buffer(entry_size, entry_buffer,
                              vert_cap, vert_buffer,
-                             index_cap, index_buffer,
-                             proj);
+                             index_cap, index_buffer);
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
-        push_quad(&cmd, v2(-100), v2(100), v3(1));
+        RenderGroup group = render_group(&cmd, proj);
 
-        opengl_render_commands(&cmd);
+        start_timestamp(&profiler_main);
+
+        for (u32 i = 0; i < 1; ++i) {
+            push_cube(&group, v3(0), v3(1), v3(1));
+        }
 
         double duration = end_timestamp(&profiler_main);
+        opengl_render_commands(&cmd);
+
         printf("Main loop took %f ms\n", duration * 1000);
 
         glfwSwapBuffers(global_window.handle);

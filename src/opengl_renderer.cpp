@@ -8,8 +8,8 @@
 #include "include/types.h"
 #include "include/util.h"
 
-#define MAX_VERTEX 10000
-#define MAX_INDEX 10000
+#define MAX_VERTEX 400000
+#define MAX_INDEX 600000
 
 OpenGLContext opengl;
 
@@ -118,6 +118,10 @@ void opengl_init()
     }
     init_arena(&opengl.render_arena, &pool);
 
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
+
 #ifdef DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
@@ -173,15 +177,12 @@ void copy_to_buffer(u32 slot, u32 size, u32 max_size, void* data)
 
 void opengl_render_commands(CommandBuffer* buffer)
 {
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
     glUseProgram(opengl.draw_shader.base.id);
-    glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, &(buffer->proj)[0][0]);
 
     copy_to_buffer(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->vert_count,
                    sizeof(Vertex) * MAX_VERTEX, buffer->vert_buffer);
     copy_to_buffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * buffer->index_count,
-                   sizeof(u32) * MAX_VERTEX, buffer->index_buffer);
+                   sizeof(u32) * MAX_INDEX, buffer->index_buffer);
 
     u32 offset = 0;
     while (offset < buffer->entry_size) {
@@ -192,11 +193,12 @@ void opengl_render_commands(CommandBuffer* buffer)
                 CommandEntry_Clear* clear = (CommandEntry_Clear*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntry_Clear);
                 glClearColor(clear->color.x, clear->color.y, clear->color.z, 1);
-                glClear(GL_COLOR_BUFFER_BIT);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             } break;
 
             case EntryType_Draw: {
                 CommandEntry_Draw* draw = (CommandEntry_Draw*) (buffer->entry_buffer + offset);
+                glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, &(draw->proj)[0][0]);
                 offset += sizeof(CommandEntry_Draw);
 
                 glDrawElements(GL_TRIANGLES, draw->index_count, GL_UNSIGNED_INT, 
