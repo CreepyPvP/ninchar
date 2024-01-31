@@ -92,7 +92,8 @@ i32 main()
 
     init_camera(&camera, v3(2), v3(-1, 0, 0));
 
-    Profiler profiler_main;
+    Profiler profiler_renderer;
+    Profiler profiler_opengl_backend;
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
@@ -139,16 +140,17 @@ i32 main()
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
         RenderGroup group = render_group(&cmd, proj);
 
-        start_timestamp(&profiler_main);
-
+        start_timestamp(&profiler_renderer);
         for (u32 i = 0; i < box_count; ++i) {
             push_cube(&group, boxpos[i], v3(1), boxcolor[i]);
         }
+        double render_duration = end_timestamp(&profiler_renderer);
 
-        double duration = end_timestamp(&profiler_main);
+        start_timestamp(&profiler_opengl_backend);
         opengl_render_commands(&cmd);
-
-        printf("Main loop took %f ms\n", duration * 1000);
+        double opengl_backend_duration = end_timestamp(&profiler_opengl_backend);
+        printf("Renderer: %f, Backend %f ms\n", 
+               render_duration * 1000, opengl_backend_duration * 1000);
 
         glfwSwapBuffers(global_window.handle);
         glfwPollEvents();
