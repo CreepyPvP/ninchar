@@ -14,6 +14,7 @@
 #include "include/opengl_renderer.h"
 #include "include/camera.h"
 #include "include/profiler.h"
+#include "include/game_math.h"
 
 
 struct GameWindow {
@@ -95,6 +96,18 @@ i32 main()
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
+    const u32 box_count = 10000;
+    V3 boxpos[box_count];
+    V3 boxcolor[box_count];
+    for (u32 i = 0; i < box_count; ++i) {
+        boxpos[i].x = halton(i, 2) * 300;
+        boxpos[i].y = halton(i, 3) * 300;
+        boxpos[i].z = halton(i, 5) * 300;
+        boxcolor[i].x = halton(i, 5);
+        boxcolor[i].y = halton(i, 3);
+        boxcolor[i].z = halton(i, 2);
+    }
+
     while (!glfwWindowShouldClose(global_window.handle)) {
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(global_window.handle, true);
@@ -128,8 +141,8 @@ i32 main()
 
         start_timestamp(&profiler_main);
 
-        for (u32 i = 0; i < 1; ++i) {
-            push_cube(&group, v3(0), v3(1), v3(1));
+        for (u32 i = 0; i < box_count; ++i) {
+            push_cube(&group, boxpos[i], v3(1), boxcolor[i]);
         }
 
         double duration = end_timestamp(&profiler_main);

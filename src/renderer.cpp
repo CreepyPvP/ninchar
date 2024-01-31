@@ -139,14 +139,14 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, V3 color)
               p2, v2(0, 1),
               p3, v2(1, 1),
               p4, v2(1, 0),
-              v3(0, 0, 1), v3(1, 0, 0));
+              v3(0, 0, 1), color);
 
     push_quad(group, 
               p8, v2(0, 0),
               p7, v2(0, 1),
               p6, v2(1, 1),
               p5, v2(1, 0),
-              v3(0, 0, -1), v3(0, 1, 0));
+              v3(0, 0, -1), color);
 
     push_quad(group, 
               p8, v2(0, 0),
@@ -167,13 +167,13 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, V3 color)
               p3, v2(0, 1),
               p2, v2(1, 1),
               p6, v2(1, 0),
-              v3(0, 1, 0), v3(0, 0, 1));
+              v3(0, 1, 0), color);
 
     push_quad(group, 
               p5, v2(0, 0),
               p1, v2(0, 1),
               p4, v2(1, 1),
               p8, v2(1, 0),
-              v3(0, -1, 0), v3(0, 0, 1));
+              v3(0, -1, 0), color);
 
 }

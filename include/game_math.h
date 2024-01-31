@@ -36,4 +36,6 @@ inline V3 cross(V3 a, V3 b)
 V3 norm(V3 a);
 float radians(float degrees);
 
+float halton(u32 i, u32 b);
+
 #endif
