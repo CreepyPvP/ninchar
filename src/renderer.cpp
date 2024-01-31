@@ -3,8 +3,7 @@
 #include <stdio.h>
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
-                             u32 vert_cap, Vertex* vert_buffer, 
-                             u32 index_cap, u32* index_buffer)
+                             u32 vert_cap, Vertex* vert_buffer)
 {
     CommandBuffer commands;
     commands.entry_buffer = entry_buffer;
@@ -13,9 +12,6 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     commands.vert_buffer = vert_buffer;
     commands.vert_cap = vert_cap;
     commands.vert_count = 0;
-    commands.index_buffer = index_buffer;
-    commands.index_cap = index_cap;
-    commands.index_count = 0;
     return commands;
 }
 
@@ -51,24 +47,20 @@ void push_clear(CommandBuffer* commands, V3 color)
     clear->color = color;
 }
 
-CommandEntry_Draw* get_current_draw(RenderGroup* group, u32 vert_count, u32 index_count)
+CommandEntry_Draw* get_current_draw(RenderGroup* group, u32 vert_count)
 {
     CommandBuffer* commands = group->commands;
     if (!group->current_draw) {
         group->current_draw = (CommandEntry_Draw*) push_entry(commands, sizeof(CommandEntry_Draw));
 
         group->current_draw->header.type = EntryType_Draw;
-        group->current_draw->index_offset = commands->index_count;
-        group->current_draw->index_count = 0;
+        group->current_draw->vertex_offset = commands->vert_count;
+        group->current_draw->quad_count = 0;
         group->current_draw->proj = group->proj;
     }
 
     if (commands->vert_count + vert_count > commands->vert_cap) {
         printf("Warning: Vertex buffer size exceede\n");
-        return NULL;
-    }
-    if (commands->index_count + index_count > commands->index_cap) {
-        printf("Warning: Index buffer size exceede\n");
         return NULL;
     }
 
@@ -86,7 +78,7 @@ void push_quad(RenderGroup* group,
     CommandEntry_Draw* draw = group->current_draw;
     assert(draw);
 
-    draw->index_count += 6;
+    ++draw->quad_count;
 
     u32 vcurr = commands->vert_count;
     commands->vert_buffer[vcurr + 0].pos = p1;
@@ -105,22 +97,13 @@ void push_quad(RenderGroup* group,
     commands->vert_buffer[vcurr + 3].uv = uv4;
     commands->vert_buffer[vcurr + 3].norm = norm;
     commands->vert_buffer[vcurr + 3].color = color;
-
-    u32 icurr = commands->index_count;
-    commands->index_buffer[icurr + 0] = 0 + vcurr;
-    commands->index_buffer[icurr + 1] = 1 + vcurr;
-    commands->index_buffer[icurr + 2] = 2 + vcurr;
-    commands->index_buffer[icurr + 3] = 0 + vcurr;
-    commands->index_buffer[icurr + 4] = 2 + vcurr;
-    commands->index_buffer[icurr + 5] = 3 + vcurr;
     
-    commands->index_count += 6;
     commands->vert_count += 4;
 }
 
 void push_cube(RenderGroup* group, V3 pos, V3 radius, V3 color)
 {
-    CommandEntry_Draw* entry = get_current_draw(group, 8, 12);
+    CommandEntry_Draw* entry = get_current_draw(group, 6 * 4);
     if (!entry) {
         return;
     }
@@ -137,43 +120,43 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, V3 color)
     push_quad(group, 
               p1, v2(0, 0),
               p2, v2(0, 1),
-              p3, v2(1, 1),
               p4, v2(1, 0),
+              p3, v2(1, 1),
               v3(0, 0, 1), color);
 
     push_quad(group, 
               p8, v2(0, 0),
               p7, v2(0, 1),
-              p6, v2(1, 1),
               p5, v2(1, 0),
+              p6, v2(1, 1),
               v3(0, 0, -1), color);
 
     push_quad(group, 
               p8, v2(0, 0),
               p4, v2(0, 1),
-              p3, v2(1, 1),
               p7, v2(1, 0),
+              p3, v2(1, 1),
               v3(1, 0, 0), color);
 
     push_quad(group, 
               p6, v2(0, 0),
               p2, v2(0, 1),
-              p1, v2(1, 1),
               p5, v2(1, 0),
+              p1, v2(1, 1),
               v3(-1, 0, 0), color);
 
     push_quad(group, 
               p7, v2(0, 0),
               p3, v2(0, 1),
-              p2, v2(1, 1),
               p6, v2(1, 0),
+              p2, v2(1, 1),
               v3(0, 1, 0), color);
 
     push_quad(group, 
               p5, v2(0, 0),
               p1, v2(0, 1),
-              p4, v2(1, 1),
               p8, v2(1, 0),
+              p4, v2(1, 1),
               v3(0, -1, 0), color);
 
 }

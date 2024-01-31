@@ -87,8 +87,6 @@ i32 main()
     u8* entry_buffer = (u8*) push_size(&arena, entry_size);
     u32 vert_cap = 5000000;
     Vertex* vert_buffer = (Vertex*) push_size(&arena, vert_cap * sizeof(Vertex));
-    u32 index_cap = 6000000;
-    u32* index_buffer = (u32*) push_size(&arena, index_cap * sizeof(u32));
 
     init_camera(&camera, v3(2), v3(-1, 0, 0));
 
@@ -104,9 +102,9 @@ i32 main()
         boxpos[i].x = halton(i, 2) * 300;
         boxpos[i].y = halton(i, 3) * 300;
         boxpos[i].z = halton(i, 5) * 300;
-        boxcolor[i].x = halton(i, 5);
-        boxcolor[i].y = halton(i, 3);
-        boxcolor[i].z = halton(i, 2);
+        boxcolor[i].x = halton(i + 1, 5);
+        boxcolor[i].y = halton(i + 1, 3);
+        boxcolor[i].z = halton(i + 1, 2);
     }
 
     while (!glfwWindowShouldClose(global_window.handle)) {
@@ -125,8 +123,7 @@ i32 main()
         }
 
         cmd = command_buffer(entry_size, entry_buffer,
-                             vert_cap, vert_buffer,
-                             index_cap, index_buffer);
+                             vert_cap, vert_buffer);
 
         Mat4 view = glm::lookAt(
             glm::vec3(camera.pos.x, camera.pos.y, camera.pos.z),

@@ -8,9 +8,6 @@
 #include "include/types.h"
 #include "include/util.h"
 
-#define MAX_VERTEX 4000000
-#define MAX_INDEX 6000000
-
 OpenGLContext opengl;
 
 void APIENTRY debug_output(GLenum source, 
@@ -133,12 +130,10 @@ void opengl_init()
     glGenVertexArrays(1, &draw_vao);
     glBindVertexArray(draw_vao);
 
-    u32 buffers[2];
-    glGenBuffers(2, buffers);
+    u32 buffers[1];
+    glGenBuffers(1, buffers);
 
     opengl.vertex_buffer = buffers[0];
-    opengl.index_buffer = buffers[1];
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opengl.index_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
 
     // 0: pos
@@ -164,8 +159,6 @@ void opengl_render_commands(CommandBuffer* buffer)
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->vert_count, 
                  buffer->vert_buffer, GL_STREAM_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * buffer->index_count, 
-                 buffer->index_buffer, GL_STREAM_DRAW);
 
     u32 offset = 0;
     while (offset < buffer->entry_size) {
@@ -184,8 +177,9 @@ void opengl_render_commands(CommandBuffer* buffer)
                 glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, &(draw->proj)[0][0]);
                 offset += sizeof(CommandEntry_Draw);
 
-                glDrawElements(GL_TRIANGLES, draw->index_count, GL_UNSIGNED_INT, 
-                               (void*) (draw->index_offset * sizeof(u32)));
+                for (u32 i = 0; i < draw->quad_count; ++i) {
+                    glDrawArrays(GL_TRIANGLE_STRIP, i * 4 + draw->vertex_offset, 4);
+                }
             } break;
 
             default: {

@@ -28,10 +28,6 @@ struct CommandBuffer
     u32 vert_cap;
     u32 vert_count;
 
-    u32* index_buffer;
-    u32 index_cap;
-    u32 index_count;
-
     u8* entry_buffer;
     u32 entry_cap;
     u32 entry_size;
@@ -47,8 +43,8 @@ struct CommandEntry_Draw
 {
     CommandEntryHeader header;
     Mat4 proj;
-    u32 index_offset;
-    u32 index_count;
+    u32 vertex_offset;
+    u32 quad_count;
 };
 
 struct RenderGroup
@@ -60,8 +56,7 @@ struct RenderGroup
 
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
-                             u32 vert_cap, Vertex* vert_buffer, 
-                             u32 index_cap, u32* index_buffer);
+                             u32 vert_cap, Vertex* vert_buffer);
 
 RenderGroup render_group(CommandBuffer* commands, Mat4 proj);
 
