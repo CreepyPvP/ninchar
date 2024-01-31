@@ -7,10 +7,12 @@ struct Camera
 {
     V3 pos;
     V3 front;
-    V3 right;
+    float yaw;
+    float pitch;
 };
 
-void init_camera(Camera* camera, V3 pos, V3 front, V3 right);
+void init_camera(Camera* camera, V3 pos, V3 front);
 void update_camera(Camera* camera, u8 buttons_pressed, float delta);
+void update_camera_mouse(Camera* camera, float x, float y);
 
 #endif

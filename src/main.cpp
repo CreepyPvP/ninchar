@@ -15,14 +15,29 @@
 #include "include/camera.h"
 #include "include/profiler.h"
 
+
 struct GameWindow {
     GLFWwindow* handle;
     u32 width;
     u32 height;
 };
 
-
 GameWindow global_window;
+Camera camera;
+
+double last_mouse_pos_x;
+double last_mouse_pos_y;
+
+
+void mouse_callback(GLFWwindow* window, double pos_x, double pos_y) 
+{
+    float x_offset = pos_x - last_mouse_pos_x;
+    float y_offset = pos_y - last_mouse_pos_y;
+    update_camera_mouse(&camera, x_offset * 0.1, y_offset * 0.1);
+
+    last_mouse_pos_x = pos_x;
+    last_mouse_pos_y = pos_y;
+}
 
 void create_window() {
     glfwInit();
@@ -51,6 +66,8 @@ void create_window() {
     }
 
     // glfwSetFramebufferSizeCallback(Window.Handle, resize_cb);
+    glfwSetCursorPosCallback(global_window.handle, mouse_callback);
+    glfwSetInputMode(global_window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwMakeContextCurrent(global_window.handle);
 }
 
@@ -72,8 +89,7 @@ i32 main()
     u32 index_cap = 600000;
     u32* index_buffer = (u32*) push_size(&arena, index_cap * sizeof(u32));
 
-    Camera camera;
-    init_camera(&camera, v3(2), v3(-1, 0, 0), v3(0, 1, 0));
+    init_camera(&camera, v3(2), v3(-1, 0, 0));
 
     Profiler profiler_main;
 
