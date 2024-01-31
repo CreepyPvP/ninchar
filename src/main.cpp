@@ -12,6 +12,7 @@
 #include "include/arena.h"
 #include "include/renderer.h"
 #include "include/opengl_renderer.h"
+#include "include/camera.h"
 #include "include/profiler.h"
 
 struct GameWindow {
@@ -71,17 +72,24 @@ i32 main()
     u32 index_cap = 600000;
     u32* index_buffer = (u32*) push_size(&arena, index_cap * sizeof(u32));
 
+    Camera camera;
+    init_camera(&camera, v3(2), v3(-1, 0, 0), v3(0, 1, 0));
+
     Profiler profiler_main;
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
-    Mat4 view = glm::lookAt(
-        glm::vec3(10, 10, 10),
-        glm::vec3(0, 0, 0),
-        glm::vec3(0, 0, 1)
-    );
-    Mat4 proj = projection * view;
 
     while (!glfwWindowShouldClose(global_window.handle)) {
+        if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(global_window.handle, true);
+        }
+
+        u8 pressed = (glfwGetKey(global_window.handle, GLFW_KEY_W) == GLFW_PRESS) << 0 |
+                     (glfwGetKey(global_window.handle, GLFW_KEY_S) == GLFW_PRESS) << 1 |
+                     (glfwGetKey(global_window.handle, GLFW_KEY_A) == GLFW_PRESS) << 2 |
+                     (glfwGetKey(global_window.handle, GLFW_KEY_D) == GLFW_PRESS) << 3;
+        update_camera(&camera, pressed, 1.0f / 60.0f);
+
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(global_window.handle, true);
         }
@@ -89,6 +97,15 @@ i32 main()
         cmd = command_buffer(entry_size, entry_buffer,
                              vert_cap, vert_buffer,
                              index_cap, index_buffer);
+
+        Mat4 view = glm::lookAt(
+            glm::vec3(camera.pos.x, camera.pos.y, camera.pos.z),
+            glm::vec3(camera.pos.x + camera.front.x, 
+                      camera.pos.y + camera.front.y, 
+                      camera.pos.z + camera.front.z),
+            glm::vec3(0, 0, 1)
+        );
+        Mat4 proj = projection * view;
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
         RenderGroup group = render_group(&cmd, proj);
