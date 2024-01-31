@@ -8,8 +8,8 @@
 #include "include/types.h"
 #include "include/util.h"
 
-#define MAX_VERTEX 400000
-#define MAX_INDEX 600000
+#define MAX_VERTEX 4000000
+#define MAX_INDEX 6000000
 
 OpenGLContext opengl;
 
@@ -140,8 +140,6 @@ void opengl_init()
     opengl.index_buffer = buffers[1];
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opengl.index_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * MAX_INDEX, NULL, GL_DYNAMIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * MAX_VERTEX, NULL, GL_DYNAMIC_DRAW);
 
     // 0: pos
     // 1: uv
@@ -160,29 +158,14 @@ void opengl_init()
     opengl.draw_shader.proj = glGetUniformLocation(opengl.draw_shader.base.id, "proj");
 }
 
-void copy_to_buffer(u32 slot, u32 size, u32 max_size, void* data)
-{
-    if (size == 0) {
-        return;
-    }
-    if (size > max_size) {
-        printf("Max gpu buffer size exceeded. Max %d\n", max_size);
-        size = max_size;
-    }
-
-    void* map = glMapBufferRange(slot, 0, size, GL_MAP_WRITE_BIT);
-    memcpy(map, data, size);
-    glUnmapBuffer(slot);
-}
-
 void opengl_render_commands(CommandBuffer* buffer)
 {
     glUseProgram(opengl.draw_shader.base.id);
 
-    copy_to_buffer(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->vert_count,
-                   sizeof(Vertex) * MAX_VERTEX, buffer->vert_buffer);
-    copy_to_buffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * buffer->index_count,
-                   sizeof(u32) * MAX_INDEX, buffer->index_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->vert_count, 
+                 buffer->vert_buffer, GL_STREAM_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * buffer->index_count, 
+                 buffer->index_buffer, GL_STREAM_DRAW);
 
     u32 offset = 0;
     while (offset < buffer->entry_size) {

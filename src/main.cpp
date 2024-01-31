@@ -85,9 +85,9 @@ i32 main()
     CommandBuffer cmd;
     u32 entry_size = 10000;
     u8* entry_buffer = (u8*) push_size(&arena, entry_size);
-    u32 vert_cap = 500000;
+    u32 vert_cap = 5000000;
     Vertex* vert_buffer = (Vertex*) push_size(&arena, vert_cap * sizeof(Vertex));
-    u32 index_cap = 600000;
+    u32 index_cap = 6000000;
     u32* index_buffer = (u32*) push_size(&arena, index_cap * sizeof(u32));
 
     init_camera(&camera, v3(2), v3(-1, 0, 0));
@@ -97,9 +97,9 @@ i32 main()
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
-    const u32 box_count = 10000;
-    V3 boxpos[box_count];
-    V3 boxcolor[box_count];
+    u32 box_count = 100000;
+    V3* boxpos = (V3*) push_size(&arena, sizeof(V3) * box_count);
+    V3* boxcolor = (V3*) push_size(&arena, sizeof(V3) * box_count);
     for (u32 i = 0; i < box_count; ++i) {
         boxpos[i].x = halton(i, 2) * 300;
         boxpos[i].y = halton(i, 3) * 300;
