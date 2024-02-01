@@ -11,7 +11,7 @@ struct Transform
     V3 pos;
 };
 
-struct Box
+struct Crate
 {
     Transform trans;
 };
@@ -22,7 +22,7 @@ struct Game
     u32 height;
     u8* grid;
 
-    Box* crate;
+    Crate* crate;
     u32 crate_count;
     u32 crate_cap;
 };

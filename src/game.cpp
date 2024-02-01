@@ -32,7 +32,7 @@ void game_init(Game* game, Arena* arena)
 
     game->crate_count = 1;
     game->crate_cap = 1;
-    game->crate = (Box*) push_size(arena, sizeof(Box) * game->crate_cap);
+    game->crate = (Crate*) push_size(arena, sizeof(Crate) * game->crate_cap);
 
     game->crate[0].trans.pos = v3(4, 4, 1);
 }
@@ -50,7 +50,7 @@ void game_update(Game* game, RenderGroup* group)
     }
 
     for (u32 i = 0; i < game->crate_count; ++i) {
-        Box* crate = game->crate + i;
+        Crate* crate = game->crate + i;
         push_cube(group, crate->trans.pos, v3(0.5), crate_texture, v3(1));
     }
 }
