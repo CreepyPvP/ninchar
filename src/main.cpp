@@ -15,6 +15,7 @@
 #include "include/camera.h"
 #include "include/profiler.h"
 #include "include/game_math.h"
+#include "include/game.h"
 
 
 struct GameWindow {
@@ -85,7 +86,7 @@ i32 main()
     CommandBuffer cmd;
     u32 entry_size = 10000;
     u8* entry_buffer = (u8*) push_size(&arena, entry_size);
-    u32 vert_cap = 5000000;
+    u32 vert_cap = 50000;
     Vertex* vert_buffer = (Vertex*) push_size(&arena, vert_cap * sizeof(Vertex));
 
     init_camera(&camera, v3(2), v3(-1, 0, 0));
@@ -95,17 +96,8 @@ i32 main()
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
-    u32 box_count = 100000;
-    V3* boxpos = (V3*) push_size(&arena, sizeof(V3) * box_count);
-    V3* boxcolor = (V3*) push_size(&arena, sizeof(V3) * box_count);
-    for (u32 i = 0; i < box_count; ++i) {
-        boxpos[i].x = halton(i, 2) * 300;
-        boxpos[i].y = halton(i, 3) * 300;
-        boxpos[i].z = halton(i, 5) * 300;
-        boxcolor[i].x = halton(i + 1, 5);
-        boxcolor[i].y = halton(i + 1, 3);
-        boxcolor[i].z = halton(i + 1, 2);
-    }
+    Game game;
+    game_init(&game, &arena);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -138,14 +130,13 @@ i32 main()
         RenderGroup group = render_group(&cmd, proj);
 
         start_timestamp(&profiler_renderer);
-        for (u32 i = 0; i < box_count; ++i) {
-            push_cube(&group, boxpos[i], v3(1), boxcolor[i]);
-        }
+        game_update(&game, &group);
         double render_duration = end_timestamp(&profiler_renderer);
 
         start_timestamp(&profiler_opengl_backend);
         opengl_render_commands(&cmd);
         double opengl_backend_duration = end_timestamp(&profiler_opengl_backend);
+
         printf("Renderer: %f, Backend %f ms\n", 
                render_duration * 1000, opengl_backend_duration * 1000);
 

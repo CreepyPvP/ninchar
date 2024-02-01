@@ -6,7 +6,7 @@
 
 #include <glm/glm.hpp>
 
-// #define DEBUG
+#define DEBUG
 #define WINDOWS
 
 #ifdef WINDOWS

@@ -177,6 +177,7 @@ void opengl_render_commands(CommandBuffer* buffer)
                 glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, &(draw->proj)[0][0]);
                 offset += sizeof(CommandEntry_Draw);
 
+                // TODO: glMultiDraw and BindLess Texture
                 for (u32 i = 0; i < draw->quad_count; ++i) {
                     glDrawArrays(GL_TRIANGLE_STRIP, i * 4 + draw->vertex_offset, 4);
                 }
