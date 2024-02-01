@@ -95,11 +95,6 @@ i32 main()
     opengl_load_texture(&load_white);
     free_texture_load_op(&load_white);
 
-    TextureHandle ground;
-    TextureLoadOp load_ground = texture_load_op(&ground, "assets/ground.png");
-    opengl_load_texture(&load_ground);
-    free_texture_load_op(&load_ground);
-
     init_camera(&camera, v3(2), v3(-1, 0, 0));
 
     Profiler profiler_renderer;
@@ -108,6 +103,7 @@ i32 main()
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
     Game game;
+    game_load_assets();
     game_init(&game, &arena);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
@@ -140,7 +136,7 @@ i32 main()
         RenderGroup group = render_group(&cmd, proj);
 
         start_timestamp(&profiler_renderer);
-        game_update(&game, &group, ground);
+        game_update(&game, &group);
         double render_duration = end_timestamp(&profiler_renderer);
 
         start_timestamp(&profiler_opengl_backend);
