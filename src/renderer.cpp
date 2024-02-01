@@ -1,17 +1,22 @@
 #include "include/renderer.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "include/stb_image.h"
+
 #include <stdio.h>
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
-                             u32 vert_cap, Vertex* vert_buffer)
+                             u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer)
 {
     CommandBuffer commands;
     commands.entry_buffer = entry_buffer;
     commands.entry_cap = entry_cap;
     commands.entry_size = 0;
+
     commands.vert_buffer = vert_buffer;
-    commands.vert_cap = vert_cap;
-    commands.vert_count = 0;
+    commands.texture_buffer = texture_buffer;
+    commands.quad_cap = quad_cap;
+    commands.quad_count = 0;
     return commands;
 }
 
@@ -47,19 +52,19 @@ void push_clear(CommandBuffer* commands, V3 color)
     clear->color = color;
 }
 
-CommandEntry_Draw* get_current_draw(RenderGroup* group, u32 vert_count)
+CommandEntry_Draw* get_current_draw(RenderGroup* group, u32 quad_count)
 {
     CommandBuffer* commands = group->commands;
     if (!group->current_draw) {
         group->current_draw = (CommandEntry_Draw*) push_entry(commands, sizeof(CommandEntry_Draw));
 
         group->current_draw->header.type = EntryType_Draw;
-        group->current_draw->vertex_offset = commands->vert_count;
+        group->current_draw->quad_offset = commands->quad_count;
         group->current_draw->quad_count = 0;
         group->current_draw->proj = group->proj;
     }
 
-    if (commands->vert_count + vert_count > commands->vert_cap) {
+    if (commands->quad_count + quad_count > commands->quad_cap) {
         printf("Warning: Vertex buffer size exceede\n");
         return NULL;
     }
@@ -72,7 +77,7 @@ void push_quad(RenderGroup* group,
                V3 p2, V2 uv2,
                V3 p3, V2 uv3,
                V3 p4, V2 uv4,
-               V3 norm, V3 color)
+               V3 norm, TextureHandle texture, V3 color)
 {
     CommandBuffer* commands = group->commands;
     CommandEntry_Draw* draw = group->current_draw;
@@ -80,7 +85,7 @@ void push_quad(RenderGroup* group,
 
     ++draw->quad_count;
 
-    u32 vcurr = commands->vert_count;
+    u32 vcurr = commands->quad_count * 4;
     commands->vert_buffer[vcurr + 0].pos = p1;
     commands->vert_buffer[vcurr + 0].uv = uv1;
     commands->vert_buffer[vcurr + 0].norm = norm;
@@ -97,11 +102,13 @@ void push_quad(RenderGroup* group,
     commands->vert_buffer[vcurr + 3].uv = uv4;
     commands->vert_buffer[vcurr + 3].norm = norm;
     commands->vert_buffer[vcurr + 3].color = color;
+
+    commands->texture_buffer[commands->quad_count] = texture;
     
-    commands->vert_count += 4;
+    ++commands->quad_count;
 }
 
-void push_cube(RenderGroup* group, V3 pos, V3 radius, V3 color)
+void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color)
 {
     CommandEntry_Draw* entry = get_current_draw(group, 6 * 4);
     if (!entry) {
@@ -122,41 +129,60 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, V3 color)
               p2, v2(0, 1),
               p4, v2(1, 0),
               p3, v2(1, 1),
-              v3(0, 0, 1), color);
+              v3(0, 0, 1), texture, color);
 
     push_quad(group, 
               p8, v2(0, 0),
               p7, v2(0, 1),
               p5, v2(1, 0),
               p6, v2(1, 1),
-              v3(0, 0, -1), color);
+              v3(0, 0, -1), texture, color);
 
     push_quad(group, 
               p8, v2(0, 0),
               p4, v2(0, 1),
               p7, v2(1, 0),
               p3, v2(1, 1),
-              v3(1, 0, 0), color);
+              v3(1, 0, 0), texture, color);
 
     push_quad(group, 
               p6, v2(0, 0),
               p2, v2(0, 1),
               p5, v2(1, 0),
               p1, v2(1, 1),
-              v3(-1, 0, 0), color);
+              v3(-1, 0, 0), texture, color);
 
     push_quad(group, 
               p7, v2(0, 0),
               p3, v2(0, 1),
               p6, v2(1, 0),
               p2, v2(1, 1),
-              v3(0, 1, 0), color);
+              v3(0, 1, 0), texture, color);
 
     push_quad(group, 
               p5, v2(0, 0),
               p1, v2(0, 1),
               p8, v2(1, 0),
               p4, v2(1, 1),
-              v3(0, -1, 0), color);
+              v3(0, -1, 0), texture, color);
 
+}
+
+TextureLoadOp texture_load_op(TextureHandle* handle, const char* path)
+{
+    stbi_set_flip_vertically_on_load(true);
+    TextureLoadOp load_op;
+    load_op.handle = handle;
+    load_op.data = stbi_load(path, &load_op.width, &load_op.height, 
+                             &load_op.num_channels, 0);
+    if (!load_op.data) {
+        assert(0 && "Failed to load texture");
+    }
+
+    return load_op;
+}
+
+void free_texture_load_op(TextureLoadOp* load_op)
+{
+    stbi_image_free(load_op->data);
 }

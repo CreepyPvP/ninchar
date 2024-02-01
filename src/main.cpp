@@ -86,8 +86,19 @@ i32 main()
     CommandBuffer cmd;
     u32 entry_size = 10000;
     u8* entry_buffer = (u8*) push_size(&arena, entry_size);
-    u32 vert_cap = 50000;
-    Vertex* vert_buffer = (Vertex*) push_size(&arena, vert_cap * sizeof(Vertex));
+    u32 quad_cap = 10000;
+    Vertex* vert_buffer = (Vertex*) push_size(&arena, quad_cap * 4 * sizeof(Vertex));
+    TextureHandle* texture_buffer = (TextureHandle*) push_size(&arena, quad_cap * sizeof(TextureHandle));
+
+    TextureHandle white;
+    TextureLoadOp load_white = texture_load_op(&white, "assets/white.png");
+    opengl_load_texture(&load_white);
+    free_texture_load_op(&load_white);
+
+    TextureHandle ground;
+    TextureLoadOp load_ground = texture_load_op(&ground, "assets/ground.png");
+    opengl_load_texture(&load_ground);
+    free_texture_load_op(&load_ground);
 
     init_camera(&camera, v3(2), v3(-1, 0, 0));
 
@@ -114,8 +125,7 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
-        cmd = command_buffer(entry_size, entry_buffer,
-                             vert_cap, vert_buffer);
+        cmd = command_buffer(entry_size, entry_buffer, quad_cap, vert_buffer, texture_buffer);
 
         Mat4 view = glm::lookAt(
             glm::vec3(camera.pos.x, camera.pos.y, camera.pos.z),
@@ -130,7 +140,7 @@ i32 main()
         RenderGroup group = render_group(&cmd, proj);
 
         start_timestamp(&profiler_renderer);
-        game_update(&game, &group);
+        game_update(&game, &group, ground);
         double render_duration = end_timestamp(&profiler_renderer);
 
         start_timestamp(&profiler_opengl_backend);

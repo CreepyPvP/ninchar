@@ -157,7 +157,7 @@ void opengl_render_commands(CommandBuffer* buffer)
 {
     glUseProgram(opengl.draw_shader.base.id);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->vert_count, 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
                  buffer->vert_buffer, GL_STREAM_DRAW);
 
     u32 offset = 0;
@@ -179,7 +179,9 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 // TODO: glMultiDraw and BindLess Texture
                 for (u32 i = 0; i < draw->quad_count; ++i) {
-                    glDrawArrays(GL_TRIANGLE_STRIP, i * 4 + draw->vertex_offset, 4);
+                    u32 quad_offset = i + draw->quad_offset;
+                    glBindTexture(GL_TEXTURE_2D, buffer->texture_buffer[quad_offset].id);
+                    glDrawArrays(GL_TRIANGLE_STRIP, 4 * quad_offset, 4);
                 }
             } break;
 
@@ -189,3 +191,26 @@ void opengl_render_commands(CommandBuffer* buffer)
         }
     }
 }
+
+void opengl_load_texture(TextureLoadOp* load_op)
+{
+    u32 texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    u32 format = GL_RGBA;
+    if (load_op->num_channels == 3) {
+        format = GL_RGB;
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
+                 load_op->width, load_op->height, 0, format, 
+                 GL_UNSIGNED_BYTE, load_op->data);
+
+    load_op->handle->id = texture;
+}
+

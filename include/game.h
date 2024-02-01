@@ -13,6 +13,6 @@ struct Game
 };
 
 void game_init(Game* game, Arena* arena);
-void game_update(Game* game, RenderGroup* group);
+void game_update(Game* game, RenderGroup* group, TextureHandle texture);
 
 #endif

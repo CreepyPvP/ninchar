@@ -27,4 +27,6 @@ struct OpenGLContext
 void opengl_init();
 void opengl_render_commands(CommandBuffer* buffer);
 
+void opengl_load_texture(TextureLoadOp* load_op);
+
 #endif
