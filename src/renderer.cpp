@@ -7,7 +7,7 @@
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
                              u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer,
-                             u32 width, u32 height)
+                             u32 width, u32 height, TextureHandle white)
 {
     CommandBuffer commands;
     commands.entry_buffer = entry_buffer;
@@ -21,6 +21,7 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
 
     commands.width = width;
     commands.height = height;
+    commands.white = white;
 
     return commands;
 }

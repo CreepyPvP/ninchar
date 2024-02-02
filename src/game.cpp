@@ -66,6 +66,9 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 game->crate[game->crate_count].trans.pos = v3(x, y, 1);
                 ++game->crate_count;
             }
+            if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
+                game->player.trans.pos = v3(x, y, 1);
+            }
 
             curr += 3;
         }
@@ -89,4 +92,6 @@ void game_update(Game* game, RenderGroup* group)
     for (u32 i = 0; i < game->wall_count; ++i) {
         push_cube(group, game->wall[i].trans.pos, v3(0.5), wall_texture, v3(1));
     }
+
+    push_cube(group, game->player.trans.pos, v3(0.35, 0.35, 0.5), group->commands->white, v3(0, 0, 1));
 }

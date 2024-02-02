@@ -50,6 +50,8 @@ struct CommandBuffer
     u8* entry_buffer;
     u32 entry_cap;
     u32 entry_size;
+
+    TextureHandle white;
 };
 
 struct CommandEntry_Clear
@@ -76,7 +78,7 @@ struct RenderGroup
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
                              u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer,
-                             u32 width, u32 height);
+                             u32 width, u32 height, TextureHandle white);
 
 RenderGroup render_group(CommandBuffer* commands, Mat4 proj);
 

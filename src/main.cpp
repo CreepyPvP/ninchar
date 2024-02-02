@@ -115,6 +115,7 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
+#ifdef DEBUG
         static bool c_pressed = false;
         if (glfwGetKey(global_window.handle, GLFW_KEY_C) == GLFW_PRESS) {
             if (!c_pressed) {
@@ -124,6 +125,7 @@ i32 main()
         } else {
             c_pressed = false;
         }
+#endif
 
         u8 pressed = (glfwGetKey(global_window.handle, GLFW_KEY_W) == GLFW_PRESS) << 0 |
                      (glfwGetKey(global_window.handle, GLFW_KEY_S) == GLFW_PRESS) << 1 |
@@ -139,7 +141,7 @@ i32 main()
         }
 
         cmd = command_buffer(entry_size, entry_buffer, quad_cap, vert_buffer, texture_buffer, 
-                             global_window.width, global_window.height);
+                             global_window.width, global_window.height, white);
 
         Mat4 view = glm::lookAt(
             glm::vec3(game.camera.pos.x, game.camera.pos.y, game.camera.pos.z),

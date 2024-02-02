@@ -21,6 +21,11 @@ struct Wall
     Transform trans;
 };
 
+struct Player
+{
+    Transform trans;
+};
+
 struct Game
 {
     u32 width;
@@ -35,6 +40,7 @@ struct Game
     u32 crate_cap;
 
     Camera camera;
+    Player player;
 };
 
 

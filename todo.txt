@@ -1,5 +1,3 @@
-level import
-
 basic player movement
 collisions
 physics
@@ -7,6 +5,8 @@ physics
 cleanup
 
 -------------  today -------------
+
+objectives
 
 debug line / box drawing
 line of sight check
