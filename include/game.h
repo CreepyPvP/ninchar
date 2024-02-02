@@ -12,24 +12,26 @@ enum CameraState
     CameraState_Free = 1,
 };
 
-struct Transform
+struct Collider
 {
-    V3 pos;
+    V3 radius;
 };
 
 struct Crate
 {
-    Transform trans;
+    V3 pos;
+    Collider collider;
 };
 
 struct Wall
 {
-    Transform trans;
+    V3 pos;
+    Collider collider;
 };
 
 struct Player
 {
-    Transform trans;
+    V3 pos;
 };
 
 struct Game
@@ -57,5 +59,8 @@ void game_init(Game* game, Arena* arena, u32 stage);
 void game_update(Game* game, RenderGroup* group, u8 inputs, float delta);
 
 void game_toggle_camera_state(Game* game);
+
+
+void move_and_collide(V3* pos, Collider* col, V2 dir, Game* game);
 
 #endif

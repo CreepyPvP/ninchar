@@ -1,6 +1,7 @@
-basic player movement
 collisions
 physics
+
+fix camera pos?
 
 cleanup
 
@@ -20,8 +21,7 @@ camera cone
 player fail / restart
 
 ui rendering
-
-
+fix camera jump
 
 
 animations

@@ -60,15 +60,17 @@ void game_init(Game* game, Arena* arena, u32 stage)
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
             if (curr[0] == 0 && curr[1] == 0 && curr[2] == 0) {
-                game->wall[game->wall_count].trans.pos = v3(x, y, 1);
+                game->wall[game->wall_count].pos = v3(x, y, 1);
+                game->wall[game->wall_count].collider.radius = v3(0.5);
                 ++game->wall_count;
             }
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
-                game->crate[game->crate_count].trans.pos = v3(x, y, 1);
+                game->crate[game->crate_count].pos = v3(x, y, 1);
+                game->crate[game->crate_count].collider.radius = v3(0.5);
                 ++game->crate_count;
             }
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
-                game->player.trans.pos = v3(x, y, 1);
+                game->player.pos = v3(x, y, 1);
             }
 
             curr += 3;
@@ -109,8 +111,14 @@ void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
             movement = v2(movement.x / distance, movement.y / distance);
         }
 
-        game->player.trans.pos.x += movement.x * delta * 6;
-        game->player.trans.pos.y += movement.y * delta * 6;
+        Collider player_collider;
+        player_collider.radius = v3(0.35, 0.35, 0.7);
+
+        // game->player.pos.x += movement.x * delta * 6;
+        // game->player.pos.y += movement.y * delta * 6;
+        movement.x *= delta * 6;
+        movement.y *= delta * 6;
+        move_and_collide(&game->player.pos, &player_collider, movement, game);
     }
 
     for (u32 y = 0; y < game->height; ++y) {
@@ -120,14 +128,14 @@ void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
     }
 
     for (u32 i = 0; i < game->crate_count; ++i) {
-        push_cube(group, game->crate[i].trans.pos, v3(0.5), crate_texture, v3(1));
+        push_cube(group, game->crate[i].pos, v3(0.5), crate_texture, v3(1));
     }
 
     for (u32 i = 0; i < game->wall_count; ++i) {
-        push_cube(group, game->wall[i].trans.pos, v3(0.5), wall_texture, v3(1));
+        push_cube(group, game->wall[i].pos, v3(0.5), wall_texture, v3(1));
     }
 
-    push_cube(group, game->player.trans.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
+    push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
 }
 
 void game_toggle_camera_state(Game* game)
