@@ -31,6 +31,12 @@ double last_mouse_pos_x;
 double last_mouse_pos_y;
 
 
+void resize_callback(GLFWwindow* window, i32 width, i32 height) 
+{
+    global_window.width = width;
+    global_window.height = height;
+}
+
 void mouse_callback(GLFWwindow* window, double pos_x, double pos_y) 
 {
     float x_offset = pos_x - last_mouse_pos_x;
@@ -67,7 +73,7 @@ void create_window() {
         assert(0 && "Failed to create window\n");
     }
 
-    // glfwSetFramebufferSizeCallback(Window.Handle, resize_cb);
+    glfwSetFramebufferSizeCallback(global_window.handle, resize_callback);
     glfwSetCursorPosCallback(global_window.handle, mouse_callback);
     glfwSetInputMode(global_window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwMakeContextCurrent(global_window.handle);
@@ -121,7 +127,8 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
-        cmd = command_buffer(entry_size, entry_buffer, quad_cap, vert_buffer, texture_buffer);
+        cmd = command_buffer(entry_size, entry_buffer, quad_cap, vert_buffer, texture_buffer, 
+                             global_window.width, global_window.height);
 
         Mat4 view = glm::lookAt(
             glm::vec3(camera.pos.x, camera.pos.y, camera.pos.z),

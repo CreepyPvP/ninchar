@@ -39,6 +39,9 @@ struct CommandEntryHeader
 
 struct CommandBuffer
 {
+    u32 width;
+    u32 height;
+
     Vertex* vert_buffer;
     TextureHandle* texture_buffer;
     u32 quad_cap;
@@ -72,7 +75,8 @@ struct RenderGroup
 
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
-                             u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer);
+                             u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer,
+                             u32 width, u32 height);
 
 RenderGroup render_group(CommandBuffer* commands, Mat4 proj);
 

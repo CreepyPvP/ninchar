@@ -155,6 +155,7 @@ void opengl_init()
 
 void opengl_render_commands(CommandBuffer* buffer)
 {
+    glViewport(0, 0, buffer->width, buffer->height);
     glUseProgram(opengl.draw_shader.base.id);
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
@@ -199,8 +200,8 @@ void opengl_load_texture(TextureLoadOp* load_op)
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     u32 format = GL_RGBA;
     if (load_op->num_channels == 3) {

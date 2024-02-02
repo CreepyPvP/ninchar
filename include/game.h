@@ -16,11 +16,19 @@ struct Crate
     Transform trans;
 };
 
+struct Wall
+{
+    Transform trans;
+};
+
 struct Game
 {
     u32 width;
     u32 height;
-    u8* grid;
+
+    Wall* wall;
+    u32 wall_count;
+    u32 wall_cap;
 
     Crate* crate;
     u32 crate_count;

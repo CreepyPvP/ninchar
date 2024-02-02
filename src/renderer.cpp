@@ -6,7 +6,8 @@
 #include <stdio.h>
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
-                             u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer)
+                             u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer,
+                             u32 width, u32 height)
 {
     CommandBuffer commands;
     commands.entry_buffer = entry_buffer;
@@ -17,6 +18,10 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     commands.texture_buffer = texture_buffer;
     commands.quad_cap = quad_cap;
     commands.quad_count = 0;
+
+    commands.width = width;
+    commands.height = height;
+
     return commands;
 }
 
