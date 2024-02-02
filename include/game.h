@@ -12,8 +12,16 @@ enum CameraState
     CameraState_Free = 1,
 };
 
+enum ColliderType
+{
+    ColliderType_Static = 0,
+    ColliderType_Moveable = 1,
+    ColliderType_Destroyable = 2,
+};
+
 struct Collider
 {
+    u32 type;
     V3 radius;
 };
 

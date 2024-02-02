@@ -62,11 +62,13 @@ void game_init(Game* game, Arena* arena, u32 stage)
             if (curr[0] == 0 && curr[1] == 0 && curr[2] == 0) {
                 game->wall[game->wall_count].pos = v3(x, y, 1);
                 game->wall[game->wall_count].collider.radius = v3(0.5);
+                game->wall[game->wall_count].collider.type = ColliderType_Static;
                 ++game->wall_count;
             }
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
                 game->crate[game->crate_count].pos = v3(x, y, 1);
                 game->crate[game->crate_count].collider.radius = v3(0.5);
+                game->crate[game->crate_count].collider.type = ColliderType_Moveable;
                 ++game->crate_count;
             }
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {

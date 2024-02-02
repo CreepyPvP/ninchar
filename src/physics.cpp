@@ -6,8 +6,8 @@
 
 V3 far_away = v3(1000, 1000, 1000);
 
-float clamp(float a, float b){
-    if (b == 0){
+float clamp_abs(float a, float b){
+    if (b < 0.0001 && b > -0.0001){
         return 0;
     } else if (b > 0){
         return min(a, b);
@@ -36,9 +36,40 @@ void move_and_push_boxes(V3* pos, V2 dir, Game* game)
     *pos = new_pos;
 }
 
-V2 try_move_into(V3 pos, Collider* col, V2 dir, Game* game) 
+V2 distance_towards(V3 pos, Collider* col, V3 other_pos, Collider* other, V2 dir) 
 {
-    // TODO
+    V2 res;
+    if (dir.x > 0) {
+        res.x = other_pos.x - pos.x - col->radius.x - other->radius.x;
+    } else {
+        res.x = other_pos.x - pos.x + col->radius.x + other->radius.x;
+    }
+
+    if (dir.y > 0) {
+        res.y = other_pos.y - pos.y - col->radius.y - other->radius.y;
+    } else {
+        res.y = other_pos.y - pos.y + col->radius.y + other->radius.y;
+    }
+
+    return res;
+}
+
+V2 try_move_into(V3 pos, Collider* col, V3 other_pos, Collider* other, V2 dir, Game* game) 
+{
+    switch (other->type) {
+        case ColliderType_Static: {
+            return distance_towards(pos, col, other_pos, other, dir);
+        } break;
+
+        case ColliderType_Moveable: {
+            return distance_towards(pos, col, other_pos, other, dir);
+        } break;
+
+        case ColliderType_Destroyable: {
+            // return dir;
+        }
+    }
+
     return v2(0);
 }
 
@@ -52,19 +83,21 @@ V2 get_collided_movement(V3* pos, Collider* col, V2 dir, Game* game)
 
     // TODO Clean this up
     for (u32 i = 0; i < game->wall_count; ++i) {
+        V3 other_pos = game->wall[i].pos;
         Collider* other = &game->wall[i].collider;
-        if (intersects(new_pos, col, game->wall[i].pos, other)) {
-            V2 move_into = try_move_into(old_pos, other, dir, game);
-            res.x = clamp(res.x, move_into.x);
-            res.y = clamp(res.y, move_into.y);
+        if (intersects(new_pos, col, other_pos, other)) {
+            V2 move_into = try_move_into(old_pos, col, other_pos, other, dir, game);
+            res.x = clamp_abs(res.x, move_into.x);
+            res.y = clamp_abs(res.y, move_into.y);
         }
     }
     for (u32 i = 0; i < game->crate_count; ++i) {
+        V3 other_pos = game->crate[i].pos;
         Collider* other = &game->crate[i].collider;
-        if (intersects(new_pos, col, game->crate[i].pos, other)) {
-            V2 move_into = try_move_into(old_pos, other, dir, game);
-            res.x = clamp(res.x, move_into.x);
-            res.y = clamp(res.y, move_into.y);
+        if (intersects(new_pos, col, other_pos, other)) {
+            V2 move_into = try_move_into(old_pos, col, other_pos, other, dir, game);
+            res.x = clamp_abs(res.x, move_into.x);
+            res.y = clamp_abs(res.y, move_into.y);
         }
     }
 
