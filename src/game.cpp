@@ -26,6 +26,7 @@ void game_load_assets()
 
 void game_init(Game* game, Arena* arena, u32 stage)
 {
+    game->camera_state = CameraState_Locked;
     init_camera(&game->camera, v3(10, 4.5, 9), v3(-0.44, -0, -0.9));
 
     char path[1024];
@@ -77,8 +78,41 @@ void game_init(Game* game, Arena* arena, u32 stage)
     stbi_image_free(tmp);
 }
 
-void game_update(Game* game, RenderGroup* group)
+void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
 {
+    if (game->camera_state == CameraState_Free) {
+        update_camera(&game->camera, inputs, delta);
+    } else {
+        V2 movement = v2(0);
+
+        // w
+        if (inputs & (1 << 0)) {
+            movement.y += 1;
+        }
+        // s
+        if (inputs & (1 << 1)) {
+            movement.y -= 1;
+        }
+        // a
+        if (inputs & (1 << 2)) {
+            movement.x -= 1;
+        }
+        // d
+        if (inputs & (1 << 3)) {
+            movement.x += 1;
+        }
+
+        float distance = sqrt(movement.x * movement.x + movement.y * movement.y);
+        if (distance < 0.1) {
+            movement = v2(0);
+        } else {
+            movement = v2(movement.x / distance, movement.y / distance);
+        }
+
+        game->player.trans.pos.x += movement.x * delta * 6;
+        game->player.trans.pos.y += movement.y * delta * 6;
+    }
+
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
             push_cube(group, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
@@ -93,5 +127,15 @@ void game_update(Game* game, RenderGroup* group)
         push_cube(group, game->wall[i].trans.pos, v3(0.5), wall_texture, v3(1));
     }
 
-    push_cube(group, game->player.trans.pos, v3(0.35, 0.35, 0.5), group->commands->white, v3(0, 0, 1));
+    push_cube(group, game->player.trans.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
+}
+
+void game_toggle_camera_state(Game* game)
+{
+    if (game->camera_state == CameraState_Free) {
+        game->camera_state = CameraState_Locked;
+        init_camera(&game->camera, v3(10, 4.5, 9), v3(-0.44, -0, -0.9));
+    } else {
+        game->camera_state = CameraState_Free;
+    }
 }

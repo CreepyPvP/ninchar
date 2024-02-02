@@ -119,7 +119,7 @@ i32 main()
         static bool c_pressed = false;
         if (glfwGetKey(global_window.handle, GLFW_KEY_C) == GLFW_PRESS) {
             if (!c_pressed) {
-                game.camera.locked = !game.camera.locked;
+                game_toggle_camera_state(&game);
             }
             c_pressed = true;
         } else {
@@ -131,7 +131,7 @@ i32 main()
                      (glfwGetKey(global_window.handle, GLFW_KEY_S) == GLFW_PRESS) << 1 |
                      (glfwGetKey(global_window.handle, GLFW_KEY_A) == GLFW_PRESS) << 2 |
                      (glfwGetKey(global_window.handle, GLFW_KEY_D) == GLFW_PRESS) << 3;
-        update_camera(&game.camera, pressed, 1.0f / 60.0f);
+
         // printf("Camera pos: %f, %f, %f, Camera forward: %f %f %f\n", 
         //        game.camera.pos.x, game.camera.pos.y, game.camera.pos.z,
         //        game.camera.front.x, game.camera.front.y, game.camera.front.z);
@@ -156,7 +156,7 @@ i32 main()
         RenderGroup group = render_group(&cmd, proj);
 
         start_timestamp(&profiler_renderer);
-        game_update(&game, &group);
+        game_update(&game, &group, pressed, 1.0f / 60.0f);
         double render_duration = end_timestamp(&profiler_renderer);
 
         start_timestamp(&profiler_opengl_backend);

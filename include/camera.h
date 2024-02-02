@@ -9,8 +9,6 @@ struct Camera
     V3 front;
     float yaw;
     float pitch;
-
-    bool locked;
 };
 
 void init_camera(Camera* camera, V3 pos, V3 front);
