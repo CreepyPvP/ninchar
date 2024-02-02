@@ -108,7 +108,7 @@ i32 main()
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
     game_load_assets();
-    game_init(&game, &arena);
+    game_init(&game, &arena, 6);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {

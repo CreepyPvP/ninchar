@@ -39,7 +39,7 @@ struct Game
 
 
 void game_load_assets();
-void game_init(Game* game, Arena* arena);
+void game_init(Game* game, Arena* arena, u32 stage);
 void game_update(Game* game, RenderGroup* group);
 
 #endif

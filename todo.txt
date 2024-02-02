@@ -1,9 +1,10 @@
 level import
-fixed camera pos
 
 basic player movement
 collisions
 physics
+
+cleanup
 
 -------------  today -------------
 
