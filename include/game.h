@@ -4,7 +4,7 @@
 #include "include/types.h"
 #include "include/arena.h"
 #include "include/renderer.h"
-
+#include "include/camera.h"
 
 struct Transform
 {
@@ -33,6 +33,8 @@ struct Game
     Crate* crate;
     u32 crate_count;
     u32 crate_cap;
+
+    Camera camera;
 };
 
 

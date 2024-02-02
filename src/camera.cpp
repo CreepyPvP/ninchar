@@ -9,13 +9,19 @@
 void init_camera(Camera* camera, V3 pos, V3 front)
 {
     camera->pos = pos;
-    camera->front = front;
+    camera->front = norm(front);
     camera->yaw = 0;
     camera->pitch = 0;
+
+    camera->locked = true;
 }
 
 void update_camera(Camera* camera, u8 buttons_pressed, float delta)
 {
+    if (camera->locked) {
+        return;
+    }
+
     V2 movement = v2(0);
 
     // w
@@ -53,6 +59,10 @@ void update_camera(Camera* camera, u8 buttons_pressed, float delta)
 
 void update_camera_mouse(Camera* camera, float x, float y)
 {
+    if (camera->locked) {
+        return;
+    }
+
     camera->yaw += x;
     camera->pitch -= y;
 

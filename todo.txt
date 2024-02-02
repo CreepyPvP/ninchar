@@ -5,6 +5,8 @@ basic player movement
 collisions
 physics
 
+-------------  today -------------
+
 debug line / box drawing
 line of sight check
 

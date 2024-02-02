@@ -25,10 +25,11 @@ struct GameWindow {
 };
 
 GameWindow global_window;
-Camera camera;
 
 double last_mouse_pos_x;
 double last_mouse_pos_y;
+
+Game game;
 
 
 void resize_callback(GLFWwindow* window, i32 width, i32 height) 
@@ -41,7 +42,7 @@ void mouse_callback(GLFWwindow* window, double pos_x, double pos_y)
 {
     float x_offset = pos_x - last_mouse_pos_x;
     float y_offset = pos_y - last_mouse_pos_y;
-    update_camera_mouse(&camera, x_offset * 0.1, y_offset * 0.1);
+    update_camera_mouse(&game.camera, x_offset * 0.1, y_offset * 0.1);
 
     last_mouse_pos_x = pos_x;
     last_mouse_pos_y = pos_y;
@@ -101,14 +102,11 @@ i32 main()
     opengl_load_texture(&load_white);
     free_texture_load_op(&load_white);
 
-    init_camera(&camera, v3(2), v3(-1, 0, 0));
-
     Profiler profiler_renderer;
     Profiler profiler_opengl_backend;
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
-    Game game;
     game_load_assets();
     game_init(&game, &arena);
 
@@ -117,11 +115,24 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
+        static bool c_pressed = false;
+        if (glfwGetKey(global_window.handle, GLFW_KEY_C) == GLFW_PRESS) {
+            if (!c_pressed) {
+                game.camera.locked = !game.camera.locked;
+            }
+            c_pressed = true;
+        } else {
+            c_pressed = false;
+        }
+
         u8 pressed = (glfwGetKey(global_window.handle, GLFW_KEY_W) == GLFW_PRESS) << 0 |
                      (glfwGetKey(global_window.handle, GLFW_KEY_S) == GLFW_PRESS) << 1 |
                      (glfwGetKey(global_window.handle, GLFW_KEY_A) == GLFW_PRESS) << 2 |
                      (glfwGetKey(global_window.handle, GLFW_KEY_D) == GLFW_PRESS) << 3;
-        update_camera(&camera, pressed, 1.0f / 60.0f);
+        update_camera(&game.camera, pressed, 1.0f / 60.0f);
+        // printf("Camera pos: %f, %f, %f, Camera forward: %f %f %f\n", 
+        //        game.camera.pos.x, game.camera.pos.y, game.camera.pos.z,
+        //        game.camera.front.x, game.camera.front.y, game.camera.front.z);
 
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(global_window.handle, true);
@@ -131,10 +142,10 @@ i32 main()
                              global_window.width, global_window.height);
 
         Mat4 view = glm::lookAt(
-            glm::vec3(camera.pos.x, camera.pos.y, camera.pos.z),
-            glm::vec3(camera.pos.x + camera.front.x, 
-                      camera.pos.y + camera.front.y, 
-                      camera.pos.z + camera.front.z),
+            glm::vec3(game.camera.pos.x, game.camera.pos.y, game.camera.pos.z),
+            glm::vec3(game.camera.pos.x + game.camera.front.x, 
+                      game.camera.pos.y + game.camera.front.y, 
+                      game.camera.pos.z + game.camera.front.z),
             glm::vec3(0, 0, 1)
         );
         Mat4 proj = projection * view;
@@ -150,8 +161,8 @@ i32 main()
         opengl_render_commands(&cmd);
         double opengl_backend_duration = end_timestamp(&profiler_opengl_backend);
 
-        printf("Renderer: %f, Backend %f ms\n", 
-               render_duration * 1000, opengl_backend_duration * 1000);
+        // printf("Renderer: %f, Backend %f ms\n", 
+        //        render_duration * 1000, opengl_backend_duration * 1000);
 
         glfwSwapBuffers(global_window.handle);
         glfwPollEvents();

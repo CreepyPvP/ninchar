@@ -25,6 +25,8 @@ void game_load_assets()
 
 void game_init(Game* game, Arena* arena)
 {
+    init_camera(&game->camera, v3(9, 4.1, 9), v3(-0.44, -0, -0.9));
+
     game->width = 10;
     game->height = 10;
 
