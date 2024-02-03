@@ -1,9 +1,12 @@
 #include "include/renderer.h"
 
+#include <stdio.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 
-#include <stdio.h>
+#include "include/game_math.h"
+
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
                              u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer,
@@ -23,15 +26,19 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     commands.height = height;
     commands.white = white;
 
+    commands.active_group = NULL;
+
     return commands;
 }
 
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj)
+RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool culling)
 {
     RenderGroup group;
     group.commands = commands;
     group.current_draw = NULL;
-    group.proj = proj;
+    group.settings.proj = proj;
+    group.settings.lit = lit;
+    group.settings.culling = culling;
     return group;
 }
 
@@ -49,7 +56,7 @@ u8* push_entry(CommandBuffer* commands, u32 size)
 
 void push_clear(CommandBuffer* commands, V3 color)
 {
-    CommandEntry_Clear* clear = (CommandEntry_Clear*) push_entry(commands, sizeof(CommandEntry_Clear));
+    CommandEntryClear* clear = (CommandEntryClear*) push_entry(commands, sizeof(CommandEntryClear));
     if (!clear) {
         return;
     }
@@ -58,16 +65,18 @@ void push_clear(CommandBuffer* commands, V3 color)
     clear->color = color;
 }
 
-CommandEntry_Draw* get_current_draw(RenderGroup* group, u32 quad_count)
+CommandEntryDraw* get_current_draw(RenderGroup* group, u32 quad_count)
 {
     CommandBuffer* commands = group->commands;
-    if (!group->current_draw) {
-        group->current_draw = (CommandEntry_Draw*) push_entry(commands, sizeof(CommandEntry_Draw));
+    if (!group->current_draw || group->commands->active_group != group) {
+        group->current_draw = (CommandEntryDraw*) push_entry(commands, sizeof(CommandEntryDraw));
 
         group->current_draw->header.type = EntryType_Draw;
         group->current_draw->quad_offset = commands->quad_count;
         group->current_draw->quad_count = 0;
-        group->current_draw->proj = group->proj;
+        group->current_draw->settings = group->settings;
+
+        group->commands->active_group = group;
     }
 
     if (commands->quad_count + quad_count > commands->quad_cap) {
@@ -86,7 +95,7 @@ void push_quad(RenderGroup* group,
                V3 norm, TextureHandle texture, V3 color)
 {
     CommandBuffer* commands = group->commands;
-    CommandEntry_Draw* draw = group->current_draw;
+    CommandEntryDraw* draw = group->current_draw;
     assert(draw);
 
     ++draw->quad_count;
@@ -116,7 +125,7 @@ void push_quad(RenderGroup* group,
 
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color)
 {
-    CommandEntry_Draw* entry = get_current_draw(group, 6 * 4);
+    CommandEntryDraw* entry = get_current_draw(group, 6);
     if (!entry) {
         return;
     }
@@ -172,6 +181,31 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 
               p4, v2(1, 1),
               v3(0, -1, 0), texture, color);
 
+}
+
+void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
+{
+    CommandEntryDraw* entry = get_current_draw(group, 1);
+
+    // TODO: Orient line so it always faces the camera
+    // TODO: Apply "lit" renderer setting correctly in the backend
+    V3 up = v3(0, 0, 1);
+    float width = 0.025;
+
+    V3 dir = norm(v3(end.x - start.x, end.y - start.y, end.z - start.z));
+    V3 side = norm(cross(dir, up));
+
+    V3 p0 = v3(start.x - width * side.x, start.y - width * side.y, start.z - width * side.z);
+    V3 p1 = v3(start.x + width * side.x, start.y + width * side.y, start.z + width * side.z);
+    V3 p2 = v3(end.x - width * side.x, end.y - width * side.y, end.z - width * side.z);
+    V3 p3 = v3(end.x + width * side.x, end.y + width * side.y, end.z + width * side.z);
+
+    push_quad(group, 
+              p0, v2(0, 0),
+              p1, v2(0, 1),
+              p2, v2(1, 0),
+              p3, v2(1, 1),
+              v3(0, 0, 1), group->commands->white, color);
 }
 
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path)

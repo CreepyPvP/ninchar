@@ -4,6 +4,9 @@
 #include "include/types.h"
 
 
+struct RenderGroup;
+
+
 struct TextureHandle
 {
     u32 id;
@@ -24,6 +27,13 @@ struct Vertex
     V2 uv;
     V3 norm;
     V3 color;
+};
+
+struct RenderSettings
+{
+    Mat4 proj;
+    bool lit;
+    bool culling;
 };
 
 enum CommandEntryType
@@ -52,27 +62,31 @@ struct CommandBuffer
     u32 entry_size;
 
     TextureHandle white;
+
+    RenderGroup* active_group;
 };
 
-struct CommandEntry_Clear
+struct CommandEntryClear
 {
     CommandEntryHeader header;
     V3 color;
 };
 
-struct CommandEntry_Draw
+struct CommandEntryDraw
 {
     CommandEntryHeader header;
     Mat4 proj;
     u32 quad_offset;
     u32 quad_count;
+
+    RenderSettings settings;
 };
 
 struct RenderGroup
 {
     CommandBuffer* commands;
-    CommandEntry_Draw* current_draw;
-    Mat4 proj;
+    CommandEntryDraw* current_draw;
+    RenderSettings settings;
 };
 
 
@@ -80,10 +94,11 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
                              u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer,
                              u32 width, u32 height, TextureHandle white);
 
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj);
+RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool culling);
 
 void push_clear(CommandBuffer* buffer, V3 color);
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color);
+void push_line(RenderGroup* group, V3 start, V3 end, V3 color);
 
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path);
 void free_texture_load_op(TextureLoadOp* load_op);

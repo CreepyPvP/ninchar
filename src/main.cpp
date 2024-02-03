@@ -166,10 +166,14 @@ i32 main()
         Mat4 proj = projection * view;
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
-        RenderGroup group = render_group(&cmd, proj);
+        RenderGroup main_group = render_group(&cmd, proj, true, true);
+        RenderGroup debug_group = render_group(&cmd, proj, false, false);
 
         start_timestamp(&profiler_renderer);
-        game_update(&game, &group, pressed, 1.0f / 60.0f);
+
+        game_update(&game, &main_group, pressed, 1.0f / 60.0f);
+        push_line(&debug_group, v3(0, 0, 2), v3(10, 10, 2), v3(1, 0, 0));
+
         double render_duration = end_timestamp(&profiler_renderer);
 
         start_timestamp(&profiler_opengl_backend);

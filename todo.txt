@@ -1,4 +1,3 @@
-debug line / box drawing
 line of sight check
 
 ------- today ---------

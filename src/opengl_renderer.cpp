@@ -156,7 +156,6 @@ void opengl_init()
 void opengl_render_commands(CommandBuffer* buffer)
 {
     glViewport(0, 0, buffer->width, buffer->height);
-    glUseProgram(opengl.draw_shader.base.id);
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
                  buffer->vert_buffer, GL_STREAM_DRAW);
@@ -167,16 +166,24 @@ void opengl_render_commands(CommandBuffer* buffer)
 
         switch (header->type) {
             case EntryType_Clear: {
-                CommandEntry_Clear* clear = (CommandEntry_Clear*) (buffer->entry_buffer + offset);
-                offset += sizeof(CommandEntry_Clear);
+                CommandEntryClear* clear = (CommandEntryClear*) (buffer->entry_buffer + offset);
+                offset += sizeof(CommandEntryClear);
                 glClearColor(clear->color.x, clear->color.y, clear->color.z, 1);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             } break;
 
             case EntryType_Draw: {
-                CommandEntry_Draw* draw = (CommandEntry_Draw*) (buffer->entry_buffer + offset);
-                glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, &(draw->proj)[0][0]);
-                offset += sizeof(CommandEntry_Draw);
+                CommandEntryDraw* draw = (CommandEntryDraw*) (buffer->entry_buffer + offset);
+                offset += sizeof(CommandEntryDraw);
+
+                if (draw->settings.culling) {
+                    glEnable(GL_CULL_FACE);
+                } else {
+                    glDisable(GL_CULL_FACE);
+                }
+                glUseProgram(opengl.draw_shader.base.id);
+                glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, 
+                                   &(draw->settings.proj)[0][0]);
 
                 // TODO: glMultiDraw and BindLess Texture
                 for (u32 i = 0; i < draw->quad_count; ++i) {
