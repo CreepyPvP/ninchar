@@ -39,7 +39,10 @@ inline V3 cross(V3 a, V3 b)
 }
 
 V3 norm(V3 a);
+V2 norm(V2 a);
 float radians(float degrees);
+
+bool is_zero(float x);
 
 float halton(u32 i, u32 b);
 

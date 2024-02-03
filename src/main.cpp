@@ -107,8 +107,10 @@ i32 main()
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
+    Arena game_arena;
+    init_arena(&game_arena, &pool);
     game_load_assets();
-    game_init(&game, &arena, 6);
+    game_init(&game, &game_arena, 6);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -124,6 +126,17 @@ i32 main()
             c_pressed = true;
         } else {
             c_pressed = false;
+        }
+
+        static bool r_pressed = false;
+        if (glfwGetKey(global_window.handle, GLFW_KEY_R) == GLFW_PRESS) {
+            if (!c_pressed) {
+                dispose(&game_arena);
+                game_init(&game, &game_arena, 6);
+            }
+            r_pressed = true;
+        } else {
+            r_pressed = false;
         }
 #endif
 

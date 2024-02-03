@@ -1,6 +1,7 @@
 #include "include/game.h"
 
 #include "include/opengl_renderer.h"
+#include "include/game_math.h"
 
 #include "include/stb_image.h"
 
@@ -107,21 +108,15 @@ void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
             movement.x += 1;
         }
 
-        float distance = sqrt(movement.x * movement.x + movement.y * movement.y);
-        if (distance < 0.1) {
-            movement = v2(0);
-        } else {
-            movement = v2(movement.x / distance, movement.y / distance);
-        }
+        movement = norm(movement);
 
         Collider player_collider;
         player_collider.radius = v3(0.35, 0.35, 0.7);
 
-        // game->player.pos.x += movement.x * delta * 6;
-        // game->player.pos.y += movement.y * delta * 6;
         movement.x *= delta * 6;
         movement.y *= delta * 6;
-        move_and_collide(aabb(&game->player.pos, &player_collider), movement, game);
+        move_and_collide(aabb(&game->player.pos, &player_collider), v2(movement.x, 0), game);
+        move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
     }
 
     for (u32 y = 0; y < game->height; ++y) {

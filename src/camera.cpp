@@ -37,11 +37,7 @@ void update_camera(Camera* camera, u8 buttons_pressed, float delta)
         movement.y += 1;
     }
 
-    float distance = sqrt(movement.x * movement.x + movement.y * movement.y);
-    if (distance < 0.1) {
-        return;
-    }
-    movement = v2(movement.x / distance, movement.y / distance);
+    movement = norm(movement);
 
     V3 right = norm(cross(camera->front, v3(0, 0, 1)));
 

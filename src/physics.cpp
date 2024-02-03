@@ -7,9 +7,10 @@
 V3 far_away = v3(1000, 1000, 1000);
 
 V2 get_collided_movement(AABB a, V2 dir, Game* game);
+V2 distance_towards(AABB a, AABB b, V2 dir);
 
 float clamp_abs(float a, float b){
-    if (b < 0.0001 && b > -0.0001){
+    if (is_zero(b)){
         return 0;
     } else if (b > 0){
         return min(a, b);
@@ -28,10 +29,10 @@ bool intersects(AABB a, AABB b)
            a.pos->z + a.collider->radius.z > b.pos->z - b.collider->radius.z;
 }
 
-void do_collision_response(AABB a, V2 dir, Game* game) 
+void do_collision_response(AABB a, AABB b, V2 dir, Game* game) 
 {
-    if (a.collider->type == ColliderType_Moveable) {
-        move_and_collide(a, dir, game);
+    if (b.collider->type == ColliderType_Moveable) {
+        move_and_collide(b, dir, game);
     }
 }
 
@@ -44,13 +45,13 @@ void move_and_push_boxes(AABB a, V2 dir, Game* game)
     for (u32 i = 0; i < game->wall_count; ++i) {
         AABB b = aabb(&game->wall[i].pos, &game->wall[i].collider);
         if (intersects(new_aabb, b)) {
-            do_collision_response(b, dir, game);
+            do_collision_response(new_aabb, b, dir, game);
         }
     }
     for (u32 i = 0; i < game->crate_count; ++i) {
         AABB b = aabb(&game->crate[i].pos, &game->crate[i].collider);
         if (intersects(new_aabb, b)) {
-            do_collision_response(b, dir, game);
+            do_collision_response(new_aabb, b, dir, game);
         }
     }
 
@@ -89,7 +90,7 @@ V2 try_move_into(AABB a, AABB b, V2 dir, Game* game)
         } break;
 
         case ColliderType_Destroyable: {
-            // return dir;
+            assert(0 && "Not implemented");
         }
     }
 
@@ -132,7 +133,7 @@ V2 get_collided_movement(AABB a, V2 dir, Game* game)
 void move_and_collide(AABB a, V2 dir, Game* game)
 {
     V2 actual_movement = get_collided_movement(a, dir, game);
-    if (actual_movement.x != 0 || actual_movement.y != 0) {
+    if (!is_zero(actual_movement.x) || !is_zero(actual_movement.y)) {
         move_and_push_boxes(a, actual_movement, game);
     }
 }
