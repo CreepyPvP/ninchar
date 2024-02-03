@@ -1,10 +1,5 @@
 cleanup
 
-fix physics system
-    - player aber to move boxes in other directions
-    - objects glitching into each other
-    - moveable objects having space between
-    - "sticky walls"
 objectives
 
 debug line / box drawing
@@ -23,6 +18,7 @@ player fail / restart
 ui rendering
 fix camera jump
 
+constraint based physics
 
 animations
 
@@ -30,3 +26,4 @@ animations
 aa
 bloom
 color correction
+directional shadows

@@ -36,8 +36,10 @@ void game_init(Game* game, Arena* arena, u32 stage)
 
     game->wall_cap = 0;
     game->crate_cap = 0;
+    game->objective_cap = 0;
     game->crate_count = 0;
     game->wall_count = 0;
+    game->objective_count = 0;
 
     u8* curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
@@ -48,6 +50,9 @@ void game_init(Game* game, Arena* arena, u32 stage)
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
                 ++game->crate_cap;
             }
+            if (curr[0] == 1 && curr[1] == 125 && curr[2] == 10) {
+                ++game->objective_cap;
+            }
 
             curr += 3;
         }
@@ -55,6 +60,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
 
     game->crate = (Crate*) push_size(arena, sizeof(Crate) * game->crate_cap);
     game->wall = (Wall*) push_size(arena, sizeof(Wall) * game->wall_cap);
+    game->objective = (Objective*) push_size(arena, sizeof(Objective) * game->objective_cap);
 
     curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
@@ -73,6 +79,12 @@ void game_init(Game* game, Arena* arena, u32 stage)
             }
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
                 game->player.pos = v3(x, y, 1);
+            }
+            if (curr[0] == 1 && curr[1] == 125 && curr[2] == 10) {
+                game->objective[game->objective_count].pos = v3(x, y, 1);
+                game->objective[game->objective_count].collider.radius = v3(0.5);
+                game->objective[game->objective_count].collider.type = ColliderType_Destroyable;
+                ++game->objective_count;
             }
 
             curr += 3;
@@ -131,6 +143,10 @@ void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
 
     for (u32 i = 0; i < game->wall_count; ++i) {
         push_cube(group, game->wall[i].pos, v3(0.5), wall_texture, v3(1));
+    }
+
+    for (u32 i = 0; i < game->objective_count; ++i) {
+        push_cube(group, game->objective[i].pos, v3(0.5), group->commands->white, v3(0, 1, 0));
     }
 
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));

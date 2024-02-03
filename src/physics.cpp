@@ -54,6 +54,12 @@ void move_and_push_boxes(AABB a, V2 dir, Game* game)
             do_collision_response(new_aabb, b, dir, game);
         }
     }
+    for (u32 i = 0; i < game->objective_count; ++i) {
+        AABB b = aabb(&game->objective[i].pos, &game->objective[i].collider);
+        if (intersects(new_aabb, b)) {
+            do_collision_response(new_aabb, b, dir, game);
+        }
+    }
 
     *a.pos = new_pos;
 }
@@ -90,7 +96,7 @@ V2 try_move_into(AABB a, AABB b, V2 dir, Game* game)
         } break;
 
         case ColliderType_Destroyable: {
-            assert(0 && "Not implemented");
+            return dir;
         }
     }
 
@@ -119,6 +125,14 @@ V2 get_collided_movement(AABB a, V2 dir, Game* game)
     }
     for (u32 i = 0; i < game->crate_count; ++i) {
         AABB b = aabb(&game->crate[i].pos, &game->crate[i].collider);
+        if (intersects(new_aabb, b)) {
+            V2 move_into = try_move_into(old_aabb, b, dir, game);
+            res.x = clamp_abs(res.x, move_into.x);
+            res.y = clamp_abs(res.y, move_into.y);
+        }
+    }
+    for (u32 i = 0; i < game->objective_count; ++i) {
+        AABB b = aabb(&game->objective[i].pos, &game->objective[i].collider);
         if (intersects(new_aabb, b)) {
             V2 move_into = try_move_into(old_aabb, b, dir, game);
             res.x = clamp_abs(res.x, move_into.x);

@@ -37,6 +37,12 @@ struct Wall
     Collider collider;
 };
 
+struct Objective
+{
+    V3 pos;
+    Collider collider;
+};
+
 struct Player
 {
     V3 pos;
@@ -54,6 +60,10 @@ struct Game
     Crate* crate;
     u32 crate_count;
     u32 crate_cap;
+
+    Objective* objective;
+    u32 objective_count;
+    u32 objective_cap;
 
     Camera camera;
     u32 camera_state;
