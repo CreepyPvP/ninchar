@@ -1,7 +1,3 @@
-cleanup
-
-objectives
-
 debug line / box drawing
 line of sight check
 

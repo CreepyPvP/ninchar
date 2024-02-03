@@ -1,6 +1,25 @@
 #ifndef GAME_H
 #define GAME_H
 
+#define FOR_POS_COLLIDER(game, block) \
+{   \
+    for (u32 i = 0; i < game->wall_count; ++i) {    \
+        V3* pos = &game->wall[i].pos; \
+        Collider* collider = &game->wall[i].collider; \
+        block;  \
+    }   \
+    for (u32 i = 0; i < game->crate_count; ++i) {    \
+        V3* pos = &game->crate[i].pos; \
+        Collider* collider = &game->crate[i].collider; \
+        block;  \
+    }   \
+    for (u32 i = 0; i < game->objective_count; ++i) {    \
+        V3* pos = &game->objective[i].pos; \
+        Collider* collider = &game->objective[i].collider; \
+        block;  \
+    }   \
+}
+
 #include "include/types.h"
 #include "include/arena.h"
 #include "include/renderer.h"
