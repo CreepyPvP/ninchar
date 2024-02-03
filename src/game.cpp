@@ -120,7 +120,7 @@ void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
         // game->player.pos.y += movement.y * delta * 6;
         movement.x *= delta * 6;
         movement.y *= delta * 6;
-        move_and_collide(&game->player.pos, &player_collider, movement, game);
+        move_and_collide(aabb(&game->player.pos, &player_collider), movement, game);
     }
 
     for (u32 y = 0; y < game->height; ++y) {

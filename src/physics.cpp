@@ -6,6 +6,8 @@
 
 V3 far_away = v3(1000, 1000, 1000);
 
+V2 get_collided_movement(AABB a, V2 dir, Game* game);
+
 float clamp_abs(float a, float b){
     if (b < 0.0001 && b > -0.0001){
         return 0;
@@ -16,53 +18,74 @@ float clamp_abs(float a, float b){
     }
 }
 
-bool intersects(V3 pa, Collider* ca, V3 pb, Collider* cb)
+bool intersects(AABB a, AABB b)
 {
-    return pa.x - ca->radius.x < pb.x + cb->radius.x &&
-           pa.x + ca->radius.x > pb.x - cb->radius.x &&
-           pa.y - ca->radius.y < pb.y + cb->radius.y &&
-           pa.y + ca->radius.y > pb.y - cb->radius.y &&
-           pa.z - ca->radius.z < pb.z + cb->radius.z &&
-           pa.z + ca->radius.z > pb.z - cb->radius.z;
+    return a.pos->x - a.collider->radius.x < b.pos->x + b.collider->radius.x &&
+           a.pos->x + a.collider->radius.x > b.pos->x - b.collider->radius.x &&
+           a.pos->y - a.collider->radius.y < b.pos->y + b.collider->radius.y &&
+           a.pos->y + a.collider->radius.y > b.pos->y - b.collider->radius.y &&
+           a.pos->z - a.collider->radius.z < b.pos->z + b.collider->radius.z &&
+           a.pos->z + a.collider->radius.z > b.pos->z - b.collider->radius.z;
 }
 
-void move_and_push_boxes(V3* pos, V2 dir, Game* game)
+void do_collision_response(AABB a, V2 dir, Game* game) 
 {
-    V3 new_pos = v3(pos->x + dir.x, pos->y + dir.y, pos->z);
-    *pos = far_away;
-
-    // TODO: handle collisions here
-
-    *pos = new_pos;
+    if (a.collider->type == ColliderType_Moveable) {
+        move_and_collide(a, dir, game);
+    }
 }
 
-V2 distance_towards(V3 pos, Collider* col, V3 other_pos, Collider* other, V2 dir) 
+void move_and_push_boxes(AABB a, V2 dir, Game* game)
+{
+    V3 new_pos = v3(a.pos->x + dir.x, a.pos->y + dir.y, a.pos->z);
+    AABB new_aabb = aabb(&new_pos, a.collider);
+    *a.pos = far_away;
+
+    for (u32 i = 0; i < game->wall_count; ++i) {
+        AABB b = aabb(&game->wall[i].pos, &game->wall[i].collider);
+        if (intersects(new_aabb, b)) {
+            do_collision_response(b, dir, game);
+        }
+    }
+    for (u32 i = 0; i < game->crate_count; ++i) {
+        AABB b = aabb(&game->crate[i].pos, &game->crate[i].collider);
+        if (intersects(new_aabb, b)) {
+            do_collision_response(b, dir, game);
+        }
+    }
+
+    *a.pos = new_pos;
+}
+
+V2 distance_towards(AABB a, AABB b, V2 dir) 
 {
     V2 res;
     if (dir.x > 0) {
-        res.x = other_pos.x - pos.x - col->radius.x - other->radius.x;
+        res.x = b.pos->x - a.pos->x - a.collider->radius.x - b.collider->radius.x;
     } else {
-        res.x = other_pos.x - pos.x + col->radius.x + other->radius.x;
+        res.x = b.pos->x - a.pos->x + a.collider->radius.x + b.collider->radius.x;
     }
 
     if (dir.y > 0) {
-        res.y = other_pos.y - pos.y - col->radius.y - other->radius.y;
+        res.y = b.pos->y - a.pos->y - a.collider->radius.y - b.collider->radius.y;
     } else {
-        res.y = other_pos.y - pos.y + col->radius.y + other->radius.y;
+        res.y = b.pos->y - a.pos->y + a.collider->radius.y + b.collider->radius.y;
     }
 
     return res;
 }
 
-V2 try_move_into(V3 pos, Collider* col, V3 other_pos, Collider* other, V2 dir, Game* game) 
+V2 try_move_into(AABB a, AABB b, V2 dir, Game* game) 
 {
-    switch (other->type) {
+    switch (b.collider->type) {
         case ColliderType_Static: {
-            return distance_towards(pos, col, other_pos, other, dir);
+            return distance_towards(a, b, dir);
         } break;
 
         case ColliderType_Moveable: {
-            return distance_towards(pos, col, other_pos, other, dir);
+            V2 to = distance_towards(a, b, dir);
+            V2 tmp = get_collided_movement(b, dir, game);
+            return v2(to.x + tmp.x, to.y + tmp.y);
         } break;
 
         case ColliderType_Destroyable: {
@@ -73,42 +96,43 @@ V2 try_move_into(V3 pos, Collider* col, V3 other_pos, Collider* other, V2 dir, G
     return v2(0);
 }
 
-V2 get_collided_movement(V3* pos, Collider* col, V2 dir, Game* game)
+V2 get_collided_movement(AABB a, V2 dir, Game* game)
 {
-    V3 new_pos = v3(pos->x + dir.x, pos->y + dir.y, pos->z);
-    V3 old_pos = *pos;
-    *pos = far_away;
+    V3 new_pos = v3(a.pos->x + dir.x, a.pos->y + dir.y, a.pos->z);
+    V3 old_pos = *a.pos;
+    *a.pos = far_away;
 
     V2 res = dir;
+    
+    AABB new_aabb = aabb(&new_pos, a.collider);
+    AABB old_aabb = aabb(&old_pos, a.collider);
 
     // TODO Clean this up
     for (u32 i = 0; i < game->wall_count; ++i) {
-        V3 other_pos = game->wall[i].pos;
-        Collider* other = &game->wall[i].collider;
-        if (intersects(new_pos, col, other_pos, other)) {
-            V2 move_into = try_move_into(old_pos, col, other_pos, other, dir, game);
+        AABB b = aabb(&game->wall[i].pos, &game->wall[i].collider);
+        if (intersects(new_aabb, b)) {
+            V2 move_into = try_move_into(old_aabb, b, dir, game);
             res.x = clamp_abs(res.x, move_into.x);
             res.y = clamp_abs(res.y, move_into.y);
         }
     }
     for (u32 i = 0; i < game->crate_count; ++i) {
-        V3 other_pos = game->crate[i].pos;
-        Collider* other = &game->crate[i].collider;
-        if (intersects(new_pos, col, other_pos, other)) {
-            V2 move_into = try_move_into(old_pos, col, other_pos, other, dir, game);
+        AABB b = aabb(&game->crate[i].pos, &game->crate[i].collider);
+        if (intersects(new_aabb, b)) {
+            V2 move_into = try_move_into(old_aabb, b, dir, game);
             res.x = clamp_abs(res.x, move_into.x);
             res.y = clamp_abs(res.y, move_into.y);
         }
     }
 
-    *pos = old_pos;
+    *a.pos = old_pos;
     return res;
 }
 
-void move_and_collide(V3* pos, Collider* col, V2 dir, Game* game)
+void move_and_collide(AABB a, V2 dir, Game* game)
 {
-    V2 actual_movement = get_collided_movement(pos, col, dir, game);
+    V2 actual_movement = get_collided_movement(a, dir, game);
     if (actual_movement.x != 0 || actual_movement.y != 0) {
-        move_and_push_boxes(pos, actual_movement, game);
+        move_and_push_boxes(a, actual_movement, game);
     }
 }

@@ -1,16 +1,13 @@
-collisions
-physics
-
 fix camera pos?
 
 cleanup
-
--------------  today -------------
 
 objectives
 
 debug line / box drawing
 line of sight check
+
+------- today ---------
 
 obj importing
 object rendering

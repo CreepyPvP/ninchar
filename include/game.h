@@ -69,6 +69,17 @@ void game_update(Game* game, RenderGroup* group, u8 inputs, float delta);
 void game_toggle_camera_state(Game* game);
 
 
-void move_and_collide(V3* pos, Collider* col, V2 dir, Game* game);
+struct AABB
+{
+    V3* pos;
+    Collider* collider;
+};
+
+inline AABB aabb(V3* pos, Collider* collider) 
+{
+    return { pos, collider };
+}
+
+void move_and_collide(AABB aabb, V2 dir, Game* game);
 
 #endif
