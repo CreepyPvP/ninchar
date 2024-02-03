@@ -1,7 +1,9 @@
-fix camera pos?
-
 cleanup
 
+fix physics system
+    - player aber to move boxes in other directions
+    - objects glitching into each other
+    - moveable objects having space between
 objectives
 
 debug line / box drawing

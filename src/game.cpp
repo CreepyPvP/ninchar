@@ -27,7 +27,6 @@ void game_load_assets()
 void game_init(Game* game, Arena* arena, u32 stage)
 {
     game->camera_state = CameraState_Locked;
-    init_camera(&game->camera, v3(10, 4.5, 9), v3(-0.44, -0, -0.9));
 
     char path[1024];
     sprintf(path, "assets/stages/%u.png", stage);
@@ -80,6 +79,8 @@ void game_init(Game* game, Arena* arena, u32 stage)
     }
 
     stbi_image_free(tmp);
+
+    game_reset_camera(game);
 }
 
 void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
@@ -140,11 +141,16 @@ void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
 }
 
+void game_reset_camera(Game* game)
+{
+    init_camera(&game->camera, v3(game->width / 2, game->height / 2, 15), v3(0, 0.01, -1));
+}
+
 void game_toggle_camera_state(Game* game)
 {
     if (game->camera_state == CameraState_Free) {
         game->camera_state = CameraState_Locked;
-        init_camera(&game->camera, v3(10, 4.5, 9), v3(-0.44, -0, -0.9));
+        game_reset_camera(game);
     } else {
         game->camera_state = CameraState_Free;
     }
