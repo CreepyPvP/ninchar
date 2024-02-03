@@ -108,7 +108,7 @@ Program load_program(const char* vertex_file, const char* frag_file)
     return shader;
 }
 
-void opengl_init()
+void opengl_init(u32 width, u32 height)
 {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         assert(0 && "Failed to load required extensions\n");
@@ -126,12 +126,33 @@ void opengl_init()
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
-    u32 draw_vao;
-    glGenVertexArrays(1, &draw_vao);
-    glBindVertexArray(draw_vao);
+    glGenFramebuffers(1, &opengl.main_framebuffer);
+    glGenTextures(1, &opengl.main_color);
+    glGenRenderbuffers(1, &opengl.main_depth);
 
-    u32 buffers[1];
-    glGenBuffers(1, buffers);
+    glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer);
+    glBindTexture(GL_TEXTURE_2D, opengl.main_color);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+                           GL_TEXTURE_2D, opengl.main_color, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, opengl.main_depth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, opengl.main_depth);
+    u32 attachments[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, attachments);
+
+    u32 vaos[2];
+    glGenVertexArrays(2, vaos);
+
+    opengl.draw_vao = vaos[0];
+    glBindVertexArray(opengl.draw_vao);
+
+    u32 buffers[2];
+    glGenBuffers(2, buffers);
 
     opengl.vertex_buffer = buffers[0];
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
@@ -149,14 +170,34 @@ void opengl_init()
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, color));
 
+    float quad_verts[] = {
+        -1, -1,
+        -1, 1,
+        1, -1,
+        1, 1
+    };
+    opengl.quad_vao = vaos[1];
+    glBindVertexArray(opengl.quad_vao);
+    u32 quad_buffer = buffers[1];
+    glBindBuffer(GL_ARRAY_BUFFER, quad_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 4 * 2, quad_verts, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+
     opengl.draw_shader.base = load_program("shader/draw.vert", "shader/draw.frag");
     opengl.draw_shader.proj = glGetUniformLocation(opengl.draw_shader.base.id, "proj");
+
+    opengl.post_shader = load_program("shader/post.vert", "shader/post.frag");
 }
 
 void opengl_render_commands(CommandBuffer* buffer)
 {
     glViewport(0, 0, buffer->width, buffer->height);
+    glEnable(GL_DEPTH_TEST);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer);
+    glBindVertexArray(opengl.draw_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
                  buffer->vert_buffer, GL_STREAM_DRAW);
 
@@ -198,6 +239,15 @@ void opengl_render_commands(CommandBuffer* buffer)
             }
         }
     }
+
+    glDisable(GL_DEPTH_TEST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindVertexArray(opengl.quad_vao);
+    glUseProgram(opengl.post_shader.id);
+
+    glBindTexture(GL_TEXTURE_2D, opengl.main_color);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void opengl_load_texture(TextureLoadOp* load_op)

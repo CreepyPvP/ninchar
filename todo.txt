@@ -1,7 +1,11 @@
-line of sight check
+postprocessing
+aa
+
+fix resize (again) *sigh*
 
 ------- today ---------
 
+line of sight check
 obj importing
 object rendering
 
@@ -17,8 +21,6 @@ constraint based physics
 
 animations
 
-
-aa
 bloom
 color correction
 directional shadows

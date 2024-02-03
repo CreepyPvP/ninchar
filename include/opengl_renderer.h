@@ -22,9 +22,17 @@ struct OpenGLContext
 
     Arena render_arena;
     DrawShader draw_shader;
+    Program post_shader;
+
+    u32 main_framebuffer;
+    u32 main_color;
+    u32 main_depth;
+
+    u32 draw_vao;
+    u32 quad_vao;
 };
 
-void opengl_init();
+void opengl_init(u32 width, u32 height);
 void opengl_render_commands(CommandBuffer* buffer);
 
 void opengl_load_texture(TextureLoadOp* load_op);
