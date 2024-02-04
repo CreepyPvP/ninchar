@@ -1,5 +1,3 @@
-look into sRGB?
-
 fake cube ambient occlusion?
 
 ------- today ---------

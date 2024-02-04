@@ -348,7 +348,7 @@ void opengl_load_texture(TextureLoadOp* load_op)
         format = GL_RGB;
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, 
                  load_op->width, load_op->height, 0, format, 
                  GL_UNSIGNED_BYTE, load_op->data);
 
