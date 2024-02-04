@@ -7,7 +7,7 @@
 
 
 V3 far_away = v3(1000000, 1000000, 1000000);
-float precision = 0.00001f;
+float box_gap = 0.00001f;
 
 V2 get_collided_movement(AABB a, V2 dir, Game* game);
 V2 distance_towards(AABB a, AABB b, V2 dir);
@@ -38,16 +38,16 @@ V2 expand_slightly(V2 dir){
     if(dir.x == 0){
         res.x = dir.x;
     }else if(dir.x > 0){
-        res.x = dir.x + precision;
+        res.x = dir.x + box_gap;
     }else{
-        res.x = dir.x - precision;
+        res.x = dir.x - box_gap;
     }
     if(dir.y == 0){
         res.y = dir.y;
     }else if(dir.y > 0){
-        res.y = dir.y + precision;
+        res.y = dir.y + box_gap;
     }else{
-        res.y = dir.y - precision;
+        res.y = dir.y - box_gap;
     }
     return res;
 }
@@ -77,10 +77,9 @@ void move_and_push_boxes(AABB a, V2 dir, Game* game)
             do_collision_response(old_aabb, b, expand_slightly(dir), game);
         }
         if(intersects(new_aabb, b)){
-            std::printf("Still colliding after collision response. %f , %f \n", dir.x, dir.y);
+            std::printf("Still intersects after collision response. %f , %f \n", dir.x, dir.y);
             V2 overlap = distance_towards(new_aabb, b , dir);
             std::printf("Overlap %f, %f \n", distance_towards(new_aabb, b , dir));
-            
         }
     });
 
