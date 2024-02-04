@@ -1,11 +1,15 @@
-#version 440
+#version 440 
 
 in vec2 uv;
 
-uniform sampler2D color;
-
 out vec4 out_Color;
 
-void main() {
-    out_Color = texture(color, uv);
+uniform sampler2D color;
+
+void main(void) {
+    vec3 final_color = texture(color, uv).rgb;
+
+    float gamma = 2.2;
+    final_color = pow(final_color, vec3(1.0 / gamma));
+    out_Color = vec4(final_color, 1.0);
 }

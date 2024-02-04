@@ -108,15 +108,85 @@ Program load_program(const char* vertex_file, const char* frag_file)
     return shader;
 }
 
-void opengl_init(u32 width, u32 height)
+void destroy_framebuffer(Framebuffer* framebuffer)
+{
+    bool initialized = framebuffer->flags & FRAMEBUFFER_INITIALIZED;
+    bool depth = framebuffer->flags & FRAMEBUFFER_DEPTH;
+    bool color = framebuffer->flags & FRAMEBUFFER_COLOR;
+
+    if (initialized) {
+        glDeleteFramebuffers(1, &framebuffer->id);
+    }
+    if (color) {
+        glDeleteTextures(1, &framebuffer->color);
+    }
+    if (depth) {
+        glDeleteRenderbuffers(1, &framebuffer->depth);
+    }
+}
+
+Framebuffer create_framebuffer(u32 width, u32 height, u32 flags)
+{
+    Framebuffer res;
+    res.flags = flags | FRAMEBUFFER_INITIALIZED;
+    glGenFramebuffers(1, &res.id);
+
+    bool multisampled = flags & FRAMEBUFFER_MULTISAMPLED;
+    bool filtered = flags & FRAMEBUFFER_FILTERED;
+    bool depth = flags & FRAMEBUFFER_DEPTH;
+    bool color = flags & FRAMEBUFFER_COLOR;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, res.id);
+
+    if (color) {
+        u32 filter = filtered? GL_LINEAR : GL_NEAREST;
+        u32 slot = multisampled? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+
+        glGenTextures(1, &res.color);
+        glBindTexture(slot, res.color);
+        if (multisampled) {
+            glTexImage2DMultisample(slot, opengl.max_samples, GL_RGBA, width, height, GL_TRUE);
+        } else {
+            glTexImage2D(slot, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(slot, GL_TEXTURE_MIN_FILTER, filter);
+            glTexParameteri(slot, GL_TEXTURE_MAG_FILTER, filter);
+            glTexParameteri(slot, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(slot, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, slot, res.color, 0);
+        glBindTexture(slot, 0);
+    }
+
+    if (depth) {
+        glGenRenderbuffers(1, &res.depth);
+        glBindRenderbuffer(GL_RENDERBUFFER, res.depth);
+
+        if (multisampled) {
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, opengl.max_samples, 
+                                             GL_DEPTH_COMPONENT, width, height);
+        } else {
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        }
+
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, res.depth);
+    }
+    u32 attachments[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, attachments);
+
+    u32 status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    assert(status == GL_FRAMEBUFFER_COMPLETE);
+
+    return res;
+}
+
+void opengl_init()
 {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         assert(0 && "Failed to load required extensions\n");
     }
     init_arena(&opengl.render_arena, &pool);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glGetIntegerv(GL_MAX_SAMPLES, &opengl.max_samples);
     glFrontFace(GL_CW);
 
 #ifdef DEBUG
@@ -126,24 +196,10 @@ void opengl_init(u32 width, u32 height)
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
-    glGenFramebuffers(1, &opengl.main_framebuffer);
-    glGenTextures(1, &opengl.main_color);
-    glGenRenderbuffers(1, &opengl.main_depth);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer);
-    glBindTexture(GL_TEXTURE_2D, opengl.main_color);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
-                           GL_TEXTURE_2D, opengl.main_color, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, opengl.main_depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, opengl.main_depth);
-    u32 attachments[] = { GL_COLOR_ATTACHMENT0 };
-    glDrawBuffers(1, attachments);
+    opengl.prev_settings.width = 0;
+    opengl.prev_settings.height = 0;
+    opengl.main_framebuffer.flags = 0;
+    opengl.post_framebuffer.flags = 0;
 
     u32 vaos[2];
     glGenVertexArrays(2, vaos);
@@ -190,12 +246,33 @@ void opengl_init(u32 width, u32 height)
     opengl.post_shader = load_program("shader/post.vert", "shader/post.frag");
 }
 
+void apply_settings(RenderSettings* settings) 
+{
+    destroy_framebuffer(&opengl.main_framebuffer);
+    destroy_framebuffer(&opengl.post_framebuffer);
+
+    opengl.main_framebuffer = create_framebuffer(settings->width, settings->height, FRAMEBUFFER_MULTISAMPLED | 
+                                                 FRAMEBUFFER_DEPTH | FRAMEBUFFER_COLOR);
+    opengl.post_framebuffer = create_framebuffer(settings->width, settings->height, FRAMEBUFFER_COLOR);
+
+    opengl.prev_settings = *settings;
+}
+
 void opengl_render_commands(CommandBuffer* buffer)
 {
-    glViewport(0, 0, buffer->width, buffer->height);
-    glEnable(GL_DEPTH_TEST);
+    RenderSettings settings = buffer->settings;
+    if (!equal_settings(&settings, &opengl.prev_settings)) {
+        apply_settings(&settings);
+    }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer);
+    glViewport(0, 0, settings.width, settings.height);
+    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    // glEnable(GL_SAMPLE_ALPHA_TO_ONE);
+    glEnable(GL_MULTISAMPLE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer.id);
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(opengl.draw_vao);
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
@@ -217,14 +294,14 @@ void opengl_render_commands(CommandBuffer* buffer)
                 CommandEntryDraw* draw = (CommandEntryDraw*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryDraw);
 
-                if (draw->settings.culling) {
+                if (draw->setup.culling) {
                     glEnable(GL_CULL_FACE);
                 } else {
                     glDisable(GL_CULL_FACE);
                 }
                 glUseProgram(opengl.draw_shader.base.id);
                 glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, 
-                                   &(draw->settings.proj)[0][0]);
+                                   &(draw->setup.proj)[0][0]);
 
                 // TODO: glMultiDraw and BindLess Texture
                 for (u32 i = 0; i < draw->quad_count; ++i) {
@@ -240,13 +317,19 @@ void opengl_render_commands(CommandBuffer* buffer)
         }
     }
 
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, opengl.main_framebuffer.id);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, opengl.post_framebuffer.id);
+    glBlitFramebuffer(0, 0, settings.width, settings.height, 0, 0, settings.width, settings.height, 
+                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_MULTISAMPLE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(opengl.quad_vao);
     glUseProgram(opengl.post_shader.id);
 
-    glBindTexture(GL_TEXTURE_2D, opengl.main_color);
+    glBindTexture(GL_TEXTURE_2D, opengl.post_framebuffer.color);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
@@ -265,7 +348,7 @@ void opengl_load_texture(TextureLoadOp* load_op)
         format = GL_RGB;
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, 
                  load_op->width, load_op->height, 0, format, 
                  GL_UNSIGNED_BYTE, load_op->data);
 

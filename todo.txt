@@ -1,7 +1,4 @@
-postprocessing
-aa
-
-fix resize (again) *sigh*
+fake cube ambient occlusion?
 
 ------- today ---------
 
