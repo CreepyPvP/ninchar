@@ -268,11 +268,11 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
             skip_whitespaces(ptr);
             u32* current = index_buffer + index_count;
 
-            current[0] = read_int(ptr);
+            current[0] = read_int(ptr) - 1;
             skip_whitespaces(ptr);
-            current[1] = read_int(ptr);
+            current[1] = read_int(ptr) - 1;
             skip_whitespaces(ptr);
-            current[2] = read_int(ptr);
+            current[2] = read_int(ptr) - 1;
             next_line(ptr);
 
             index_count += 3;

@@ -3,7 +3,8 @@ obj importing
     attrib managment
     vao creation cleanup
 
-object rendering
+fix camera jump
+Editor to game transform
 
 
 fake cube ambient occlusion? - probably not
@@ -16,7 +17,6 @@ camera cone
 player fail / restart
 
 ui rendering
-fix camera jump
 
 animations
 
