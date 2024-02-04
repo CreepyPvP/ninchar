@@ -77,9 +77,9 @@ void move_and_push_boxes(AABB a, V2 dir, Game* game)
             do_collision_response(old_aabb, b, expand_slightly(dir), game);
         }
         if(intersects(new_aabb, b)){
-            std::printf("Still intersects after collision response. %f , %f \n", dir.x, dir.y);
-            V2 overlap = distance_towards(new_aabb, b , dir);
-            std::printf("Overlap %f, %f \n", distance_towards(new_aabb, b , dir));
+            printf("Still intersects after collision response. %f , %f \n", dir.x, dir.y);
+            V2 overlap = distance_towards(new_aabb, b, dir);
+            printf("Overlap %f, %f \n", overlap.x, overlap.y);
         }
     });
 
