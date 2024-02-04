@@ -6,6 +6,10 @@
 #include "include/stb_image.h"
 
 #include "include/game_math.h"
+#include "include/util.h"
+
+#define MAX_MODEL_VERT 10000
+#define MAX_MODEL_INDEX 20000
 
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
@@ -220,6 +224,60 @@ TextureLoadOp texture_load_op(TextureHandle* handle, const char* path)
     }
 
     return load_op;
+}
+
+ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
+{
+    u32 vert_stride = sizeof(u32) * 3;
+
+    const char* file_content = read_file(path, NULL, arena);
+    const char** ptr = &file_content;
+
+    u32 vert_count = 0;
+    u32 index_count = 0;
+    u8* vert_buffer = (u8*) push_size(arena, vert_stride * MAX_MODEL_VERT);
+    u32* index_buffer = (u32*) push_size(arena, sizeof(u32) * MAX_MODEL_INDEX);
+
+    while (true) {
+        if (prefix("v", ptr)) {
+            skip_whitespaces(ptr);
+            float* current = (float*) (vert_buffer + vert_stride * vert_count);
+
+            current[0] = read_float(ptr);
+            skip_whitespaces(ptr);
+            current[1] = read_float(ptr);
+            skip_whitespaces(ptr);
+            current[2] = read_float(ptr);
+            next_line(ptr);
+
+            ++vert_count;
+            assert(vert_count <= MAX_MODEL_VERT);
+        } else if (prefix("f", ptr)) {
+            skip_whitespaces(ptr);
+            u32* current = index_buffer + index_count;
+
+            current[0] = read_int(ptr);
+            skip_whitespaces(ptr);
+            current[1] = read_int(ptr);
+            skip_whitespaces(ptr);
+            current[2] = read_int(ptr);
+            next_line(ptr);
+
+            index_count += 3;
+            assert(index_count <= MAX_MODEL_INDEX);
+        } else {
+            break;
+        }
+    }
+
+    ModelLoadOp load;
+    load.vert_buffer = vert_buffer;
+    load.vert_count=  vert_count;
+    load.index_buffer = index_buffer;
+    load.index_count = index_count;
+    load.vert_stride = vert_stride;
+    load.handle = handle;
+    return load;
 }
 
 void free_texture_load_op(TextureLoadOp* load_op)

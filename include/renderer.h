@@ -12,6 +12,11 @@ struct TextureHandle
     u32 id;
 };
 
+struct ModelHandle
+{
+    u32 id;
+};
+
 struct TextureLoadOp
 {
     i32 width;
@@ -19,6 +24,19 @@ struct TextureLoadOp
     i32 num_channels;
     u8* data;
     TextureHandle* handle;
+};
+
+struct ModelLoadOp
+{
+    u8* vert_buffer;
+    u32 vert_count;
+
+    u32* index_buffer;
+    u32 index_count;
+
+    u32 vert_stride;
+
+    ModelHandle* handle;
 };
 
 struct Vertex

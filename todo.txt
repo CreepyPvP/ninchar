@@ -1,7 +1,5 @@
 fake cube ambient occlusion?
 
-------- today ---------
-
 line of sight check
 obj importing
 object rendering

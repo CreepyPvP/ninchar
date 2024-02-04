@@ -29,3 +29,53 @@ char* read_file(const char* file, i32* flen, Arena* arena)
     return buf;
 }
 
+
+bool prefix(const char* prefix, const char** ptr)
+{
+    i32 i = 0;
+    while (prefix[i]) {
+        if (prefix[i] != (*ptr)[i])
+            return false;
+        ++i;
+    }
+    (*ptr) += i;
+    return true;
+}
+
+void skip_whitespaces(const char** ptr)
+{
+    while (**ptr == ' ') {
+        (*ptr)++;
+    }
+}
+
+void next_line(const char** ptr) 
+{
+    while (**ptr != '\n' && **ptr != 0) {
+        (*ptr)++;
+    }
+    // praise windows
+    while (**ptr == '\n' || **ptr == '\r') {
+        (*ptr)++;
+    }
+}
+
+float read_float(const char** ptr)
+{
+    float result = atof(*ptr);
+    while (**ptr != 0 && **ptr != ' ' && **ptr != '\n') {
+        (*ptr)++;
+    }
+    return result;
+}
+
+i32 read_int(const char** ptr)
+{
+    i32 result = atoi(*ptr);
+    while (**ptr != 0 && **ptr != ' ' && **ptr != '\n') {
+        (*ptr)++;
+    }
+    return result;
+}
+
+
