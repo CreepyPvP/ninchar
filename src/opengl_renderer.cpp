@@ -108,19 +108,37 @@ Program load_program(const char* vertex_file, const char* frag_file)
     return shader;
 }
 
+void destroy_framebuffer(Framebuffer* framebuffer)
+{
+    bool initialized = framebuffer->flags & FRAMEBUFFER_INITIALIZED;
+    bool depth = framebuffer->flags & FRAMEBUFFER_DEPTH;
+    bool color = framebuffer->flags & FRAMEBUFFER_COLOR;
+
+    if (initialized) {
+        glDeleteFramebuffers(1, &framebuffer->id);
+    }
+    if (color) {
+        glDeleteTextures(1, &framebuffer->color);
+    }
+    if (depth) {
+        glDeleteRenderbuffers(1, &framebuffer->depth);
+    }
+}
+
 Framebuffer create_framebuffer(u32 width, u32 height, u32 flags)
 {
     Framebuffer res;
-    res.flags = flags;
+    res.flags = flags | FRAMEBUFFER_INITIALIZED;
     glGenFramebuffers(1, &res.id);
 
     bool multisampled = flags & FRAMEBUFFER_MULTISAMPLED;
     bool filtered = flags & FRAMEBUFFER_FILTERED;
     bool depth = flags & FRAMEBUFFER_DEPTH;
+    bool color = flags & FRAMEBUFFER_COLOR;
 
     glBindFramebuffer(GL_FRAMEBUFFER, res.id);
 
-    {
+    if (color) {
         u32 filter = filtered? GL_LINEAR : GL_NEAREST;
         u32 slot = multisampled? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 
@@ -180,6 +198,8 @@ void opengl_init()
 
     opengl.prev_settings.width = 0;
     opengl.prev_settings.height = 0;
+    opengl.main_framebuffer.flags = 0;
+    opengl.post_framebuffer.flags = 0;
 
     u32 vaos[2];
     glGenVertexArrays(2, vaos);
@@ -228,9 +248,12 @@ void opengl_init()
 
 void apply_settings(RenderSettings* settings) 
 {
-    opengl.main_framebuffer = create_framebuffer(settings->width, settings->height, 
-                                                 FRAMEBUFFER_MULTISAMPLED | FRAMEBUFFER_DEPTH);
-    opengl.post_framebuffer = create_framebuffer(settings->width, settings->height, 0);
+    destroy_framebuffer(&opengl.main_framebuffer);
+    destroy_framebuffer(&opengl.post_framebuffer);
+
+    opengl.main_framebuffer = create_framebuffer(settings->width, settings->height, FRAMEBUFFER_MULTISAMPLED | 
+                                                 FRAMEBUFFER_DEPTH | FRAMEBUFFER_COLOR);
+    opengl.post_framebuffer = create_framebuffer(settings->width, settings->height, FRAMEBUFFER_COLOR);
 
     opengl.prev_settings = *settings;
 }

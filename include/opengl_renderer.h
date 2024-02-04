@@ -5,9 +5,11 @@
 #include "include/arena.h"
 #include "include/renderer.h"
 
-#define FRAMEBUFFER_MULTISAMPLED (1 << 0)
-#define FRAMEBUFFER_FILTERED (1 << 1)
-#define FRAMEBUFFER_DEPTH (1 << 2)
+#define FRAMEBUFFER_INITIALIZED (1 << 0)
+#define FRAMEBUFFER_MULTISAMPLED (1 << 1)
+#define FRAMEBUFFER_FILTERED (1 << 2)
+#define FRAMEBUFFER_DEPTH (1 << 3)
+#define FRAMEBUFFER_COLOR (1 << 4)
 
 struct Program
 {
