@@ -2,6 +2,7 @@
 
 #include "include/opengl_renderer.h"
 #include "include/game_math.h"
+#include "include/arena.h"
 
 #include "include/stb_image.h"
 
@@ -9,9 +10,14 @@ TextureHandle ground_texture;
 TextureHandle wall_texture;
 TextureHandle crate_texture;
 
+ModelHandle teapot;
+
 // TODO: move asset loading to asset queue. Then game has no opengl dependency
 void game_load_assets()
 {
+    Arena asset_arena;
+    init_arena(&asset_arena, &pool);
+
     TextureLoadOp load_ground = texture_load_op(&ground_texture, "assets/ground.png");
     opengl_load_texture(&load_ground);
     free_texture_load_op(&load_ground);
@@ -23,6 +29,11 @@ void game_load_assets()
     TextureLoadOp load_wall = texture_load_op(&wall_texture, "assets/wall.png");
     opengl_load_texture(&load_wall);
     free_texture_load_op(&load_wall);
+
+    ModelLoadOp load_teapot = model_load_op(&teapot, "assets/teapot.obj", &asset_arena);
+    opengl_load_model(&load_teapot);
+
+    dispose(&asset_arena);
 };
 
 void game_init(Game* game, Arena* arena, u32 stage)
@@ -96,7 +107,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     game_reset_camera(game);
 }
 
-void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
+void game_update(Game* game, RenderGroup* group, RenderGroup* dbg, u8 inputs, float delta)
 {
     if (game->camera_state == CameraState_Free) {
         update_camera(&game->camera, inputs, delta);
@@ -154,6 +165,8 @@ void game_update(Game* game, RenderGroup* group, u8 inputs, float delta)
     }
 
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
+
+    push_model(dbg, v3(0, 0, 10), teapot);
 }
 
 void game_reset_camera(Game* game)

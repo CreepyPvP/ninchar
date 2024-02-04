@@ -55,6 +55,7 @@ u8* push_entry(CommandBuffer* commands, u32 size)
 
     u8* entry = commands->entry_buffer + commands->entry_size;
     commands->entry_size += size;
+    commands->active_group = NULL;
     return entry;
 }
 
@@ -69,13 +70,13 @@ void push_clear(CommandBuffer* commands, V3 color)
     clear->color = color;
 }
 
-CommandEntryDraw* get_current_draw(RenderGroup* group, u32 quad_count)
+CommandEntryDrawQuads* get_current_draw(RenderGroup* group, u32 quad_count)
 {
     CommandBuffer* commands = group->commands;
     if (!group->current_draw || group->commands->active_group != group) {
-        group->current_draw = (CommandEntryDraw*) push_entry(commands, sizeof(CommandEntryDraw));
+        group->current_draw = (CommandEntryDrawQuads*) push_entry(commands, sizeof(CommandEntryDrawQuads));
 
-        group->current_draw->header.type = EntryType_Draw;
+        group->current_draw->header.type = EntryType_DrawQuads;
         group->current_draw->quad_offset = commands->quad_count;
         group->current_draw->quad_count = 0;
         group->current_draw->setup = group->setup;
@@ -99,7 +100,7 @@ void push_quad(RenderGroup* group,
                V3 norm, TextureHandle texture, V3 color)
 {
     CommandBuffer* commands = group->commands;
-    CommandEntryDraw* draw = group->current_draw;
+    CommandEntryDrawQuads* draw = group->current_draw;
     assert(draw);
 
     ++draw->quad_count;
@@ -129,7 +130,7 @@ void push_quad(RenderGroup* group,
 
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color)
 {
-    CommandEntryDraw* entry = get_current_draw(group, 6);
+    CommandEntryDrawQuads* entry = get_current_draw(group, 6);
     if (!entry) {
         return;
     }
@@ -187,9 +188,20 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 
 
 }
 
+void push_model(RenderGroup* group, V3 pos, ModelHandle handle)
+{
+    CommandBuffer* commands = group->commands;
+    CommandEntryDrawModel* draw = (CommandEntryDrawModel*) push_entry(commands, sizeof(CommandEntryDrawModel));
+
+    draw->header.type = EntryType_DrawModel;
+    draw->model = handle;
+    draw->setup = group->setup;
+    draw->trans = mat4(pos);
+}
+
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
 {
-    CommandEntryDraw* entry = get_current_draw(group, 1);
+    CommandEntryDrawQuads* entry = get_current_draw(group, 1);
 
     // TODO: Orient line so it always faces the camera
     // TODO: Apply "lit" renderer setting correctly in the backend

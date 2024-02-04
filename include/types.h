@@ -59,4 +59,6 @@ inline V3 v3(float x)
     return { x, x, x };
 }
 
+Mat4 mat4(V3 pos);
+
 #endif

@@ -52,8 +52,6 @@ V2 expand_slightly(V2 dir){
     return res;
 }
 
-
-
 void do_collision_response(AABB a, AABB b, V2 dir, Game* game) 
 {
     if (b.collider->type == ColliderType_Moveable) {

@@ -58,7 +58,7 @@ void APIENTRY debug_output(GLenum source,
     printf("\n");
 }
 
-Program load_program(const char* vertex_file, const char* frag_file)
+ProgramBase load_program(const char* vertex_file, const char* frag_file)
 {
     begin_tmp(&opengl.render_arena);
 
@@ -89,7 +89,7 @@ Program load_program(const char* vertex_file, const char* frag_file)
         assert(0);
     }
 
-    Program shader;
+    ProgramBase shader;
     shader.id = glCreateProgram();
     glAttachShader(shader.id, vertex_prog);
     glAttachShader(shader.id, frag_prog);
@@ -104,7 +104,9 @@ Program load_program(const char* vertex_file, const char* frag_file)
     glDeleteShader(vertex_prog);
     glDeleteShader(frag_prog);
     end_tmp(&opengl.render_arena);
-
+    
+    shader.proj = glGetUniformLocation(shader.id, "proj");
+    
     return shader;
 }
 
@@ -204,8 +206,8 @@ void opengl_init()
     u32 vaos[2];
     glGenVertexArrays(2, vaos);
 
-    opengl.draw_vao = vaos[0];
-    glBindVertexArray(opengl.draw_vao);
+    opengl.quad_vao = vaos[0];
+    glBindVertexArray(opengl.quad_vao);
 
     u32 buffers[2];
     glGenBuffers(2, buffers);
@@ -232,18 +234,18 @@ void opengl_init()
         1, -1,
         1, 1
     };
-    opengl.quad_vao = vaos[1];
-    glBindVertexArray(opengl.quad_vao);
-    u32 quad_buffer = buffers[1];
-    glBindBuffer(GL_ARRAY_BUFFER, quad_buffer);
+    opengl.post_vao = vaos[1];
+    glBindVertexArray(opengl.post_vao);
+    u32 post_buffer = buffers[1];
+    glBindBuffer(GL_ARRAY_BUFFER, post_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 4 * 2, quad_verts, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
-    opengl.draw_shader.base = load_program("shader/draw.vert", "shader/draw.frag");
-    opengl.draw_shader.proj = glGetUniformLocation(opengl.draw_shader.base.id, "proj");
-
+    opengl.quad_shader = load_program("shader/draw.vert", "shader/draw.frag");
     opengl.post_shader = load_program("shader/post.vert", "shader/post.frag");
+    opengl.model_shader.base = load_program("shader/model.vert", "shader/model.frag");
+    opengl.model_shader.trans = glGetUniformLocation(opengl.model_shader.base.id, "trans");
 }
 
 void apply_settings(RenderSettings* settings) 
@@ -256,6 +258,19 @@ void apply_settings(RenderSettings* settings)
     opengl.post_framebuffer = create_framebuffer(settings->width, settings->height, FRAMEBUFFER_COLOR);
 
     opengl.prev_settings = *settings;
+}
+
+void prepare_render_setup(RenderSetup* setup, ProgramBase* shader)
+{
+    // TODO: Apply draw->setup.lit here
+    if (setup->culling) {
+        glEnable(GL_CULL_FACE);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
+    glUseProgram(shader->id);
+    glUniformMatrix4fv(shader->proj, 1, GL_FALSE, 
+                       &(setup->proj)[0][0]);
 }
 
 void opengl_render_commands(CommandBuffer* buffer)
@@ -273,7 +288,7 @@ void opengl_render_commands(CommandBuffer* buffer)
 
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer.id);
     // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindVertexArray(opengl.draw_vao);
+    glBindVertexArray(opengl.quad_vao);
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
                  buffer->vert_buffer, GL_STREAM_DRAW);
@@ -290,18 +305,13 @@ void opengl_render_commands(CommandBuffer* buffer)
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             } break;
 
-            case EntryType_Draw: {
-                CommandEntryDraw* draw = (CommandEntryDraw*) (buffer->entry_buffer + offset);
-                offset += sizeof(CommandEntryDraw);
+            case EntryType_DrawQuads: {
+                CommandEntryDrawQuads* draw = (CommandEntryDrawQuads*) (buffer->entry_buffer + offset);
+                offset += sizeof(CommandEntryDrawQuads);
 
-                if (draw->setup.culling) {
-                    glEnable(GL_CULL_FACE);
-                } else {
-                    glDisable(GL_CULL_FACE);
-                }
-                glUseProgram(opengl.draw_shader.base.id);
-                glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, 
-                                   &(draw->setup.proj)[0][0]);
+                glBindVertexArray(opengl.quad_vao);
+
+                prepare_render_setup(&draw->setup, &opengl.quad_shader);
 
                 // TODO: glMultiDraw and BindLess Texture
                 for (u32 i = 0; i < draw->quad_count; ++i) {
@@ -309,6 +319,20 @@ void opengl_render_commands(CommandBuffer* buffer)
                     glBindTexture(GL_TEXTURE_2D, buffer->texture_buffer[quad_offset].id);
                     glDrawArrays(GL_TRIANGLE_STRIP, 4 * quad_offset, 4);
                 }
+            } break;
+
+
+            case EntryType_DrawModel: {
+                CommandEntryDrawModel* draw = (CommandEntryDrawModel*) (buffer->entry_buffer + offset);
+                offset += sizeof(CommandEntryDrawModel);
+
+                glBindVertexArray(draw->model.id);
+
+                prepare_render_setup(&draw->setup, &opengl.model_shader.base);
+                glUniformMatrix4fv(opengl.model_shader.trans, 1, GL_FALSE, 
+                                   &(draw->trans)[0][0]);
+
+                glDrawElements(GL_TRIANGLES, draw->model.index_count, GL_UNSIGNED_INT, (void*) 0);
             } break;
 
             default: {
@@ -326,7 +350,7 @@ void opengl_render_commands(CommandBuffer* buffer)
     glDisable(GL_MULTISAMPLE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindVertexArray(opengl.quad_vao);
+    glBindVertexArray(opengl.post_vao);
     glUseProgram(opengl.post_shader.id);
 
     glBindTexture(GL_TEXTURE_2D, opengl.post_framebuffer.color);
@@ -355,5 +379,31 @@ void opengl_load_texture(TextureLoadOp* load_op)
     glGenerateMipmap(GL_TEXTURE_2D);
 
     load_op->handle->id = texture;
+}
+
+void opengl_load_model(ModelLoadOp* load_op)
+{
+    u32 vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    u32 buffers[2];
+    glGenBuffers(2, buffers);
+
+    u32 vert_buffer = buffers[0];
+    u32 index_buffer = buffers[1];
+
+    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
+    glBufferData(GL_ARRAY_BUFFER, load_op->vert_stride * load_op->vert_count, load_op->vert_buffer, 
+                 GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * load_op->index_count, load_op->index_buffer, 
+                 GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, load_op->vert_stride, 0);
+
+    load_op->handle->id = vao;
+    load_op->handle->index_count = load_op->index_count;
 }
 
