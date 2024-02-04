@@ -1,6 +1,8 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <iostream>
+
 #define FOR_POS_COLLIDER(game, block) \
 {   \
     for (u32 i = 0; i < game->wall_count; ++i) {    \
