@@ -5,6 +5,10 @@
 #include "include/arena.h"
 #include "include/renderer.h"
 
+#define FRAMEBUFFER_MULTISAMPLED (1 << 0)
+#define FRAMEBUFFER_FILTERED (1 << 1)
+#define FRAMEBUFFER_DEPTH (1 << 2)
+
 struct Program
 {
     u32 id;
@@ -16,6 +20,15 @@ struct DrawShader
     u32 proj;
 };
 
+struct Framebuffer
+{
+    u32 id;
+    u32 flags;
+
+    u32 color;
+    u32 depth;
+};
+
 struct OpenGLContext
 {
     u32 vertex_buffer;
@@ -24,12 +37,13 @@ struct OpenGLContext
     DrawShader draw_shader;
     Program post_shader;
 
-    u32 main_framebuffer;
-    u32 main_color;
-    u32 main_depth;
+    Framebuffer main_framebuffer;
+    Framebuffer post_framebuffer;
 
     u32 draw_vao;
     u32 quad_vao;
+
+    i32 max_samples;
 };
 
 void opengl_init(u32 width, u32 height);

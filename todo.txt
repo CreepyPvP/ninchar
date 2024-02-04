@@ -1,7 +1,15 @@
-postprocessing
-aa
+msaa
+    fix incomplete framebuffer
+    query max available samples
 
-fix resize (again) *sigh*
+clean up rendertarget managment on engine side
+recreate render targets on resize
+
+postprocessing
+
+look into sRGB?
+
+fake cube ambient occlusion?
 
 ------- today ---------
 
