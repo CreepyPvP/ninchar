@@ -31,6 +31,7 @@ struct Framebuffer
 
 struct OpenGLContext
 {
+    RenderSettings prev_settings;
     u32 vertex_buffer;
 
     Arena render_arena;
@@ -46,7 +47,7 @@ struct OpenGLContext
     i32 max_samples;
 };
 
-void opengl_init(u32 width, u32 height);
+void opengl_init();
 void opengl_render_commands(CommandBuffer* buffer);
 
 void opengl_load_texture(TextureLoadOp* load_op);

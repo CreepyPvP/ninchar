@@ -1,12 +1,3 @@
-msaa
-    fix incomplete framebuffer
-    query max available samples
-
-clean up rendertarget managment on engine side
-recreate render targets on resize
-
-postprocessing
-
 look into sRGB?
 
 fake cube ambient occlusion?

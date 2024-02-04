@@ -84,7 +84,7 @@ i32 main()
     create_window();
     init_pool(&pool);
 
-    opengl_init(960, 540);
+    opengl_init();
 
     Arena arena;
     init_arena(&arena, &pool);

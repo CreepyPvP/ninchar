@@ -29,7 +29,7 @@ struct Vertex
     V3 color;
 };
 
-struct RenderSettings
+struct RenderSetup
 {
     Mat4 proj;
     bool lit;
@@ -47,10 +47,15 @@ struct CommandEntryHeader
     u32 type;
 };
 
-struct CommandBuffer
+struct RenderSettings
 {
     u32 width;
     u32 height;
+};
+
+struct CommandBuffer
+{
+    RenderSettings settings;
 
     Vertex* vert_buffer;
     TextureHandle* texture_buffer;
@@ -79,14 +84,14 @@ struct CommandEntryDraw
     u32 quad_offset;
     u32 quad_count;
 
-    RenderSettings settings;
+    RenderSetup setup;
 };
 
 struct RenderGroup
 {
     CommandBuffer* commands;
     CommandEntryDraw* current_draw;
-    RenderSettings settings;
+    RenderSetup setup;
 };
 
 
@@ -102,5 +107,11 @@ void push_line(RenderGroup* group, V3 start, V3 end, V3 color);
 
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path);
 void free_texture_load_op(TextureLoadOp* load_op);
+
+
+inline bool equal_settings(RenderSettings* a, RenderSettings* b) 
+{
+    return (a->width == b->width) && (a->height == b->height);
+}
 
 #endif

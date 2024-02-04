@@ -22,8 +22,8 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     commands.quad_cap = quad_cap;
     commands.quad_count = 0;
 
-    commands.width = width;
-    commands.height = height;
+    commands.settings.width = width;
+    commands.settings.height = height;
     commands.white = white;
 
     commands.active_group = NULL;
@@ -36,9 +36,9 @@ RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool cull
     RenderGroup group;
     group.commands = commands;
     group.current_draw = NULL;
-    group.settings.proj = proj;
-    group.settings.lit = lit;
-    group.settings.culling = culling;
+    group.setup.proj = proj;
+    group.setup.lit = lit;
+    group.setup.culling = culling;
     return group;
 }
 
@@ -74,7 +74,7 @@ CommandEntryDraw* get_current_draw(RenderGroup* group, u32 quad_count)
         group->current_draw->header.type = EntryType_Draw;
         group->current_draw->quad_offset = commands->quad_count;
         group->current_draw->quad_count = 0;
-        group->current_draw->settings = group->settings;
+        group->current_draw->setup = group->setup;
 
         group->commands->active_group = group;
     }

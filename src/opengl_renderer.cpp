@@ -161,7 +161,7 @@ Framebuffer create_framebuffer(u32 width, u32 height, u32 flags)
     return res;
 }
 
-void opengl_init(u32 width, u32 height)
+void opengl_init()
 {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         assert(0 && "Failed to load required extensions\n");
@@ -178,9 +178,8 @@ void opengl_init(u32 width, u32 height)
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
-    opengl.main_framebuffer = create_framebuffer(width, height, 
-                                                 FRAMEBUFFER_MULTISAMPLED | FRAMEBUFFER_DEPTH);
-    opengl.post_framebuffer = create_framebuffer(width, height, 0);
+    opengl.prev_settings.width = 0;
+    opengl.prev_settings.height = 0;
 
     u32 vaos[2];
     glGenVertexArrays(2, vaos);
@@ -227,9 +226,23 @@ void opengl_init(u32 width, u32 height)
     opengl.post_shader = load_program("shader/post.vert", "shader/post.frag");
 }
 
+void apply_settings(RenderSettings* settings) 
+{
+    opengl.main_framebuffer = create_framebuffer(settings->width, settings->height, 
+                                                 FRAMEBUFFER_MULTISAMPLED | FRAMEBUFFER_DEPTH);
+    opengl.post_framebuffer = create_framebuffer(settings->width, settings->height, 0);
+
+    opengl.prev_settings = *settings;
+}
+
 void opengl_render_commands(CommandBuffer* buffer)
 {
-    glViewport(0, 0, buffer->width, buffer->height);
+    RenderSettings settings = buffer->settings;
+    if (!equal_settings(&settings, &opengl.prev_settings)) {
+        apply_settings(&settings);
+    }
+
+    glViewport(0, 0, settings.width, settings.height);
     glEnable(GL_DEPTH_TEST);
     // glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
     // glEnable(GL_SAMPLE_ALPHA_TO_ONE);
@@ -258,14 +271,14 @@ void opengl_render_commands(CommandBuffer* buffer)
                 CommandEntryDraw* draw = (CommandEntryDraw*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryDraw);
 
-                if (draw->settings.culling) {
+                if (draw->setup.culling) {
                     glEnable(GL_CULL_FACE);
                 } else {
                     glDisable(GL_CULL_FACE);
                 }
                 glUseProgram(opengl.draw_shader.base.id);
                 glUniformMatrix4fv(opengl.draw_shader.proj, 1, GL_FALSE, 
-                                   &(draw->settings.proj)[0][0]);
+                                   &(draw->setup.proj)[0][0]);
 
                 // TODO: glMultiDraw and BindLess Texture
                 for (u32 i = 0; i < draw->quad_count; ++i) {
@@ -283,7 +296,7 @@ void opengl_render_commands(CommandBuffer* buffer)
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, opengl.main_framebuffer.id);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, opengl.post_framebuffer.id);
-    glBlitFramebuffer(0, 0, buffer->width, buffer->height, 0, 0, buffer->width, buffer->height, 
+    glBlitFramebuffer(0, 0, settings.width, settings.height, 0, 0, settings.width, settings.height, 
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     glDisable(GL_DEPTH_TEST);
