@@ -188,7 +188,7 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 
 
 }
 
-void push_model(RenderGroup* group, V3 pos, ModelHandle handle)
+void push_model(RenderGroup* group, ModelHandle handle, V3 pos, V3 scale)
 {
     CommandBuffer* commands = group->commands;
     CommandEntryDrawModel* draw = (CommandEntryDrawModel*) push_entry(commands, sizeof(CommandEntryDrawModel));
@@ -196,7 +196,7 @@ void push_model(RenderGroup* group, V3 pos, ModelHandle handle)
     draw->header.type = EntryType_DrawModel;
     draw->model = handle;
     draw->setup = group->setup;
-    draw->trans = mat4(pos);
+    draw->trans = mat4(pos, scale);
 }
 
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color)

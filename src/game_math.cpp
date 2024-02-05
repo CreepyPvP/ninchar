@@ -45,7 +45,10 @@ float halton(u32 i, u32 b)
     return r;
 }
 
-Mat4 mat4(V3 pos)
+Mat4 mat4(V3 pos, V3 scale)
 {
-    return glm::translate(glm::mat4(1), glm::vec3(pos.x, pos.y, pos.z));
+    Mat4 res = glm::mat4(1);
+    res = glm::translate(res, glm::vec3(pos.x, pos.y, pos.z));
+    res = glm::scale(res, glm::vec3(scale.x, scale.y, scale.z));
+    return res;
 }

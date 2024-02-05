@@ -166,7 +166,7 @@ void game_update(Game* game, RenderGroup* group, RenderGroup* dbg, u8 inputs, fl
 
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
 
-    push_model(dbg, v3(0, 0, 10), teapot);
+    push_model(dbg, teapot, v3(14, 8, 0.5), v3(0.5));
 }
 
 void game_reset_camera(Game* game)

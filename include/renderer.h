@@ -132,7 +132,7 @@ RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool cull
 
 void push_clear(CommandBuffer* buffer, V3 color);
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color);
-void push_model(RenderGroup* group, V3 pos, ModelHandle handle);
+void push_model(RenderGroup* group, ModelHandle handle, V3 pos, V3 scale);
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color);
 
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path);
