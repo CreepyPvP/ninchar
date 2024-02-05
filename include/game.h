@@ -118,6 +118,8 @@ void game_init(Game* game, Arena* arena, u32 stage);
 void game_update(Game* game, u8 inputs, float delta);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 
+void game_raycast(Game* game, V3 pos, V3 dir, RenderGroup* dbg);
+
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);
 

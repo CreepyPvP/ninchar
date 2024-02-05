@@ -3,6 +3,7 @@
 #include "include/opengl_renderer.h"
 #include "include/game_math.h"
 #include "include/arena.h"
+#include "include/util.h"
 
 #include "include/stb_image.h"
 
@@ -36,9 +37,6 @@ void game_load_assets()
 
     dispose(&asset_arena);
 };
-
-
-
 
 void game_init(Game* game, Arena* arena, u32 stage)
 {
@@ -212,6 +210,8 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
 
     // Render Player
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
+    
+    game_raycast(game, game->player.pos, v3(-1, 0, 0), dbg);
 }
 
 void game_reset_camera(Game* game)
@@ -226,5 +226,26 @@ void game_toggle_camera_state(Game* game)
         game_reset_camera(game);
     } else {
         game->camera_state = CameraState_Free;
+    }
+}
+
+void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
+{
+    float t;
+    bool hit_found = false;
+    V3 hit;
+    FOR_POS_COLLIDER(game, {
+        V3 chit;
+        float ct;
+        if (hit_bounding_box(origin, dir, *pos, collider->radius, &chit, &ct)) {
+            if (!hit_found || ct < t) {
+                hit_found = true;
+                t = ct;
+                hit = chit;
+            }
+        }
+    });
+    if (hit_found) {
+        push_line(dbg, origin, hit, v3(1, 0, 0));
     }
 }

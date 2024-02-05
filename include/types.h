@@ -32,11 +32,16 @@ struct V2
     float y;
 };
 
-struct V3
+union V3
 {
-    float x;
-    float y;
-    float z;
+    struct
+    {
+        float x;
+        float y;
+        float z;
+    };
+
+    float v[3];
 };
 
 inline V2 v2(float x, float y)
