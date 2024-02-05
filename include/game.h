@@ -37,13 +37,15 @@ enum ColliderType
 {
     ColliderType_Static = 0,
     ColliderType_Moveable = 1,
-    ColliderType_Destroyable = 2,
+    ColliderType_Objective = 2,
 };
+
 
 struct Collider
 {
     u32 type;
     V3 radius;
+    void* extra_data;
 };
 
 struct Crate
@@ -62,6 +64,11 @@ struct Objective
 {
     V3 pos;
     Collider collider;
+    bool broken;
+
+    static void on_collide(Objective* this_objective){
+        this_objective->broken = true;
+    }
 };
 
 struct Player
