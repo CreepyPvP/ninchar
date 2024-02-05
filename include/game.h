@@ -118,6 +118,7 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);
 
+void add_entity_type(EntityType* type, Game* game);
 
 struct AABB
 {

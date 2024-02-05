@@ -94,7 +94,10 @@ void objective_render(Entity* entity, Game* game, RenderGroup* group, RenderGrou
 }
 
 
-
+void add_entity_type(EntityType* type, Game* game){
+    game->entity_types[game->entity_type_count] = *type;
+    game->entity_type_count++;
+}
 
 void game_init_entity_types(Game* game, TextureHandle* white_texture){
     game->entity_type_count = 0;
@@ -113,8 +116,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     wall.load_tile_green = 0;
     wall.load_tile_blue = 0;
 
-    game->entity_types[game->entity_type_count] = wall;
-    game->entity_type_count++;
+    add_entity_type(&wall,game);
 
     //Crate
     EntityType crate;
@@ -130,8 +132,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     crate.load_tile_green = 57;
     crate.load_tile_blue = 39;
     
-    game->entity_types[game->entity_type_count] = crate;
-    game->entity_type_count++;
+    add_entity_type(&crate,game);
     
     //Objective
     EntityType objective;
@@ -147,8 +148,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     objective.load_tile_green = 125;
     objective.load_tile_blue = 10;
     
-    game->entity_types[game->entity_type_count] = objective;
-    game->entity_type_count++;
+    add_entity_type(&objective,game);
 
 
     
