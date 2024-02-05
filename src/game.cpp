@@ -111,9 +111,6 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
 
 void game_init(Game* game, Arena* arena, u32 stage)
 {
-    
-
-
     game->reset_stage = false;
     game->current_level = stage;
 
@@ -124,7 +121,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
     assert(tmp);
 
-    for(int i=0;i<game->entity_type_count;i++){
+    for (u32 i=0;i<game->entity_type_count;i++) {
         game->entity_types[i].cap = 0;
         game->entity_types[i].count = 0;
     }
@@ -145,7 +142,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     }
     
 
-    for (int i=0;i<game->entity_type_count;i++) {
+    for (u32 i=0;i<game->entity_type_count;i++) {
         game->entity_types[i].entity_list = (Entity*) push_size(arena, sizeof(Entity) * game->entity_types[i].cap);
 
         if (game->entity_types[i].extra_data_size != 0) {
@@ -163,7 +160,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            for (int i=0; i < game->entity_type_count; i++) {
+            for (u32 i=0; i < game->entity_type_count; i++) {
                 if (curr[0] == game->entity_types[i].load_tile_red &&
                     curr[1] == game->entity_types[i].load_tile_green &&
                     curr[2] == game->entity_types[i].load_tile_blue) {
@@ -191,8 +188,8 @@ void game_init(Game* game, Arena* arena, u32 stage)
 void game_update(Game* game, u8 inputs, float delta)
 {
     // Update all entities
-    for (int i=0;i<game->entity_type_count;i++) {
-        for(int j=0;j<game->entity_types[i].count; j++) {
+    for (u32 i=0;i<game->entity_type_count;i++) {
+        for (u32 j=0;j<game->entity_types[i].count; j++) {
             game->entity_types[i].update(&game->entity_types[i].entity_list[j], game);
         }
     }

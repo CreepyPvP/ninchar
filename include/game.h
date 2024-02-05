@@ -51,9 +51,10 @@ public:
     std::string name;
     u32 count;
     u32 cap;
-    u32 extra_data_size;
 
     Entity* entity_list;
+    
+    u32 extra_data_size;
     void* extra_data_list;
 
     TextureHandle* texture;
@@ -66,7 +67,6 @@ public:
     void (*init)(Entity* entity, Game* game, u32 x, u32 y);
     void (*update)(Entity* entity, Game* game);
     void (*render)(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
-
 };
 
 

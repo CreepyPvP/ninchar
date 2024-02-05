@@ -37,6 +37,7 @@ void crate_init(Entity* entity, Game* game, u32 x, u32 y){
 void objective_init(Entity* entity, Game* game, u32 x, u32 y){
     entity_standard_init(entity, game, x, y);
     entity->collider.type = ColliderType_Objective;
+    ((ObjectiveExtraData*)entity->extra_data)->broken = false;
 }
 
 
