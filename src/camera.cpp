@@ -62,7 +62,7 @@ void update_camera_mouse(Camera* camera, float x, float y)
 
     V3 dir;
     dir.x = -cos(radians(camera->yaw)) * cos(radians(camera->pitch));
-    dir.z = sin(radians(camera->pitch));
     dir.y = sin(radians(camera->yaw)) * cos(radians(camera->pitch));
+    dir.z = sin(radians(camera->pitch));
     camera->front = norm(dir);
 }

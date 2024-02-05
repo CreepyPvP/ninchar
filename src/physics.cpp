@@ -35,18 +35,18 @@ bool intersects(AABB a, AABB b)
 
 V2 expand_slightly(V2 dir){
     V2 res;
-    if(dir.x == 0){
+    if (is_zero(dir.x)){
         res.x = dir.x;
-    }else if(dir.x > 0){
+    } else if(dir.x > 0) {
         res.x = dir.x + box_gap;
-    }else{
+    } else {
         res.x = dir.x - box_gap;
     }
-    if(dir.y == 0){
+    if (is_zero(dir.y)){
         res.y = dir.y;
-    }else if(dir.y > 0){
+    } else if (dir.y > 0) {
         res.y = dir.y + box_gap;
-    }else{
+    } else {
         res.y = dir.y - box_gap;
     }
     return res;

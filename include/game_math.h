@@ -42,6 +42,7 @@ V3 norm(V3 a);
 V2 norm(V2 a);
 float radians(float degrees);
 
+// Checks if float in range between VERY_SMALL_VALUE to -VERY_SMALL_VALUE
 bool is_zero(float x);
 
 float halton(u32 i, u32 b);
