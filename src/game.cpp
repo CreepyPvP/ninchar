@@ -40,8 +40,128 @@ void game_load_assets()
 
 
 
+u32 get_entity_type_index(std::string name, Game* game){
+    for (u32 i=0; i<game->entity_type_count; i++){
+        if ( game->entity_types[i].name.compare(name) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+
+void entity_standard_init(Entity* entity, Game* game, u32 x, u32 y)
+{
+        entity->pos = v3(x, y, 1);
+        entity->collider.radius = v3(0.5);
+        entity->collider.extra_data = NULL;
+}
+void wall_init(Entity* entity, Game* game, u32 x, u32 y){
+    entity_standard_init(entity, game, x, y);
+    entity->collider.type = ColliderType_Static;
+}
+void crate_init(Entity* entity, Game* game, u32 x, u32 y){
+    entity_standard_init(entity, game, x, y);
+    entity->collider.type = ColliderType_Moveable;
+}
+void objective_init(Entity* entity, Game* game, u32 x, u32 y){
+    entity_standard_init(entity, game, x, y);
+    entity->collider.type = ColliderType_Objective;
+    u32 objective_index = get_entity_type_index("Objective", game);
+    ObjectiveExtraData* data_array = (ObjectiveExtraData*) game->entity_types[objective_index].extra_data;
+    printf("%d", entity->type->count);
+    data_array[entity->type->count].broken = false;
+    entity->collider.extra_data = &data_array[entity->type->count];
+    entity->extra_data = &data_array[entity->type->count];
+}
+
+
+void entity_standard_update(Entity* entity, Game* game) {}
+
+void entity_standard_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
+{
+    push_cube(group, entity->pos, v3(0.5), *entity->type->texture, entity->type->render_color);
+}
+
+
+void objective_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
+{
+    ObjectiveExtraData* data = (ObjectiveExtraData*)entity->extra_data;
+    if(!data->broken){
+        entity_standard_render(entity, game, group, dbg);
+    }
+}
+
+
+
+
+void game_init_entity_types(Game* game, TextureHandle* white_texture){
+    game->entity_type_count = 0;
+
+    //Wall
+    EntityType wall;
+    wall.name = "Wall";
+    wall.extra_data_size = 0;
+    wall.init = &wall_init;
+    wall.update = &entity_standard_update;
+    wall.render = &entity_standard_render;
+    wall.texture = &wall_texture;
+    wall.render_color = v3(1);
+
+    wall.load_tile_red = 0;
+    wall.load_tile_green = 0;
+    wall.load_tile_blue = 0;
+
+    game->entity_types[game->entity_type_count] = wall;
+    game->entity_type_count++;
+
+    //Crate
+    EntityType crate;
+    crate.name = "Crate";
+    crate.extra_data_size = 0;
+    crate.init = &crate_init;
+    crate.update = &entity_standard_update;
+    crate.render = &entity_standard_render;
+    crate.texture = &crate_texture;
+    crate.render_color = v3(1);
+
+    crate.load_tile_red = 88;
+    crate.load_tile_green = 57;
+    crate.load_tile_blue = 39;
+    
+    game->entity_types[game->entity_type_count] = crate;
+    game->entity_type_count++;
+    
+    //Objective
+    EntityType objective;
+    objective.name = "Objective";
+    objective.extra_data_size = sizeof(ObjectiveExtraData);
+    objective.init = &objective_init;
+    objective.update = &entity_standard_update;
+    objective.render = &objective_render;
+    objective.texture = white_texture;
+    objective.render_color = v3(0,1,0);
+
+    objective.load_tile_red = 1;
+    objective.load_tile_green = 125;
+    objective.load_tile_blue = 10;
+    
+    game->entity_types[game->entity_type_count] = objective;
+    game->entity_type_count++;
+
+
+    
+}
+
+
+
+
 void game_init(Game* game, Arena* arena, u32 stage)
 {
+    
+
+
     game->reset_stage = false;
     game->current_level = stage;
 
@@ -52,76 +172,64 @@ void game_init(Game* game, Arena* arena, u32 stage)
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
     assert(tmp);
 
-    game->wall_cap = 0;
-    game->wall_count = 0;
-    game->crate_cap = 0;
-    game->crate_count = 0;
-    game->objective_cap = 0;
-    game->objective_count = 0;
-    game->enemy_cap = 0;
-    game->enemy_count = 0;
+    for(int i=0;i<game->entity_type_count;i++){
+        game->entity_types[i].cap = 0;
+        game->entity_types[i].count = 0;
+    }
+
 
     u8* curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            if (curr[0] == 0 && curr[1] == 0 && curr[2] == 0) {
-                ++game->wall_cap;
+            for (int i=0; i < game->entity_type_count; i++) {
+                if (curr[0] == game->entity_types[i].load_tile_red &&
+                    curr[1] == game->entity_types[i].load_tile_green &&
+                    curr[2] == game->entity_types[i].load_tile_blue) {
+                    game->entity_types[i].cap++;
+                }
             }
-            if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
-                ++game->crate_cap;
-            }
-            if (curr[0] == 1 && curr[1] == 125) {
-                ++game->objective_cap;
-            }
-            if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
-                ++game->enemy_cap;
-            }
-
             curr += 3;
         }
     }
+    
 
-    game->crate = (Crate*) push_size(arena, sizeof(Crate) * game->crate_cap);
-    game->wall = (Wall*) push_size(arena, sizeof(Wall) * game->wall_cap);
-    game->objective = (Objective*) push_size(arena, sizeof(Objective) * game->objective_cap);
-    game->enemy = (Enemy*) push_size(arena, sizeof(Enemy) * game->enemy_cap);
+    for (int i=0;i<game->entity_type_count;i++) {
+        game->entity_types[i].entity_list = (Entity*) push_size(arena, sizeof(Entity) * game->entity_types[i].cap);
+
+        if (game->entity_types[i].extra_data_size != 0) {
+            game->entity_types[i].extra_data = push_size(arena, game->entity_types[i].extra_data_size * game->entity_types[i].cap);
+        }else{
+            game->entity_types[i].extra_data = NULL;
+        }
+    }
+
+
+
+
+
 
     curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            if (curr[0] == 0 && curr[1] == 0 && curr[2] == 0) {
-                game->wall[game->wall_count].pos = v3(x, y, 1);
-                game->wall[game->wall_count].collider.radius = v3(0.5);
-                game->wall[game->wall_count].collider.type = ColliderType_Static;
-                game->wall[game->wall_count].collider.extra_data = NULL;
-                ++game->wall_count;
+            for (int i=0; i < game->entity_type_count; i++) {
+                if (curr[0] == game->entity_types[i].load_tile_red &&
+                    curr[1] == game->entity_types[i].load_tile_green &&
+                    curr[2] == game->entity_types[i].load_tile_blue) {
+                    game->entity_types[i].entity_list[game->entity_types[i].count].type = &game->entity_types[i];
+                    game->entity_types[i].init( &game->entity_types[i].entity_list[game->entity_types[i].count], game, x, y);
+                    game->entity_types[i].count++;
+                }
             }
-            if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
-                game->crate[game->crate_count].pos = v3(x, y, 1);
-                game->crate[game->crate_count].collider.radius = v3(0.5);
-                game->crate[game->crate_count].collider.type = ColliderType_Moveable;
-                game->crate[game->crate_count].collider.extra_data = NULL;
-                ++game->crate_count;
-            }
+
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
                 game->player.pos = v3(x, y, 1);
-            }
-            if (curr[0] == 1 && curr[1] == 125) {
-                game->objective[game->objective_count].pos = v3(x, y, 1);
-                game->objective[game->objective_count].collider.radius = v3(0.5);
-                game->objective[game->objective_count].collider.type = ColliderType_Objective;
-                game->objective[game->objective_count].collider.extra_data = &game->objective[game->objective_count];
-                game->objective[game->objective_count].broken = false;
-                ++game->objective_count;
-            }
-            if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
-                game->enemy[game->enemy_count].pos = v3(x, y, 1);
-                ++game->enemy_count;
             }
 
             curr += 3;
         }
     }
+
+    
 
     stbi_image_free(tmp);
 
@@ -130,6 +238,14 @@ void game_init(Game* game, Arena* arena, u32 stage)
 
 void game_update(Game* game, u8 inputs, float delta)
 {
+    // Update all entities
+    for (int i=0;i<game->entity_type_count;i++) {
+        for(int j=0;j<game->entity_types[i].count; j++) {
+            game->entity_types[i].update(&game->entity_types[i].entity_list[j], game);
+        }
+    }
+
+
     // Update Player
     if (game->camera_state == CameraState_Free) {
         update_camera(&game->camera, inputs, delta);
@@ -166,10 +282,12 @@ void game_update(Game* game, u8 inputs, float delta)
         move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
     }
 
-    // Update Objective
+    // Check level completion
     bool level_completed = true;
-    for (u32 i = 0; i < game->objective_count; ++i) {
-        if (!game->objective[i].broken){
+    int objective_index = get_entity_type_index("Objective", game);
+    ObjectiveExtraData* data_array = (ObjectiveExtraData*) (game->entity_types[objective_index].extra_data);
+    for (u32 i = 0; i < game->entity_types[objective_index].count; ++i) {
+        if (!data_array[i].broken){
             level_completed = false;
         }
     }
@@ -177,6 +295,10 @@ void game_update(Game* game, u8 inputs, float delta)
         game->reset_stage = true;
         game->current_level = (game->current_level + 1) % game->total_level_count;
     }
+
+
+
+
 }
 
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
@@ -188,25 +310,10 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
         }
     }
 
-    // Render Crates
-    for (u32 i = 0; i < game->crate_count; ++i) {
-        push_cube(group, game->crate[i].pos, v3(0.5), crate_texture, v3(1));
-    }
-
-    // Render Walls
-    for (u32 i = 0; i < game->wall_count; ++i) {
-        push_cube(group, game->wall[i].pos, v3(0.5), wall_texture, v3(1));
-    }
-
-    // Render Enemies
-    for (u32 i = 0; i < game->enemy_count; ++i) {
-        push_model(dbg, teapot, game->enemy[i].pos, v3(0.5));
-    }
-
-    // Render Objectives
-    for (u32 i = 0; i < game->objective_count; ++i) {
-        if (!game->objective[i].broken){
-            push_cube(group, game->objective[i].pos, v3(0.5), group->commands->white, v3(0, 1, 0));
+    // Render Entities
+    for (u32 i = 0; i < game->entity_type_count; i++){
+        for (u32 j = 0; j < game->entity_types[i].count; j++){
+            game->entity_types[i].render(&game->entity_types[i].entity_list[j], game, group, dbg);
         }
     }
 

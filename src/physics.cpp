@@ -62,7 +62,8 @@ void do_collision_response(AABB a, AABB b, V2 dir, Game* game)
         V2 to = distance_towards(a, b, dir);
         move_and_collide(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
     } else if (b.collider->type == ColliderType_Objective) {
-        Objective::on_collide((Objective*)b.collider->extra_data);
+        ObjectiveExtraData* data = (ObjectiveExtraData*)b.collider->extra_data;
+        data->broken = true;
     }
 }
 
