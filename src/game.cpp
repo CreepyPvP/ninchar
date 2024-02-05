@@ -36,8 +36,13 @@ void game_load_assets()
     dispose(&asset_arena);
 };
 
+
+
+
 void game_init(Game* game, Arena* arena, u32 stage)
 {
+
+
     game->camera_state = CameraState_Locked;
 
     char path[1024];
@@ -61,7 +66,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
                 ++game->crate_cap;
             }
-            if (curr[0] == 1 && curr[1] == 125 && curr[2] == 10) {
+            if (curr[0] == 1 && curr[1] == 125) {
                 ++game->objective_cap;
             }
 
@@ -69,9 +74,13 @@ void game_init(Game* game, Arena* arena, u32 stage)
         }
     }
 
+
     game->crate = (Crate*) push_size(arena, sizeof(Crate) * game->crate_cap);
     game->wall = (Wall*) push_size(arena, sizeof(Wall) * game->wall_cap);
     game->objective = (Objective*) push_size(arena, sizeof(Objective) * game->objective_cap);
+
+
+
 
     curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
@@ -80,21 +89,25 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 game->wall[game->wall_count].pos = v3(x, y, 1);
                 game->wall[game->wall_count].collider.radius = v3(0.5);
                 game->wall[game->wall_count].collider.type = ColliderType_Static;
+                game->wall[game->wall_count].collider.extra_data = NULL;
                 ++game->wall_count;
             }
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
                 game->crate[game->crate_count].pos = v3(x, y, 1);
                 game->crate[game->crate_count].collider.radius = v3(0.5);
                 game->crate[game->crate_count].collider.type = ColliderType_Moveable;
+                game->crate[game->crate_count].collider.extra_data = NULL;
                 ++game->crate_count;
             }
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
                 game->player.pos = v3(x, y, 1);
             }
-            if (curr[0] == 1 && curr[1] == 125 && curr[2] == 10) {
+            if (curr[0] == 1 && curr[1] == 125) {
                 game->objective[game->objective_count].pos = v3(x, y, 1);
                 game->objective[game->objective_count].collider.radius = v3(0.5);
-                game->objective[game->objective_count].collider.type = ColliderType_Destroyable;
+                game->objective[game->objective_count].collider.type = ColliderType_Objective;
+                game->objective[game->objective_count].collider.extra_data = &game->objective[game->objective_count];
+                game->objective[game->objective_count].broken = false;
                 ++game->objective_count;
             }
 
@@ -161,7 +174,9 @@ void game_update(Game* game, RenderGroup* group, RenderGroup* dbg, u8 inputs, fl
     }
 
     for (u32 i = 0; i < game->objective_count; ++i) {
-        push_cube(group, game->objective[i].pos, v3(0.5), group->commands->white, v3(0, 1, 0));
+        if(!game->objective[i].broken){
+            push_cube(group, game->objective[i].pos, v3(0.5), group->commands->white, v3(0, 1, 0));
+        }
     }
 
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));

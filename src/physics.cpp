@@ -6,6 +6,10 @@
 #include <iostream>
 
 
+
+
+
+
 V3 far_away = v3(1000000, 1000000, 1000000);
 float box_gap = 0.00001f;
 
@@ -57,6 +61,9 @@ void do_collision_response(AABB a, AABB b, V2 dir, Game* game)
     if (b.collider->type == ColliderType_Moveable) {
         V2 to = distance_towards(a, b, dir);
         move_and_collide(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
+    }
+    else if(b.collider->type == ColliderType_Objective){
+        Objective::on_collide((Objective*)b.collider->extra_data);
     }
 }
 
@@ -115,7 +122,7 @@ V2 try_move_into(AABB a, AABB b, V2 dir, Game* game)
             return v2(to.x + tmp.x, to.y + tmp.y);
         } break;
 
-        case ColliderType_Destroyable: {
+        case ColliderType_Objective: {
             return dir;
         }
     }
