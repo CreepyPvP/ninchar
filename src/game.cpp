@@ -47,12 +47,12 @@ void game_load_assets()
 
 
 void add_entity_type(EntityType* type, Game* game){
-    game->entity_types[game->entity_type_count] = *type;
-    game->entity_type_count++;
+    game->types[game->type_count] = *type;
+    game->type_count++;
 }
 
 void game_init_entity_types(Game* game, TextureHandle* white_texture){
-    game->entity_type_count = 0;
+    game->type_count = 0;
 
     //Wall
     EntityType wall;
@@ -127,20 +127,20 @@ void game_init(Game* game, Arena* arena, u32 stage)
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
     assert(tmp);
 
-    for (u32 i=0;i<game->entity_type_count;i++) {
-        game->entity_types[i].cap = 0;
-        game->entity_types[i].count = 0;
+    for (u32 i=0;i<game->type_count;i++) {
+        game->types[i].cap = 0;
+        game->types[i].count = 0;
     }
 
 
     u8* curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            for (int i=0; i < game->entity_type_count; i++) {
-                if (curr[0] == game->entity_types[i].load_tile_red &&
-                    curr[1] == game->entity_types[i].load_tile_green &&
-                    curr[2] == game->entity_types[i].load_tile_blue) {
-                    game->entity_types[i].cap++;
+            for (int i=0; i < game->type_count; i++) {
+                if (curr[0] == game->types[i].load_tile_red &&
+                    curr[1] == game->types[i].load_tile_green &&
+                    curr[2] == game->types[i].load_tile_blue) {
+                    game->types[i].cap++;
                 }
             }
             curr += 3;
@@ -148,13 +148,13 @@ void game_init(Game* game, Arena* arena, u32 stage)
     }
     
 
-    for (u32 i=0;i<game->entity_type_count;i++) {
-        game->entity_types[i].entity_list = (Entity*) push_size(arena, sizeof(Entity) * game->entity_types[i].cap);
+    for (u32 i=0;i<game->type_count;i++) {
+        game->types[i].entity_list = (Entity*) push_size(arena, sizeof(Entity) * game->types[i].cap);
 
-        if (game->entity_types[i].extra_data_size != 0) {
-            game->entity_types[i].extra_data_list = push_size(arena, game->entity_types[i].extra_data_size * game->entity_types[i].cap);
+        if (game->types[i].extra_data_size != 0) {
+            game->types[i].extra_data_list = push_size(arena, game->types[i].extra_data_size * game->types[i].cap);
         }else{
-            game->entity_types[i].extra_data_list = NULL;
+            game->types[i].extra_data_list = NULL;
         }
     }
 
@@ -166,13 +166,13 @@ void game_init(Game* game, Arena* arena, u32 stage)
     curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            for (u32 i=0; i < game->entity_type_count; i++) {
-                if (curr[0] == game->entity_types[i].load_tile_red &&
-                    curr[1] == game->entity_types[i].load_tile_green &&
-                    curr[2] == game->entity_types[i].load_tile_blue) {
-                    game->entity_types[i].entity_list[game->entity_types[i].count].type = &game->entity_types[i];
-                    game->entity_types[i].init( &game->entity_types[i].entity_list[game->entity_types[i].count], game, x, y);
-                    game->entity_types[i].count++;
+            for (u32 i=0; i < game->type_count; i++) {
+                if (curr[0] == game->types[i].load_tile_red &&
+                    curr[1] == game->types[i].load_tile_green &&
+                    curr[2] == game->types[i].load_tile_blue) {
+                    game->types[i].entity_list[game->types[i].count].type = &game->types[i];
+                    game->types[i].init( &game->types[i].entity_list[game->types[i].count], game, x, y);
+                    game->types[i].count++;
                 }
             }
 
@@ -194,9 +194,9 @@ void game_init(Game* game, Arena* arena, u32 stage)
 void game_update(Game* game, u8 inputs, float delta)
 {
     // Update all entities
-    for (u32 i=0;i<game->entity_type_count;i++) {
-        for (u32 j=0;j<game->entity_types[i].count; j++) {
-            game->entity_types[i].update(&game->entity_types[i].entity_list[j], game);
+    for (u32 i=0;i<game->type_count;i++) {
+        for (u32 j=0;j<game->types[i].count; j++) {
+            game->types[i].update(&game->types[i].entity_list[j], game);
         }
     }
 
@@ -240,8 +240,8 @@ void game_update(Game* game, u8 inputs, float delta)
     // Check level completion
     bool level_completed = true;
     int objective_index = get_entity_type_index("Objective", game);
-    ObjectiveExtraData* data_array = (ObjectiveExtraData*) (game->entity_types[objective_index].extra_data_list);
-    for (u32 i = 0; i < game->entity_types[objective_index].count; ++i) {
+    ObjectiveExtraData* data_array = (ObjectiveExtraData*) (game->types[objective_index].extra_data_list);
+    for (u32 i = 0; i < game->types[objective_index].count; ++i) {
         if (!data_array[i].broken){
             level_completed = false;
         }
@@ -262,9 +262,9 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
     }
 
     // Render Entities
-    for (u32 i = 0; i < game->entity_type_count; i++){
-        for (u32 j = 0; j < game->entity_types[i].count; j++){
-            game->entity_types[i].render(&game->entity_types[i].entity_list[j], game, group, dbg);
+    for (u32 i = 0; i < game->type_count; i++){
+        for (u32 j = 0; j < game->types[i].count; j++){
+            game->types[i].render(&game->types[i].entity_list[j], game, group, dbg);
         }
     }
 

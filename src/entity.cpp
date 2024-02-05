@@ -5,8 +5,8 @@
 
 
 u32 get_entity_type_index(std::string name, Game* game){
-    for (u32 i=0; i<game->entity_type_count; i++){
-        if ( game->entity_types[i].name.compare(name) == 0){
+    for (u32 i=0; i<game->type_count; i++){
+        if ( game->types[i].name.compare(name) == 0){
             return i;
         }
     }

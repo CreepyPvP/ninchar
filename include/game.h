@@ -3,17 +3,6 @@
 
 #include <iostream>
 
-#define FOR_POS_COLLIDER(game, block) \
-{   \
-    for (u32 i = 0; i < game->entity_type_count; i++){   \
-        for(u32 j = 0; j < game->entity_types[i].count; j++){  \
-            V3* pos = &game->entity_types[i].entity_list[j].pos;   \
-            Entity* entity = &game->entity_types[i].entity_list[j];  \
-            block;   \
-        }   \
-    }   \
-}
-
 #include "include/types.h"
 #include "include/arena.h"
 #include "include/renderer.h"
@@ -82,8 +71,8 @@ struct Player
 
 struct Game
 {
-    int entity_type_count;
-    EntityType entity_types[10];
+    int type_count;
+    EntityType types[10];
 
     u32 width;
     u32 height;
