@@ -4,9 +4,12 @@
 
 
 
-u32 get_entity_type_index(std::string name, Game* game){
+u32 get_entity_type_index(EntityTypeId id, Game* game){
+    if(game->types[id].id == id){
+        return id;
+    }
     for (u32 i=0; i<game->type_count; i++){
-        if ( game->types[i].name.compare(name) == 0){
+        if ( game->types[i].id == id){
             return i;
         }
     }

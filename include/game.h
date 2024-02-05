@@ -3,6 +3,17 @@
 
 #include <iostream>
 
+#define FOR_POS_COLLIDER(game, block) \
+{   \
+    for (u32 i = 0; i < game->type_count; i++){   \
+        for(u32 j = 0; j < game->types[i].count; j++){  \
+            V3* pos = &game->types[i].entity_list[j].pos;   \
+            Entity* entity = &game->types[i].entity_list[j];  \
+            block;   \
+        }   \
+    }   \
+}
+
 #include "include/types.h"
 #include "include/arena.h"
 #include "include/renderer.h"
@@ -20,10 +31,19 @@ struct Entity;
 struct Game;
 struct AABB;
 
+
+enum EntityTypeId
+{
+    EntityType_Wall = 0,
+    EntityType_Crate = 1,
+    EntityType_Objective = 2,
+};
+
+
 class EntityType
 {
 public:
-    std::string name;
+    EntityTypeId id;
     u32 count;
     u32 cap;
 

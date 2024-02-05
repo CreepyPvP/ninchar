@@ -56,7 +56,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
 
     //Wall
     EntityType wall;
-    wall.name = "Wall";
+    wall.id = EntityType_Wall;
     wall.extra_data_size = 0;
     wall.init = &entity_standard_init;
     wall.update = &entity_standard_update;
@@ -74,7 +74,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
 
     //Crate
     EntityType crate;
-    crate.name = "Crate";
+    crate.id = EntityType_Crate;
     crate.extra_data_size = 0;
     crate.init = &entity_standard_init;
     crate.update = &entity_standard_update;
@@ -92,7 +92,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     
     //Objective
     EntityType objective;
-    objective.name = "Objective";
+    objective.id = EntityType_Objective;
     objective.extra_data_size = sizeof(ObjectiveExtraData);
     objective.init = &objective_init;
     objective.update = &entity_standard_update;
@@ -239,7 +239,7 @@ void game_update(Game* game, u8 inputs, float delta)
 
     // Check level completion
     bool level_completed = true;
-    int objective_index = get_entity_type_index("Objective", game);
+    int objective_index = get_entity_type_index(EntityType_Objective, game);
     ObjectiveExtraData* data_array = (ObjectiveExtraData*) (game->types[objective_index].extra_data_list);
     for (u32 i = 0; i < game->types[objective_index].count; ++i) {
         if (!data_array[i].broken){

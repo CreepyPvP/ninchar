@@ -1,7 +1,7 @@
 #include "include/game.h"
 
 
-u32 get_entity_type_index(std::string name, Game* game);
+u32 get_entity_type_index(EntityTypeId id, Game* game);
 
 void entity_standard_init(Entity* entity, Game* game, u32 x, u32 y);
 
