@@ -66,9 +66,14 @@ struct Objective
     Collider collider;
     bool broken;
 
-    static void on_collide(Objective* this_objective){
+    static void on_collide(Objective* this_objective) {
         this_objective->broken = true;
     }
+};
+
+struct Enemy
+{
+
 };
 
 struct Player
@@ -93,10 +98,14 @@ struct Game
     u32 objective_count;
     u32 objective_cap;
 
-    Camera camera;
-    u32 camera_state;
+    Enemy* enemy;
+    u32 enemy_count;
+    u32 enemy_cap;
 
     Player player;
+
+    Camera camera;
+    u32 camera_state;
 
     int current_level;
     int total_level_count = 7;

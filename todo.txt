@@ -13,8 +13,6 @@ line of sight check
 cameras
 camera cone
 
-player fail / restart
-
 ui rendering
 
 animations
