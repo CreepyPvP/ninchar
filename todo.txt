@@ -1,8 +1,15 @@
-fake cube ambient occlusion?
+obj importing
+    asset queue
+    attrib managment
+    vao creation cleanup
+
+fix camera jump
+Editor to game transform
+
+
+fake cube ambient occlusion? - probably not
 
 line of sight check
-obj importing
-object rendering
 
 cameras
 camera cone
@@ -10,12 +17,13 @@ camera cone
 player fail / restart
 
 ui rendering
-fix camera jump
-
-constraint based physics
 
 animations
 
 bloom
 color correction
 directional shadows
+
+multithreading?
+constraint based physics
+

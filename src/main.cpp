@@ -170,7 +170,7 @@ i32 main()
 
         start_timestamp(&profiler_renderer);
 
-        game_update(&game, &main_group, pressed, 1.0f / 60.0f);
+        game_update(&game, &main_group, &debug_group, pressed, 1.0f / 60.0f);
         push_line(&debug_group, v3(0, 0, 2), v3(10, 10, 2), v3(1, 0, 0));
 
         double render_duration = end_timestamp(&profiler_renderer);

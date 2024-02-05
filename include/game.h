@@ -102,7 +102,7 @@ struct Game
 
 void game_load_assets();
 void game_init(Game* game, Arena* arena, u32 stage);
-void game_update(Game* game, RenderGroup* group, u8 inputs, float delta);
+void game_update(Game* game, RenderGroup* group, RenderGroup* dbg, u8 inputs, float delta);
 
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);

@@ -2,6 +2,8 @@
 
 #include <math.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 V3 norm(V3 a)
 {
     float len = sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
@@ -41,4 +43,9 @@ float halton(u32 i, u32 b)
     }
 
     return r;
+}
+
+Mat4 mat4(V3 pos)
+{
+    return glm::translate(glm::mat4(1), glm::vec3(pos.x, pos.y, pos.z));
 }

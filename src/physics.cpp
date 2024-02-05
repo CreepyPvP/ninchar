@@ -39,24 +39,22 @@ bool intersects(AABB a, AABB b)
 
 V2 expand_slightly(V2 dir){
     V2 res;
-    if(dir.x == 0){
+    if (is_zero(dir.x)){
         res.x = dir.x;
-    }else if(dir.x > 0){
+    } else if(dir.x > 0) {
         res.x = dir.x + box_gap;
-    }else{
+    } else {
         res.x = dir.x - box_gap;
     }
-    if(dir.y == 0){
+    if (is_zero(dir.y)){
         res.y = dir.y;
-    }else if(dir.y > 0){
+    } else if (dir.y > 0) {
         res.y = dir.y + box_gap;
-    }else{
+    } else {
         res.y = dir.y - box_gap;
     }
     return res;
 }
-
-
 
 void do_collision_response(AABB a, AABB b, V2 dir, Game* game) 
 {
@@ -84,9 +82,9 @@ void move_and_push_boxes(AABB a, V2 dir, Game* game)
             do_collision_response(old_aabb, b, expand_slightly(dir), game);
         }
         if(intersects(new_aabb, b)){
-            std::printf("Still intersects after collision response. %f , %f \n", dir.x, dir.y);
-            V2 overlap = distance_towards(new_aabb, b , dir);
-            std::printf("Overlap %f, %f \n", distance_towards(new_aabb, b , dir));
+            printf("Still intersects after collision response. %f , %f \n", dir.x, dir.y);
+            V2 overlap = distance_towards(new_aabb, b, dir);
+            printf("Overlap %f, %f \n", overlap.x, overlap.y);
         }
     });
 

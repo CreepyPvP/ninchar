@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include "include/types.h"
+#include "include/arena.h"
 
 
 struct RenderGroup;
@@ -15,6 +16,7 @@ struct TextureHandle
 struct ModelHandle
 {
     u32 id;
+    u32 index_count;
 };
 
 struct TextureLoadOp
@@ -57,7 +59,8 @@ struct RenderSetup
 enum CommandEntryType
 {
     EntryType_Clear = 0,
-    EntryType_Draw = 1,
+    EntryType_DrawQuads = 1,
+    EntryType_DrawModel = 2,
 };
 
 struct CommandEntryHeader
@@ -95,12 +98,20 @@ struct CommandEntryClear
     V3 color;
 };
 
-struct CommandEntryDraw
+struct CommandEntryDrawQuads
 {
     CommandEntryHeader header;
-    Mat4 proj;
     u32 quad_offset;
     u32 quad_count;
+
+    RenderSetup setup;
+};
+
+struct CommandEntryDrawModel
+{
+    CommandEntryHeader header;
+    Mat4 trans;
+    ModelHandle model;
 
     RenderSetup setup;
 };
@@ -108,7 +119,7 @@ struct CommandEntryDraw
 struct RenderGroup
 {
     CommandBuffer* commands;
-    CommandEntryDraw* current_draw;
+    CommandEntryDrawQuads* current_draw;
     RenderSetup setup;
 };
 
@@ -121,10 +132,14 @@ RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool cull
 
 void push_clear(CommandBuffer* buffer, V3 color);
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color);
+void push_model(RenderGroup* group, V3 pos, ModelHandle handle);
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color);
 
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path);
 void free_texture_load_op(TextureLoadOp* load_op);
+
+ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena);
+
 
 
 inline bool equal_settings(RenderSettings* a, RenderSettings* b) 

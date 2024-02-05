@@ -11,15 +11,16 @@
 #define FRAMEBUFFER_DEPTH (1 << 3)
 #define FRAMEBUFFER_COLOR (1 << 4)
 
-struct Program
+struct ProgramBase
 {
     u32 id;
+    u32 proj;
 };
 
-struct DrawShader
+struct ModelShader
 {
-    Program base;
-    u32 proj;
+    ProgramBase base;
+    u32 trans;
 };
 
 struct Framebuffer
@@ -37,14 +38,15 @@ struct OpenGLContext
     u32 vertex_buffer;
 
     Arena render_arena;
-    DrawShader draw_shader;
-    Program post_shader;
+    ProgramBase quad_shader;
+    ModelShader model_shader;
+    ProgramBase post_shader;
 
     Framebuffer main_framebuffer;
     Framebuffer post_framebuffer;
 
-    u32 draw_vao;
     u32 quad_vao;
+    u32 post_vao;
 
     i32 max_samples;
 };
@@ -53,5 +55,6 @@ void opengl_init();
 void opengl_render_commands(CommandBuffer* buffer);
 
 void opengl_load_texture(TextureLoadOp* load_op);
+void opengl_load_model(ModelLoadOp* load_op);
 
 #endif
