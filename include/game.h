@@ -97,6 +97,10 @@ struct Game
     u32 camera_state;
 
     Player player;
+
+    int current_level;
+    int total_level_count = 7;
+    bool reset_stage;
 };
 
 

@@ -31,6 +31,8 @@ double last_mouse_pos_y;
 
 Game game;
 
+int total_level_count = 7;
+
 
 void resize_callback(GLFWwindow* window, i32 width, i32 height) 
 {
@@ -106,6 +108,7 @@ i32 main()
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
+
     Arena game_arena;
     init_arena(&game_arena, &pool);
     game_load_assets();
@@ -115,6 +118,7 @@ i32 main()
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(global_window.handle, true);
         }
+
 
 #ifdef DEBUG
         static bool c_pressed = false;
@@ -129,15 +133,31 @@ i32 main()
 
         static bool r_pressed = false;
         if (glfwGetKey(global_window.handle, GLFW_KEY_R) == GLFW_PRESS) {
-            if (!c_pressed) {
-                dispose(&game_arena);
-                game_init(&game, &game_arena, 6);
+            if (!r_pressed) {
+                game.reset_stage = true;
             }
             r_pressed = true;
         } else {
             r_pressed = false;
         }
+
+        static bool n_pressed = false;
+        if (glfwGetKey(global_window.handle, GLFW_KEY_N) == GLFW_PRESS) {
+            if (!n_pressed) {
+                game.current_level = (game.current_level + 1) % game.total_level_count;
+                game.reset_stage = true;
+            }
+            n_pressed = true;
+        } else {
+            n_pressed = false;
+        }
 #endif
+
+        if(game.reset_stage){
+            dispose(&game_arena);
+            game_init(&game, &game_arena, game.current_level);
+        }
+
 
         u8 pressed = (glfwGetKey(global_window.handle, GLFW_KEY_W) == GLFW_PRESS) << 0 |
                      (glfwGetKey(global_window.handle, GLFW_KEY_S) == GLFW_PRESS) << 1 |
