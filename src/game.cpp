@@ -53,11 +53,13 @@ void game_init(Game* game, Arena* arena, u32 stage)
     assert(tmp);
 
     game->wall_cap = 0;
-    game->crate_cap = 0;
-    game->objective_cap = 0;
-    game->crate_count = 0;
     game->wall_count = 0;
+    game->crate_cap = 0;
+    game->crate_count = 0;
+    game->objective_cap = 0;
     game->objective_count = 0;
+    game->enemy_cap = 0;
+    game->enemy_count = 0;
 
     u8* curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
@@ -71,6 +73,9 @@ void game_init(Game* game, Arena* arena, u32 stage)
             if (curr[0] == 1 && curr[1] == 125) {
                 ++game->objective_cap;
             }
+            if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
+                ++game->enemy_cap;
+            }
 
             curr += 3;
         }
@@ -79,6 +84,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     game->crate = (Crate*) push_size(arena, sizeof(Crate) * game->crate_cap);
     game->wall = (Wall*) push_size(arena, sizeof(Wall) * game->wall_cap);
     game->objective = (Objective*) push_size(arena, sizeof(Objective) * game->objective_cap);
+    game->enemy = (Enemy*) push_size(arena, sizeof(Enemy) * game->enemy_cap);
 
     curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
@@ -107,6 +113,10 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 game->objective[game->objective_count].collider.extra_data = &game->objective[game->objective_count];
                 game->objective[game->objective_count].broken = false;
                 ++game->objective_count;
+            }
+            if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
+                game->enemy[game->enemy_count].pos = v3(x, y, 1);
+                ++game->enemy_count;
             }
 
             curr += 3;
@@ -188,6 +198,11 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
         push_cube(group, game->wall[i].pos, v3(0.5), wall_texture, v3(1));
     }
 
+    // Render Enemies
+    for (u32 i = 0; i < game->enemy_count; ++i) {
+        push_model(dbg, teapot, game->enemy[i].pos, v3(0.5));
+    }
+
     // Render Objectives
     for (u32 i = 0; i < game->objective_count; ++i) {
         if (!game->objective[i].broken){
@@ -197,8 +212,6 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
 
     // Render Player
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
-
-    push_model(dbg, teapot, v3(14, 8, 0.5), v3(0.5));
 }
 
 void game_reset_camera(Game* game)

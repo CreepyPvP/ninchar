@@ -73,7 +73,7 @@ struct Objective
 
 struct Enemy
 {
-
+    V3 pos;
 };
 
 struct Player
