@@ -17,7 +17,14 @@ void entity_standard_init(Entity* entity, Game* game, u32 x, u32 y)
 {
         entity->pos = v3(x, y, 1);
         entity->collider.radius = v3(0.5);
-        entity->collider.extra_data = NULL;
+        if(entity->type->extra_data_size != 0){
+            char* data_array = (char*)entity->type->extra_data_list;
+            void* data_entry = (void*)(data_array + (entity->type->extra_data_size * entity->type->count));
+            entity->extra_data = data_entry;
+            entity->collider.extra_data = data_entry;
+        }else{
+            entity->collider.extra_data = NULL;
+        }
 }
 void wall_init(Entity* entity, Game* game, u32 x, u32 y){
     entity_standard_init(entity, game, x, y);
@@ -30,12 +37,6 @@ void crate_init(Entity* entity, Game* game, u32 x, u32 y){
 void objective_init(Entity* entity, Game* game, u32 x, u32 y){
     entity_standard_init(entity, game, x, y);
     entity->collider.type = ColliderType_Objective;
-    u32 objective_index = get_entity_type_index("Objective", game);
-    ObjectiveExtraData* data_array = (ObjectiveExtraData*) game->entity_types[objective_index].extra_data_list;
-    printf("%d", entity->type->count);
-    data_array[entity->type->count].broken = false;
-    entity->collider.extra_data = &data_array[entity->type->count];
-    entity->extra_data = &data_array[entity->type->count];
 }
 
 

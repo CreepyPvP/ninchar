@@ -1,5 +1,5 @@
 
-#include "src/entity.cpp"
+#include "include/entity.h"
 
 #include "include/opengl_renderer.h"
 #include "include/game_math.h"
@@ -247,10 +247,6 @@ void game_update(Game* game, u8 inputs, float delta)
         game->reset_stage = true;
         game->current_level = (game->current_level + 1) % game->total_level_count;
     }
-
-
-
-
 }
 
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
