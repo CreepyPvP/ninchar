@@ -8,8 +8,6 @@ fix camera jump
 
 fake cube ambient occlusion? - probably not
 
-line of sight check
-
 cameras
 camera cone
 
@@ -19,7 +17,6 @@ animations
 
 bloom
 color correction
-directional shadows
 
 multithreading?
 constraint based physics

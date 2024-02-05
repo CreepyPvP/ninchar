@@ -3,12 +3,6 @@
 #include "include/types.h"
 #include "include/game_math.h"
 
-#include <iostream>
-
-
-
-
-
 
 V3 far_away = v3(1000000, 1000000, 1000000);
 float box_gap = 0.00001f;

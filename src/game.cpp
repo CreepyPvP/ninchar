@@ -108,7 +108,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 game->objective[game->objective_count].pos = v3(x, y, 1);
                 game->objective[game->objective_count].collider.radius = v3(0.5);
                 game->objective[game->objective_count].collider.type = ColliderType_Objective;
-                game->objective[game->objective_count].collider.extra_data = &game->objective[game->objective_count];
+                game->objective[game->objective_count].collider.extra_data = game->objective + game->objective_count;
                 game->objective[game->objective_count].broken = false;
                 ++game->objective_count;
             }
