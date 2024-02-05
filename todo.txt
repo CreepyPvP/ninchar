@@ -4,7 +4,6 @@ obj importing
     vao creation cleanup
 
 fix camera jump
-Editor to game transform
 
 
 fake cube ambient occlusion? - probably not

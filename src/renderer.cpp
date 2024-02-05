@@ -204,7 +204,6 @@ void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
     CommandEntryDrawQuads* entry = get_current_draw(group, 1);
 
     // TODO: Orient line so it always faces the camera
-    // TODO: Apply "lit" renderer setting correctly in the backend
     V3 up = v3(0, 0, 1);
     float width = 0.025;
 
@@ -255,11 +254,12 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
             skip_whitespaces(ptr);
             float* current = (float*) (vert_buffer + vert_stride * vert_count);
 
+            // NOTE: Flipped to match game coordiante system
             current[0] = read_float(ptr);
             skip_whitespaces(ptr);
-            current[1] = read_float(ptr);
-            skip_whitespaces(ptr);
             current[2] = read_float(ptr);
+            skip_whitespaces(ptr);
+            current[1] = read_float(ptr);
             next_line(ptr);
 
             ++vert_count;
@@ -284,7 +284,7 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
 
     ModelLoadOp load;
     load.vert_buffer = vert_buffer;
-    load.vert_count=  vert_count;
+    load.vert_count = vert_count;
     load.index_buffer = index_buffer;
     load.index_count = index_count;
     load.vert_stride = vert_stride;
