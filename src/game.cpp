@@ -58,12 +58,13 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     EntityType wall;
     wall.name = "Wall";
     wall.extra_data_size = 0;
-    wall.init = &wall_init;
+    wall.init = &entity_standard_init;
     wall.update = &entity_standard_update;
     wall.render = &entity_standard_render;
+    wall.try_move_into = &static_try_move_into;
+    wall.collision_response = &standard_collision_response;
     wall.texture = &wall_texture;
     wall.render_color = v3(1);
-    wall.collider_type = ColliderType_Static;
 
     wall.load_tile_red = 0;
     wall.load_tile_green = 0;
@@ -75,12 +76,13 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     EntityType crate;
     crate.name = "Crate";
     crate.extra_data_size = 0;
-    crate.init = &crate_init;
+    crate.init = &entity_standard_init;
     crate.update = &entity_standard_update;
     crate.render = &entity_standard_render;
+    crate.try_move_into = &moveable_try_move_into;
+    crate.collision_response = &moveable_collision_response;
     crate.texture = &crate_texture;
     crate.render_color = v3(1);
-    crate.collider_type = ColliderType_Moveable;
 
     crate.load_tile_red = 88;
     crate.load_tile_green = 57;
@@ -95,9 +97,10 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     objective.init = &objective_init;
     objective.update = &entity_standard_update;
     objective.render = &objective_render;
+    objective.try_move_into = &noclip_try_move_into;
+    objective.collision_response = &objective_collision_response;
     objective.texture = white_texture;
     objective.render_color = v3(0,1,0);
-    objective.collider_type = ColliderType_Objective;
 
     objective.load_tile_red = 1;
     objective.load_tile_green = 125;

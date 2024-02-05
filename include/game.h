@@ -27,17 +27,9 @@ enum CameraState
     CameraState_Free = 1,
 };
 
-enum ColliderType
-{
-    ColliderType_Static = 0,
-    ColliderType_Moveable = 1,
-    ColliderType_Objective = 2,
-};
-
-
-
 struct Entity;
 struct Game;
+struct AABB;
 
 class EntityType
 {
@@ -58,11 +50,13 @@ public:
     u32 load_tile_green;
     u32 load_tile_blue;
 
-    ColliderType collider_type;
-    
+
     void (*init)(Entity* entity, Game* game, u32 x, u32 y);
     void (*update)(Entity* entity, Game* game);
     void (*render)(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
+
+    void (*collision_response)(AABB a, AABB b, V2 dir, Game* game);
+    V2 (*try_move_into)(AABB a, AABB b, V2 dir, Game* game);
 };
 
 

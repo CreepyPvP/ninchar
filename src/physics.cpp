@@ -1,4 +1,4 @@
-#include "include/game.h"
+#include "include/entity.h"
 
 #include "include/types.h"
 #include "include/game_math.h"
@@ -56,16 +56,20 @@ V2 expand_slightly(V2 dir){
     return res;
 }
 
-void do_collision_response(AABB a, AABB b, V2 dir, Game* game) 
+
+void standard_collision_response(AABB a, AABB b, V2 dir, Game* game) {}
+
+void moveable_collision_response(AABB a, AABB b, V2 dir, Game* game)
 {
-    if (b.entity->type->collider_type == ColliderType_Moveable) {
-        V2 to = distance_towards(a, b, dir);
-        move_and_collide(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
-    } else if (b.entity->type->collider_type == ColliderType_Objective) {
-        ObjectiveExtraData* data = (ObjectiveExtraData*)b.entity->extra_data;
-        data->broken = true;
-    }
+    V2 to = distance_towards(a, b, dir);
+    move_and_collide(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
 }
+
+void objective_collision_response(AABB a, AABB b, V2 dir, Game* game)
+{
+    ((ObjectiveExtraData*)b.entity->extra_data)->broken = true;
+}
+
 
 void move_and_push_boxes(AABB a, V2 dir, Game* game)
 {
@@ -79,7 +83,7 @@ void move_and_push_boxes(AABB a, V2 dir, Game* game)
     FOR_POS_COLLIDER(game, {
         AABB b = aabb(pos, entity);
         if (intersects(new_aabb, b)) {
-            do_collision_response(old_aabb, b, expand_slightly(dir), game);
+            entity->type->collision_response(old_aabb, b, expand_slightly(dir), game);
         }
     });
 
@@ -104,26 +108,28 @@ V2 distance_towards(AABB a, AABB b, V2 dir)
     return res;
 }
 
-V2 try_move_into(AABB a, AABB b, V2 dir, Game* game) 
+
+
+V2 static_try_move_into(AABB a, AABB b, V2 dir, Game* game) 
 {
-    switch (b.entity->type->collider_type) {
-        case ColliderType_Static: {
-            return distance_towards(a, b, dir);
-        } break;
-
-        case ColliderType_Moveable: {
-            V2 to = distance_towards(a, b, dir);
-            V2 tmp = get_collided_movement(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
-            return v2(to.x + tmp.x, to.y + tmp.y);
-        } break;
-
-        case ColliderType_Objective: {
-            return dir;
-        }
-    }
-
-    return v2(0);
+    return distance_towards(a, b, dir);
 }
+
+V2 moveable_try_move_into(AABB a, AABB b, V2 dir, Game* game)
+{
+    V2 to = distance_towards(a, b, dir);
+    V2 tmp = get_collided_movement(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
+    return v2(to.x + tmp.x, to.y + tmp.y);
+}
+
+V2 noclip_try_move_into(AABB a, AABB b, V2 dir, Game* game)
+{
+    return dir;
+}
+
+
+
+
 
 V2 get_collided_movement(AABB a, V2 dir, Game* game)
 {
@@ -139,7 +145,7 @@ V2 get_collided_movement(AABB a, V2 dir, Game* game)
     FOR_POS_COLLIDER(game, {
         AABB b = aabb(pos, entity);
         if (intersects(new_aabb, b)) {
-            V2 move_into = try_move_into(old_aabb, b, expand_slightly(dir), game);
+            V2 move_into = entity->type->try_move_into(old_aabb, b, expand_slightly(dir), game);
             res.x = clamp_abs(res.x, move_into.x);
             res.y = clamp_abs(res.y, move_into.y);
         }

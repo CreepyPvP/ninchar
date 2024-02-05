@@ -25,12 +25,6 @@ void entity_standard_init(Entity* entity, Game* game, u32 x, u32 y)
             entity->extra_data = NULL;
         }
 }
-void wall_init(Entity* entity, Game* game, u32 x, u32 y){
-    entity_standard_init(entity, game, x, y);
-}
-void crate_init(Entity* entity, Game* game, u32 x, u32 y){
-    entity_standard_init(entity, game, x, y);
-}
 void objective_init(Entity* entity, Game* game, u32 x, u32 y){
     entity_standard_init(entity, game, x, y);
     ((ObjectiveExtraData*)entity->extra_data)->broken = false;

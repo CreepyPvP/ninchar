@@ -9,10 +9,20 @@ void entity_standard_update(Entity* entity, Game* game);
 
 void entity_standard_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
 
-void wall_init(Entity* entity, Game* game, u32 x, u32 y);
-
-void crate_init(Entity* entity, Game* game, u32 x, u32 y);
-
 void objective_init(Entity* entity, Game* game, u32 x, u32 y);
 
 void objective_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
+
+
+
+void standard_collision_response(AABB a, AABB b, V2 dir, Game* game);
+
+void moveable_collision_response(AABB a, AABB b, V2 dir, Game* game);
+
+void objective_collision_response(AABB a, AABB b, V2 dir, Game* game);
+
+V2 static_try_move_into(AABB a, AABB b, V2 dir, Game* game);
+
+V2 moveable_try_move_into(AABB a, AABB b, V2 dir, Game* game);
+
+V2 noclip_try_move_into(AABB a, AABB b, V2 dir, Game* game);
