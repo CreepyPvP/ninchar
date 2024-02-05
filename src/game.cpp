@@ -1,10 +1,12 @@
-#include "include/game.h"
+
+#include "src/entity.cpp"
 
 #include "include/opengl_renderer.h"
 #include "include/game_math.h"
 #include "include/arena.h"
 
 #include "include/stb_image.h"
+
 
 TextureHandle ground_texture;
 TextureHandle wall_texture;
@@ -40,58 +42,8 @@ void game_load_assets()
 
 
 
-u32 get_entity_type_index(std::string name, Game* game){
-    for (u32 i=0; i<game->entity_type_count; i++){
-        if ( game->entity_types[i].name.compare(name) == 0){
-            return i;
-        }
-    }
-    return -1;
-}
 
 
-
-void entity_standard_init(Entity* entity, Game* game, u32 x, u32 y)
-{
-        entity->pos = v3(x, y, 1);
-        entity->collider.radius = v3(0.5);
-        entity->collider.extra_data = NULL;
-}
-void wall_init(Entity* entity, Game* game, u32 x, u32 y){
-    entity_standard_init(entity, game, x, y);
-    entity->collider.type = ColliderType_Static;
-}
-void crate_init(Entity* entity, Game* game, u32 x, u32 y){
-    entity_standard_init(entity, game, x, y);
-    entity->collider.type = ColliderType_Moveable;
-}
-void objective_init(Entity* entity, Game* game, u32 x, u32 y){
-    entity_standard_init(entity, game, x, y);
-    entity->collider.type = ColliderType_Objective;
-    u32 objective_index = get_entity_type_index("Objective", game);
-    ObjectiveExtraData* data_array = (ObjectiveExtraData*) game->entity_types[objective_index].extra_data;
-    printf("%d", entity->type->count);
-    data_array[entity->type->count].broken = false;
-    entity->collider.extra_data = &data_array[entity->type->count];
-    entity->extra_data = &data_array[entity->type->count];
-}
-
-
-void entity_standard_update(Entity* entity, Game* game) {}
-
-void entity_standard_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
-{
-    push_cube(group, entity->pos, v3(0.5), *entity->type->texture, entity->type->render_color);
-}
-
-
-void objective_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
-{
-    ObjectiveExtraData* data = (ObjectiveExtraData*)entity->extra_data;
-    if(!data->broken){
-        entity_standard_render(entity, game, group, dbg);
-    }
-}
 
 
 void add_entity_type(EntityType* type, Game* game){
@@ -197,9 +149,9 @@ void game_init(Game* game, Arena* arena, u32 stage)
         game->entity_types[i].entity_list = (Entity*) push_size(arena, sizeof(Entity) * game->entity_types[i].cap);
 
         if (game->entity_types[i].extra_data_size != 0) {
-            game->entity_types[i].extra_data = push_size(arena, game->entity_types[i].extra_data_size * game->entity_types[i].cap);
+            game->entity_types[i].extra_data_list = push_size(arena, game->entity_types[i].extra_data_size * game->entity_types[i].cap);
         }else{
-            game->entity_types[i].extra_data = NULL;
+            game->entity_types[i].extra_data_list = NULL;
         }
     }
 
@@ -285,7 +237,7 @@ void game_update(Game* game, u8 inputs, float delta)
     // Check level completion
     bool level_completed = true;
     int objective_index = get_entity_type_index("Objective", game);
-    ObjectiveExtraData* data_array = (ObjectiveExtraData*) (game->entity_types[objective_index].extra_data);
+    ObjectiveExtraData* data_array = (ObjectiveExtraData*) (game->entity_types[objective_index].extra_data_list);
     for (u32 i = 0; i < game->entity_types[objective_index].count; ++i) {
         if (!data_array[i].broken){
             level_completed = false;
