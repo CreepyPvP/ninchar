@@ -15,7 +15,6 @@ release.zip
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
