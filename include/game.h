@@ -97,12 +97,17 @@ struct Game
     u32 camera_state;
 
     Player player;
+
+    int current_level;
+    int total_level_count = 7;
+    bool reset_stage;
 };
 
 
 void game_load_assets();
 void game_init(Game* game, Arena* arena, u32 stage);
-void game_update(Game* game, RenderGroup* group, RenderGroup* dbg, u8 inputs, float delta);
+void game_update(Game* game, u8 inputs, float delta);
+void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);

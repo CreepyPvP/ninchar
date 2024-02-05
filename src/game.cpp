@@ -12,6 +12,7 @@ TextureHandle crate_texture;
 
 ModelHandle teapot;
 
+
 // TODO: move asset loading to asset queue. Then game has no opengl dependency
 void game_load_assets()
 {
@@ -41,7 +42,8 @@ void game_load_assets()
 
 void game_init(Game* game, Arena* arena, u32 stage)
 {
-
+    game->reset_stage = false;
+    game->current_level = stage;
 
     game->camera_state = CameraState_Locked;
 
@@ -120,11 +122,13 @@ void game_init(Game* game, Arena* arena, u32 stage)
     game_reset_camera(game);
 }
 
-void game_update(Game* game, RenderGroup* group, RenderGroup* dbg, u8 inputs, float delta)
+void game_update(Game* game, u8 inputs, float delta)
 {
+    //Update Player
     if (game->camera_state == CameraState_Free) {
         update_camera(&game->camera, inputs, delta);
     } else {
+
         V2 movement = v2(0);
 
         // w
@@ -149,33 +153,54 @@ void game_update(Game* game, RenderGroup* group, RenderGroup* dbg, u8 inputs, fl
         Collider player_collider;
         player_collider.radius = v3(0.35, 0.35, 0.7);
 
-        movement.x *= delta * 6;
-        movement.y *= delta * 6;
+        movement.x *= delta * 10;
+        movement.y *= delta * 10;
 
         move_and_collide(aabb(&game->player.pos, &player_collider), v2(movement.x, 0), game);
         move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
     }
 
+
+    //Update Objective
+    bool level_completed = true;
+    for (u32 i = 0; i < game->objective_count; ++i) {
+        if(!game->objective[i].broken){
+            level_completed = false;
+        }
+    }
+    if(level_completed){
+        game->reset_stage = true;
+        game->current_level = (game->current_level + 1) % game->total_level_count;
+    }
+}
+
+void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
+
+    //Render Ground
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
             push_cube(group, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
         }
     }
 
+    //Render Crates
     for (u32 i = 0; i < game->crate_count; ++i) {
         push_cube(group, game->crate[i].pos, v3(0.5), crate_texture, v3(1));
     }
 
+    //Render Walls
     for (u32 i = 0; i < game->wall_count; ++i) {
         push_cube(group, game->wall[i].pos, v3(0.5), wall_texture, v3(1));
     }
 
+    //Render Objectives
     for (u32 i = 0; i < game->objective_count; ++i) {
         if(!game->objective[i].broken){
             push_cube(group, game->objective[i].pos, v3(0.5), group->commands->white, v3(0, 1, 0));
         }
     }
 
+    //Render Player
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
 
     push_model(dbg, teapot, v3(14, 8, 0.5), v3(0.5));
