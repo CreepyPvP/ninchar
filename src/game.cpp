@@ -63,6 +63,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     wall.render = &entity_standard_render;
     wall.texture = &wall_texture;
     wall.render_color = v3(1);
+    wall.collider_type = ColliderType_Static;
 
     wall.load_tile_red = 0;
     wall.load_tile_green = 0;
@@ -79,6 +80,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     crate.render = &entity_standard_render;
     crate.texture = &crate_texture;
     crate.render_color = v3(1);
+    crate.collider_type = ColliderType_Moveable;
 
     crate.load_tile_red = 88;
     crate.load_tile_green = 57;
@@ -95,6 +97,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     objective.render = &objective_render;
     objective.texture = white_texture;
     objective.render_color = v3(0,1,0);
+    objective.collider_type = ColliderType_Objective;
 
     objective.load_tile_red = 1;
     objective.load_tile_green = 125;
@@ -221,7 +224,7 @@ void game_update(Game* game, u8 inputs, float delta)
 
         movement = norm(movement);
 
-        Collider player_collider;
+        Entity player_collider;
         player_collider.radius = v3(0.35, 0.35, 0.7);
 
         movement.x *= delta * 10;

@@ -8,7 +8,7 @@
     for (u32 i = 0; i < game->entity_type_count; i++){   \
         for(u32 j = 0; j < game->entity_types[i].count; j++){  \
             V3* pos = &game->entity_types[i].entity_list[j].pos;   \
-            Collider* collider = &game->entity_types[i].entity_list[j].collider;  \
+            Entity* entity = &game->entity_types[i].entity_list[j];  \
             block;   \
         }   \
     }   \
@@ -34,12 +34,6 @@ enum ColliderType
     ColliderType_Objective = 2,
 };
 
-struct Collider
-{
-    u32 type;
-    V3 radius;
-    void* extra_data;
-};
 
 
 struct Entity;
@@ -53,7 +47,7 @@ public:
     u32 cap;
 
     Entity* entity_list;
-    
+
     u32 extra_data_size;
     void* extra_data_list;
 
@@ -64,6 +58,8 @@ public:
     u32 load_tile_green;
     u32 load_tile_blue;
 
+    ColliderType collider_type;
+    
     void (*init)(Entity* entity, Game* game, u32 x, u32 y);
     void (*update)(Entity* entity, Game* game);
     void (*render)(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
@@ -74,7 +70,7 @@ struct Entity
 {
     EntityType* type;
     V3 pos;
-    Collider collider;
+    V3 radius;
     void* extra_data;
 };
 
@@ -123,12 +119,12 @@ void add_entity_type(EntityType* type, Game* game);
 struct AABB
 {
     V3* pos;
-    Collider* collider;
+    Entity* entity;
 };
 
-inline AABB aabb(V3* pos, Collider* collider) 
+inline AABB aabb(V3* pos, Entity* entity) 
 {
-    return { pos, collider };
+    return { pos, entity };
 }
 
 void move_and_collide(AABB aabb, V2 dir, Game* game);
