@@ -153,7 +153,7 @@ i32 main()
         }
 #endif
 
-        if(game.reset_stage){
+        if (game.reset_stage){
             dispose(&game_arena);
             game_init(&game, &game_arena, game.current_level);
         }

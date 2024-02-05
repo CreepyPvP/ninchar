@@ -76,13 +76,9 @@ void game_init(Game* game, Arena* arena, u32 stage)
         }
     }
 
-
     game->crate = (Crate*) push_size(arena, sizeof(Crate) * game->crate_cap);
     game->wall = (Wall*) push_size(arena, sizeof(Wall) * game->wall_cap);
     game->objective = (Objective*) push_size(arena, sizeof(Objective) * game->objective_cap);
-
-
-
 
     curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
@@ -124,7 +120,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
 
 void game_update(Game* game, u8 inputs, float delta)
 {
-    //Update Player
+    // Update Player
     if (game->camera_state == CameraState_Free) {
         update_camera(&game->camera, inputs, delta);
     } else {
@@ -160,15 +156,14 @@ void game_update(Game* game, u8 inputs, float delta)
         move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
     }
 
-
-    //Update Objective
+    // Update Objective
     bool level_completed = true;
     for (u32 i = 0; i < game->objective_count; ++i) {
-        if(!game->objective[i].broken){
+        if (!game->objective[i].broken){
             level_completed = false;
         }
     }
-    if(level_completed){
+    if (level_completed){
         game->reset_stage = true;
         game->current_level = (game->current_level + 1) % game->total_level_count;
     }
@@ -176,31 +171,31 @@ void game_update(Game* game, u8 inputs, float delta)
 
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
 
-    //Render Ground
+    // Render Ground
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
             push_cube(group, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
         }
     }
 
-    //Render Crates
+    // Render Crates
     for (u32 i = 0; i < game->crate_count; ++i) {
         push_cube(group, game->crate[i].pos, v3(0.5), crate_texture, v3(1));
     }
 
-    //Render Walls
+    // Render Walls
     for (u32 i = 0; i < game->wall_count; ++i) {
         push_cube(group, game->wall[i].pos, v3(0.5), wall_texture, v3(1));
     }
 
-    //Render Objectives
+    // Render Objectives
     for (u32 i = 0; i < game->objective_count; ++i) {
-        if(!game->objective[i].broken){
+        if (!game->objective[i].broken){
             push_cube(group, game->objective[i].pos, v3(0.5), group->commands->white, v3(0, 1, 0));
         }
     }
 
-    //Render Player
+    // Render Player
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
 
     push_model(dbg, teapot, v3(14, 8, 0.5), v3(0.5));

@@ -41,7 +41,7 @@ V2 expand_slightly(V2 dir){
     V2 res;
     if (is_zero(dir.x)){
         res.x = dir.x;
-    } else if(dir.x > 0) {
+    } else if (dir.x > 0) {
         res.x = dir.x + box_gap;
     } else {
         res.x = dir.x - box_gap;
