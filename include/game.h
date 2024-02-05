@@ -5,20 +5,12 @@
 
 #define FOR_POS_COLLIDER(game, block) \
 {   \
-    for (u32 i = 0; i < game->wall_count; ++i) {    \
-        V3* pos = &game->wall[i].pos; \
-        Collider* collider = &game->wall[i].collider; \
-        block;  \
-    }   \
-    for (u32 i = 0; i < game->crate_count; ++i) {    \
-        V3* pos = &game->crate[i].pos; \
-        Collider* collider = &game->crate[i].collider; \
-        block;  \
-    }   \
-    for (u32 i = 0; i < game->objective_count; ++i) {    \
-        V3* pos = &game->objective[i].pos; \
-        Collider* collider = &game->objective[i].collider; \
-        block;  \
+    for (u32 i = 0; i < game->type_count; i++){   \
+        for(u32 j = 0; j < game->types[i].count; j++){  \
+            V3* pos = &game->types[i].entity_list[j].pos;   \
+            Entity* entity = &game->types[i].entity_list[j];  \
+            block;   \
+        }   \
     }   \
 }
 
@@ -27,54 +19,70 @@
 #include "include/renderer.h"
 #include "include/camera.h"
 
+#include <string>
+
 enum CameraState
 {
     CameraState_Locked = 0,
     CameraState_Free = 1,
 };
 
-enum ColliderType
+struct Entity;
+struct Game;
+struct AABB;
+
+
+enum EntityTypeId
 {
-    ColliderType_Static = 0,
-    ColliderType_Moveable = 1,
-    ColliderType_Objective = 2,
+    EntityType_Wall = 0,
+    EntityType_Crate = 1,
+    EntityType_Objective = 2,
 };
 
 
-struct Collider
+class EntityType
 {
-    u32 type;
+public:
+    EntityTypeId id;
+    u32 count;
+    u32 cap;
+
+    Entity* entity_list;
+
+    u32 extra_data_size;
+    void* extra_data_list;
+
+    TextureHandle* texture;
+    V3 render_color;
+
+    u32 load_tile_red;
+    u32 load_tile_green;
+    u32 load_tile_blue;
+
+
+    void (*init)(Entity* entity, Game* game, u32 x, u32 y);
+    void (*update)(Entity* entity, Game* game);
+    void (*render)(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
+
+    void (*collision_response)(AABB a, AABB b, V2 dir, Game* game);
+    V2 (*try_move_into)(AABB a, AABB b, V2 dir, Game* game);
+};
+
+
+struct Entity
+{
+    EntityType* type;
+    V3 pos;
     V3 radius;
     void* extra_data;
 };
 
-struct Crate
-{
-    V3 pos;
-    Collider collider;
-};
 
-struct Wall
+struct ObjectiveExtraData
 {
-    V3 pos;
-    Collider collider;
-};
-
-struct Objective
-{
-    V3 pos;
-    Collider collider;
     bool broken;
-
-    static void on_collide(Objective* this_objective) {
-        this_objective->broken = true;
-    }
 };
 
-struct Enemy
-{
-    V3 pos;
-};
 
 struct Player
 {
@@ -83,24 +91,11 @@ struct Player
 
 struct Game
 {
+    int type_count;
+    EntityType types[10];
+
     u32 width;
     u32 height;
-
-    Wall* wall;
-    u32 wall_count;
-    u32 wall_cap;
-
-    Crate* crate;
-    u32 crate_count;
-    u32 crate_cap;
-
-    Objective* objective;
-    u32 objective_count;
-    u32 objective_cap;
-
-    Enemy* enemy;
-    u32 enemy_count;
-    u32 enemy_cap;
 
     Player player;
 
@@ -114,6 +109,7 @@ struct Game
 
 
 void game_load_assets();
+void game_init_entity_types(Game* game, TextureHandle* white_texture);
 void game_init(Game* game, Arena* arena, u32 stage);
 void game_update(Game* game, u8 inputs, float delta);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
@@ -121,16 +117,17 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);
 
+void add_entity_type(EntityType* type, Game* game);
 
 struct AABB
 {
     V3* pos;
-    Collider* collider;
+    Entity* entity;
 };
 
-inline AABB aabb(V3* pos, Collider* collider) 
+inline AABB aabb(V3* pos, Entity* entity) 
 {
-    return { pos, collider };
+    return { pos, entity };
 }
 
 void move_and_collide(AABB aabb, V2 dir, Game* game);

@@ -1,4 +1,4 @@
-#include "include/game.h"
+#include "include/entity.h"
 
 #include "include/types.h"
 #include "include/game_math.h"
@@ -29,12 +29,12 @@ float clamp_abs(float a, float b){
 
 bool intersects(AABB a, AABB b)
 {
-    return a.pos->x - a.collider->radius.x < b.pos->x + b.collider->radius.x &&
-           a.pos->x + a.collider->radius.x > b.pos->x - b.collider->radius.x &&
-           a.pos->y - a.collider->radius.y < b.pos->y + b.collider->radius.y &&
-           a.pos->y + a.collider->radius.y > b.pos->y - b.collider->radius.y &&
-           a.pos->z - a.collider->radius.z < b.pos->z + b.collider->radius.z &&
-           a.pos->z + a.collider->radius.z > b.pos->z - b.collider->radius.z;
+    return a.pos->x - a.entity->radius.x < b.pos->x + b.entity->radius.x &&
+           a.pos->x + a.entity->radius.x > b.pos->x - b.entity->radius.x &&
+           a.pos->y - a.entity->radius.y < b.pos->y + b.entity->radius.y &&
+           a.pos->y + a.entity->radius.y > b.pos->y - b.entity->radius.y &&
+           a.pos->z - a.entity->radius.z < b.pos->z + b.entity->radius.z &&
+           a.pos->z + a.entity->radius.z > b.pos->z - b.entity->radius.z;
 }
 
 V2 expand_slightly(V2 dir){
@@ -56,31 +56,39 @@ V2 expand_slightly(V2 dir){
     return res;
 }
 
-void do_collision_response(AABB a, AABB b, V2 dir, Game* game) 
+
+void standard_collision_response(AABB a, AABB b, V2 dir, Game* game) {}
+
+void moveable_collision_response(AABB a, AABB b, V2 dir, Game* game)
 {
-    if (b.collider->type == ColliderType_Moveable) {
-        V2 to = distance_towards(a, b, dir);
-        move_and_collide(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
-    } else if (b.collider->type == ColliderType_Objective) {
-        Objective::on_collide((Objective*)b.collider->extra_data);
-    }
+    V2 to = distance_towards(a, b, dir);
+    move_and_collide(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
 }
+
+void objective_collision_response(AABB a, AABB b, V2 dir, Game* game)
+{
+    ((ObjectiveExtraData*)b.entity->extra_data)->broken = true;
+}
+
 
 void move_and_push_boxes(AABB a, V2 dir, Game* game)
 {
     V3 new_pos = v3(a.pos->x + dir.x, a.pos->y + dir.y, a.pos->z);
     V3 old_pos = *a.pos;
 
-    AABB old_aabb = aabb(&old_pos, a.collider);
-    AABB new_aabb = aabb(&new_pos, a.collider);
+    AABB old_aabb = aabb(&old_pos, a.entity);
+    AABB new_aabb = aabb(&new_pos, a.entity);
     *a.pos = far_away;
 
-    FOR_POS_COLLIDER(game, {
-        AABB b = aabb(pos, collider);
-        if (intersects(new_aabb, b)) {
-            do_collision_response(old_aabb, b, expand_slightly(dir), game);
+    for (u32 i = 0; i < game->type_count; i++){
+        for (u32 j = 0; j < game->types[i].count; j++){
+            Entity* entity = &game->types[i].entity_list[j];
+            AABB b = aabb(&entity->pos, entity);
+            if (intersects(new_aabb, b)) {
+                entity->type->collision_response(old_aabb, b, expand_slightly(dir), game);
+            }
         }
-    });
+    }
 
     *a.pos = new_pos;
 }
@@ -89,40 +97,42 @@ V2 distance_towards(AABB a, AABB b, V2 dir)
 {
     V2 res;
     if (dir.x >= 0) {
-        res.x = b.pos->x - a.pos->x - a.collider->radius.x - b.collider->radius.x;
+        res.x = b.pos->x - a.pos->x - a.entity->radius.x - b.entity->radius.x;
     } else {
-        res.x = b.pos->x - a.pos->x + a.collider->radius.x + b.collider->radius.x;
+        res.x = b.pos->x - a.pos->x + a.entity->radius.x + b.entity->radius.x;
     }
 
     if (dir.y >= 0) {
-        res.y = b.pos->y - a.pos->y - a.collider->radius.y - b.collider->radius.y;
+        res.y = b.pos->y - a.pos->y - a.entity->radius.y - b.entity->radius.y;
     } else {
-        res.y = b.pos->y - a.pos->y + a.collider->radius.y + b.collider->radius.y;
+        res.y = b.pos->y - a.pos->y + a.entity->radius.y + b.entity->radius.y;
     }
 
     return res;
 }
 
-V2 try_move_into(AABB a, AABB b, V2 dir, Game* game) 
+
+
+V2 static_try_move_into(AABB a, AABB b, V2 dir, Game* game) 
 {
-    switch (b.collider->type) {
-        case ColliderType_Static: {
-            return distance_towards(a, b, dir);
-        } break;
-
-        case ColliderType_Moveable: {
-            V2 to = distance_towards(a, b, dir);
-            V2 tmp = get_collided_movement(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
-            return v2(to.x + tmp.x, to.y + tmp.y);
-        } break;
-
-        case ColliderType_Objective: {
-            return dir;
-        }
-    }
-
-    return v2(0);
+    return distance_towards(a, b, dir);
 }
+
+V2 moveable_try_move_into(AABB a, AABB b, V2 dir, Game* game)
+{
+    V2 to = distance_towards(a, b, dir);
+    V2 tmp = get_collided_movement(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
+    return v2(to.x + tmp.x, to.y + tmp.y);
+}
+
+V2 noclip_try_move_into(AABB a, AABB b, V2 dir, Game* game)
+{
+    return dir;
+}
+
+
+
+
 
 V2 get_collided_movement(AABB a, V2 dir, Game* game)
 {
@@ -132,17 +142,20 @@ V2 get_collided_movement(AABB a, V2 dir, Game* game)
 
     V2 res = dir;
     
-    AABB new_aabb = aabb(&new_pos, a.collider);
-    AABB old_aabb = aabb(&old_pos, a.collider);
+    AABB new_aabb = aabb(&new_pos, a.entity);
+    AABB old_aabb = aabb(&old_pos, a.entity);
 
-    FOR_POS_COLLIDER(game, {
-        AABB b = aabb(pos, collider);
-        if (intersects(new_aabb, b)) {
-            V2 move_into = try_move_into(old_aabb, b, expand_slightly(dir), game);
-            res.x = clamp_abs(res.x, move_into.x);
-            res.y = clamp_abs(res.y, move_into.y);
+    for (u32 i = 0; i < game->type_count; i++){
+        for (u32 j = 0; j < game->types[i].count; j++){
+            Entity* entity = &game->types[i].entity_list[j];
+            AABB b = aabb(&entity->pos, entity);
+            if (intersects(new_aabb, b)) {
+                V2 move_into = entity->type->try_move_into(old_aabb, b, expand_slightly(dir), game);
+                res.x = clamp_abs(res.x, move_into.x);
+                res.y = clamp_abs(res.y, move_into.y);
+            }
         }
-    });
+    }
 
     *a.pos = old_pos;
     return res;

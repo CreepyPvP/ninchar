@@ -111,6 +111,7 @@ i32 main()
 
     Arena game_arena;
     init_arena(&game_arena, &pool);
+    game_init_entity_types(&game, &white);
     game_load_assets();
     game_init(&game, &game_arena, 6);
 
