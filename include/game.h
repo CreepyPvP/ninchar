@@ -93,7 +93,7 @@ public:
     u32 count;
     u32 cap;
 
-    //Render data
+    //Render data can be a TextureHandle, a ColorHandle a ModelHandle or something else that inherits from the RenderData struct.
     RenderData* render_data;
 
     //Data for loading entities of this type from png
