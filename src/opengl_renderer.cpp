@@ -105,8 +105,16 @@ ProgramBase load_program(const char* vertex_file, const char* frag_file)
     glDeleteShader(frag_prog);
     end_tmp(&opengl.render_arena);
     
-    shader.proj = glGetUniformLocation(shader.id, "proj");
-    
+    return shader;
+}
+
+DrawShader load_draw_program(const char* vertex_file, const char* frag_file)
+{
+    DrawShader shader;
+    shader.base = load_program(vertex_file, frag_file);
+    shader.proj = glGetUniformLocation(shader.base.id, "proj");
+    shader.spotlight_pos = glGetUniformLocation(shader.base.id, "sl_pos");
+    shader.spotlight_dir = glGetUniformLocation(shader.base.id, "sl_dir");
     return shader;
 }
 
@@ -242,10 +250,10 @@ void opengl_init()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
-    opengl.quad_shader = load_program("shader/draw.vert", "shader/draw.frag");
     opengl.post_shader = load_program("shader/post.vert", "shader/post.frag");
-    opengl.model_shader.base = load_program("shader/model.vert", "shader/model.frag");
-    opengl.model_shader.trans = glGetUniformLocation(opengl.model_shader.base.id, "trans");
+    opengl.quad_shader = load_draw_program("shader/draw.vert", "shader/draw.frag");
+    opengl.model_shader.draw = load_draw_program("shader/model.vert", "shader/model.frag");
+    opengl.model_shader.trans = glGetUniformLocation(opengl.model_shader.draw.base.id, "trans");
 }
 
 void apply_settings(RenderSettings* settings) 
@@ -260,7 +268,7 @@ void apply_settings(RenderSettings* settings)
     opengl.prev_settings = *settings;
 }
 
-void prepare_render_setup(RenderSetup* setup, ProgramBase* shader)
+void prepare_render_setup(RenderSetup* setup, DrawShader* shader)
 {
     // TODO: Apply draw->setup.lit here
     if (setup->culling) {
@@ -268,9 +276,17 @@ void prepare_render_setup(RenderSetup* setup, ProgramBase* shader)
     } else {
         glDisable(GL_CULL_FACE);
     }
-    glUseProgram(shader->id);
+    glUseProgram(shader->base.id);
     glUniformMatrix4fv(shader->proj, 1, GL_FALSE, 
                        &(setup->proj)[0][0]);
+
+    if (setup->spotlight_count == 1) {
+        glUniform3f(shader->spotlight_pos, setup->spotlights[0].pos.x,
+                    setup->spotlights[0].pos.y, setup->spotlights[0].pos.z);
+        glUniform4f(shader->spotlight_dir, setup->spotlights[0].dir.x,
+                    setup->spotlights[0].dir.y, setup->spotlights[0].dir.z,
+                    setup->spotlights[0].fov);
+    }
 }
 
 void opengl_render_commands(CommandBuffer* buffer)
@@ -328,7 +344,7 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 glBindVertexArray(draw->model.id);
 
-                prepare_render_setup(&draw->setup, &opengl.model_shader.base);
+                prepare_render_setup(&draw->setup, &opengl.model_shader.draw);
                 glUniformMatrix4fv(opengl.model_shader.trans, 1, GL_FALSE, 
                                    &(draw->trans)[0][0]);
 

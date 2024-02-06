@@ -14,12 +14,19 @@
 struct ProgramBase
 {
     u32 id;
+};
+
+struct DrawShader
+{
+    ProgramBase base;
     u32 proj;
+    u32 spotlight_pos;
+    u32 spotlight_dir;
 };
 
 struct ModelShader
 {
-    ProgramBase base;
+    DrawShader draw;
     u32 trans;
 };
 
@@ -38,8 +45,8 @@ struct OpenGLContext
     u32 vertex_buffer;
 
     Arena render_arena;
-    ProgramBase quad_shader;
     ModelShader model_shader;
+    DrawShader quad_shader;
     ProgramBase post_shader;
 
     Framebuffer main_framebuffer;

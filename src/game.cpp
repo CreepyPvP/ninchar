@@ -132,7 +132,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     game_reset_camera(game);
 }
 
-void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg)
+void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg)
 {
     // Update Player
     if (game->camera_state == CameraState_Free) {
@@ -179,6 +179,8 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg)
         float fov = 0.275;
         V3 left = v3(fov * side.x + (1 - fov) * facing.x, fov * side.y + (1 - fov) * facing.y, facing.z);
         V3 right = v3(-fov * side.x + (1 - fov) * facing.x, -fov * side.y + (1 - fov) * facing.y, facing.z);
+
+        push_spotlight(group, enemy->pos, facing, fov);
 
 #ifdef DEBUG
         game_raycast(game, enemy->pos, facing, NULL, dbg);

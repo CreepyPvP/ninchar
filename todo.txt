@@ -5,6 +5,11 @@ obj importing
 
 fix camera jump
 
+player acceleration
+    0.5 (0 => max speed)
+    0.4 (max speed => 0)
+    0.2 (left to right)
+
 
 fake cube ambient occlusion? - probably not
 

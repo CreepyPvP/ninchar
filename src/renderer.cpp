@@ -43,6 +43,7 @@ RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool cull
     group.setup.proj = proj;
     group.setup.lit = lit;
     group.setup.culling = culling;
+    group.setup.spotlight_count = 0;
     return group;
 }
 
@@ -290,6 +291,18 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
     load.vert_stride = vert_stride;
     load.handle = handle;
     return load;
+}
+
+void push_spotlight(RenderGroup* group, V3 pos, V3 dir, float fov)
+{
+    if (group->setup.spotlight_count >= 1) {
+        return;
+    }
+
+    group->setup.spotlights[group->setup.spotlight_count].pos = pos;
+    group->setup.spotlights[group->setup.spotlight_count].dir = dir;
+    group->setup.spotlights[group->setup.spotlight_count].fov = fov;
+    ++group->setup.spotlight_count;
 }
 
 void free_texture_load_op(TextureLoadOp* load_op)

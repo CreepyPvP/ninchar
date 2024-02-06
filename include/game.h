@@ -147,7 +147,7 @@ struct Game
 
 void game_load_assets();
 void game_init(Game* game, Arena* arena, u32 stage);
-void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg);
+void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 
 bool game_raycast(Game* game, V3 origin, V3 dir, EntityRef* ref, RenderGroup* dbg);
