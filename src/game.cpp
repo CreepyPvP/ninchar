@@ -169,7 +169,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
                     (game->types[i].load_tile_green == -1 || curr[1] == game->types[i].load_tile_green) &&
                     (game->types[i].load_tile_blue == -1 || curr[2] == game->types[i].load_tile_blue)) {
                     game->types[i].get_entity(game->types[i].count)->type = &game->types[i];
-                    game->types[i].init(game->types[i].get_entity(game->types[i].count), game, x, y);
+                    game->types[i].init(game->types[i].get_entity(game->types[i].count), game, x, y, curr[0], curr[1], curr[2]);
                     game->types[i].count++;
                 }
             }
@@ -194,7 +194,7 @@ void game_update(Game* game, u8 inputs, float delta)
     // Update all entities
     for (u32 i=0;i<game->type_count;i++) {
         for (u32 j=0;j<game->types[i].count; j++) {
-            game->types[i].update(game->types[i].get_entity(j), game);
+            game->types[i].update(game->types[i].get_entity(j), game, inputs, delta);
         }
     }
 

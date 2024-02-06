@@ -103,8 +103,8 @@ public:
     u32 load_tile_blue;
 
     //Every entity type need to implement its own init, update and render function.
-    void (*init)(Entity* entity, Game* game, u32 x, u32 y);
-    void (*update)(Entity* entity, Game* game);
+    void (*init)(Entity* entity, Game* game, u32 x, u32 y, u8 r, u8 g, u8 b);
+    void (*update)(Entity* entity, Game* game, u8 inputs, float delta);
     void (*render)(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
 
     //The physics system ignores this entity type if collideable is false.

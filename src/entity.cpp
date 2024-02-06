@@ -17,20 +17,20 @@ u32 get_entity_type_index(EntityTypeId id, Game* game){
 }
 
 //Assumes entity is a ColliderEntity
-void collider_entity_standard_init(Entity* entity, Game* game, u32 x, u32 y)
+void collider_entity_standard_init(Entity* entity, Game* game, u32 x, u32 y, u8 r, u8 g, u8 b)
 {
         entity->pos = v3(x, y, 1);
         ((ColliderEntity*)entity)->radius = v3(0.5);
 }
 
 //Assumes entity is an ObjectiveEntity
-void objective_init(Entity* entity, Game* game, u32 x, u32 y){
-    collider_entity_standard_init(entity, game, x, y);
+void objective_init(Entity* entity, Game* game, u32 x, u32 y, u8 r, u8 g, u8 b){
+    collider_entity_standard_init(entity, game, x, y, r, g, b);
     ((ObjectiveEntity*)entity)->broken = false;
 }
 
 
-void entity_standard_update(Entity* entity, Game* game) {}
+void entity_standard_update(Entity* entity, Game* game, u8 inputs, float delta) {}
 
 
 //Assumes render_data is a TextureHandle
