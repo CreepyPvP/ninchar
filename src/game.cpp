@@ -152,9 +152,11 @@ void game_init(Game* game, Arena* arena, u32 stage)
         game->types[i].entity_list = (Entity*) push_size(arena, sizeof(Entity) * game->types[i].cap);
 
         if (game->types[i].extra_data_size != 0) {
-            game->types[i].extra_data_list = push_size(arena, game->types[i].extra_data_size * game->types[i].cap);
-        }else{
-            game->types[i].extra_data_list = NULL;
+            char* extra_data_list = (char*) push_size(arena, game->types[i].extra_data_size * game->types[i].cap);
+            for(u32 j = 0; j < game->types[i].cap; j++){
+                game->types[i].entity_list[j].extra_data = (void*) extra_data_list;
+                extra_data_list += game->types[i].extra_data_size;
+            }
         }
     }
 
@@ -240,9 +242,8 @@ void game_update(Game* game, u8 inputs, float delta)
     // Check level completion
     bool level_completed = true;
     int objective_index = get_entity_type_index(EntityType_Objective, game);
-    ObjectiveExtraData* data_array = (ObjectiveExtraData*) (game->types[objective_index].extra_data_list);
     for (u32 i = 0; i < game->types[objective_index].count; ++i) {
-        if (!data_array[i].broken){
+        if (! ((ObjectiveExtraData*) game->types[objective_index].entity_list[i].extra_data)->broken) {
             level_completed = false;
         }
     }

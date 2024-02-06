@@ -50,7 +50,6 @@ public:
     Entity* entity_list;
 
     u32 extra_data_size;
-    void* extra_data_list;
 
     TextureHandle* texture;
     V3 render_color;
