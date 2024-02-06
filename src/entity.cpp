@@ -87,7 +87,7 @@ void enemy_init(Entity* entity, Game* game, u32 x, u32 y, u8 r, u8 g, u8 b)
 void enemy_update(Entity* entity, Game* game, u8 inputs, float delta)
 {
     EnemyEntity* enemy = (EnemyEntity*)entity;
-    enemy->rotation += (enemy->rotation_speed * delta);
+    enemy->rotation -= (enemy->rotation_speed * delta);
 
     //PlayerEntity* player = game->player;
 

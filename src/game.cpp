@@ -291,7 +291,7 @@ void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
     V3 hit;
     
     for (u32 i = 0; i < game->type_count; i++){ 
-        if (!game->types[i].transparent){  
+        if (game->types[i].collideable && !game->types[i].transparent){  
             for (u32 j = 0; j < game->types[i].count; j++){  
                 V3* pos = &game->types[i].get_entity(j)->pos;   
                 ColliderEntity* entity = (ColliderEntity*)(game->types[i].get_entity(j));  
@@ -302,6 +302,10 @@ void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
                         hit_found = true;
                         t = ct;
                         hit = chit;
+
+                        if(entity->type->id == EntityType_Player){
+                            game->reset_stage = true;
+                        }
                     }
                 }
             }
