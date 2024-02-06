@@ -108,7 +108,7 @@ void game_init_entity_types(Game* game){
 
     objective.load_tile_red = 1;
     objective.load_tile_green = 125;
-    objective.load_tile_blue = 10;
+    objective.load_tile_blue = -1;
     
     add_entity_type(objective,game);
 
@@ -141,9 +141,9 @@ void game_init(Game* game, Arena* arena, u32 stage)
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
             for (int i=0; i < game->type_count; i++) {
-                if (curr[0] == game->types[i].load_tile_red &&
-                    curr[1] == game->types[i].load_tile_green &&
-                    curr[2] == game->types[i].load_tile_blue) {
+                if ((game->types[i].load_tile_red == -1 || curr[0] == game->types[i].load_tile_red) &&
+                    (game->types[i].load_tile_green == -1 || curr[1] == game->types[i].load_tile_green) &&
+                    (game->types[i].load_tile_blue == -1 || curr[2] == game->types[i].load_tile_blue)) {
                     game->types[i].cap++;
                 }
             }
@@ -165,9 +165,9 @@ void game_init(Game* game, Arena* arena, u32 stage)
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
             for (u32 i=0; i < game->type_count; i++) {
-                if (curr[0] == game->types[i].load_tile_red &&
-                    curr[1] == game->types[i].load_tile_green &&
-                    curr[2] == game->types[i].load_tile_blue) {
+                if ((game->types[i].load_tile_red == -1 || curr[0] == game->types[i].load_tile_red) &&
+                    (game->types[i].load_tile_green == -1 || curr[1] == game->types[i].load_tile_green) &&
+                    (game->types[i].load_tile_blue == -1 || curr[2] == game->types[i].load_tile_blue)) {
                     game->types[i].get_entity(game->types[i].count)->type = &game->types[i];
                     game->types[i].init(game->types[i].get_entity(game->types[i].count), game, x, y);
                     game->types[i].count++;

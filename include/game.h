@@ -97,6 +97,7 @@ public:
     RenderData* render_data;
 
     //Data for loading entities of this type from png
+    //If one of the colors is -1, then that particular color gets ignored for loading.
     u32 load_tile_red;
     u32 load_tile_green;
     u32 load_tile_blue;

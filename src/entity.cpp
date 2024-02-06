@@ -16,11 +16,14 @@ u32 get_entity_type_index(EntityTypeId id, Game* game){
     return -1;
 }
 
+//Assumes entity is a ColliderEntity
 void collider_entity_standard_init(Entity* entity, Game* game, u32 x, u32 y)
 {
         entity->pos = v3(x, y, 1);
         ((ColliderEntity*)entity)->radius = v3(0.5);
 }
+
+//Assumes entity is an ObjectiveEntity
 void objective_init(Entity* entity, Game* game, u32 x, u32 y){
     collider_entity_standard_init(entity, game, x, y);
     ((ObjectiveEntity*)entity)->broken = false;
@@ -29,16 +32,19 @@ void objective_init(Entity* entity, Game* game, u32 x, u32 y){
 
 void entity_standard_update(Entity* entity, Game* game) {}
 
+
+//Assumes render_data is a TextureHandle
 void entity_texture_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
 {
     push_cube(group, entity->pos, v3(0.5),  *(TextureHandle*)(entity->type->render_data), v3(1));
 }
 
+//Assumes render_data is a ColorHandle
 void entity_color_cube_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg){
     push_cube(group, entity->pos, v3(0.5), group->commands->white, ((ColorHandle*)entity->type->render_data)->color);
 }
 
-
+//Assumes entity is an ObjectiveEntity
 void objective_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
 {
     if(!((ObjectiveEntity*)entity)->broken){
