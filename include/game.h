@@ -74,6 +74,7 @@ struct Objective
 struct Enemy
 {
     V3 pos;
+    float rotation;
 };
 
 struct Player
@@ -115,7 +116,7 @@ struct Game
 
 void game_load_assets();
 void game_init(Game* game, Arena* arena, u32 stage);
-void game_update(Game* game, u8 inputs, float delta);
+void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 
 void game_raycast(Game* game, V3 pos, V3 dir, RenderGroup* dbg);

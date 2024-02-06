@@ -94,6 +94,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 game->wall[game->wall_count].collider.extra_data = NULL;
                 ++game->wall_count;
             }
+
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
                 game->crate[game->crate_count].pos = v3(x, y, 1);
                 game->crate[game->crate_count].collider.radius = v3(0.5);
@@ -101,9 +102,11 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 game->crate[game->crate_count].collider.extra_data = NULL;
                 ++game->crate_count;
             }
+
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
                 game->player.pos = v3(x, y, 1);
             }
+
             if (curr[0] == 1 && curr[1] == 125) {
                 game->objective[game->objective_count].pos = v3(x, y, 1);
                 game->objective[game->objective_count].collider.radius = v3(0.5);
@@ -112,8 +115,10 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 game->objective[game->objective_count].broken = false;
                 ++game->objective_count;
             }
+
             if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
                 game->enemy[game->enemy_count].pos = v3(x, y, 1);
+                game->enemy[game->enemy_count].rotation = 0;
                 ++game->enemy_count;
             }
 
@@ -126,7 +131,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     game_reset_camera(game);
 }
 
-void game_update(Game* game, u8 inputs, float delta)
+void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg)
 {
     // Update Player
     if (game->camera_state == CameraState_Free) {
@@ -164,6 +169,13 @@ void game_update(Game* game, u8 inputs, float delta)
         move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
     }
 
+    for (u32 i = 0; i < game->enemy_count; ++i) {
+        Enemy* enemy = game->enemy + i;
+        V3 facing = v3(sin(enemy->rotation), cos(enemy->rotation), 0);
+        game_raycast(game, enemy->pos, facing, dbg);
+        enemy->rotation += 1 * delta;
+    }
+
     // Update Objective
     bool level_completed = true;
     for (u32 i = 0; i < game->objective_count; ++i) {
@@ -171,6 +183,7 @@ void game_update(Game* game, u8 inputs, float delta)
             level_completed = false;
         }
     }
+
     if (level_completed){
         game->reset_stage = true;
         game->current_level = (game->current_level + 1) % game->total_level_count;
@@ -178,7 +191,6 @@ void game_update(Game* game, u8 inputs, float delta)
 }
 
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
-
     // Render Ground
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
@@ -210,8 +222,6 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
 
     // Render Player
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
-    
-    game_raycast(game, game->player.pos, v3(-1, 0, 0), dbg);
 }
 
 void game_reset_camera(Game* game)
