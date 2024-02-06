@@ -22,6 +22,7 @@ void collider_entity_standard_init(Entity* entity, Game* game, u32 x, u32 y, u8 
 {
         entity->pos = v3(x, y, 1);
         ((ColliderEntity*)entity)->radius = v3(0.5);
+        ((ColliderEntity*)entity)->transparent = false;
 }
 
 
@@ -31,6 +32,7 @@ void collider_entity_standard_init(Entity* entity, Game* game, u32 x, u32 y, u8 
 void player_init(Entity* entity, Game* game, u32 x, u32 y, u8 r, u8 g, u8 b){
     entity->pos = v3(x, y, 1);
     ((PlayerEntity*)entity)->radius = v3(0.35, 0.35, 0.7);
+    ((PlayerEntity*)entity)->transparent = false;
     game->player = (PlayerEntity*) entity;
 }
 
@@ -80,7 +82,7 @@ void enemy_init(Entity* entity, Game* game, u32 x, u32 y, u8 r, u8 g, u8 b)
 {
     collider_entity_standard_init(entity, game, x,y,r,g,b);
     ((EnemyEntity*)entity)->rotation = 0;
-    ((EnemyEntity*)entity)->rotation_speed = 1;
+    ((EnemyEntity*)entity)->rotation_speed = 1.6f;
 }
 
 
