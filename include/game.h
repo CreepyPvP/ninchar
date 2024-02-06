@@ -28,62 +28,14 @@ enum CameraState
 };
 
 
-struct Game;
-struct AABB;
 
 class EntityType;
-
-enum EntityTypeId
-{
-    EntityType_Wall = 0,
-    EntityType_Crate = 1,
-    EntityType_Objective = 2,
-};
-
 
 struct Entity
 {
     EntityType* type;
     V3 pos;
 };
-
-class EntityType
-{
-public:
-    EntityTypeId id;
-    u32 count;
-    u32 cap;
-
-    bool collideable;
-
-    u32 sizeof_entity;
-
-    TextureHandle* texture;
-    V3 render_color;
-
-    u32 load_tile_red;
-    u32 load_tile_green;
-    u32 load_tile_blue;
-
-
-    void (*init)(Entity* entity, Game* game, u32 x, u32 y);
-    void (*update)(Entity* entity, Game* game);
-    void (*render)(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
-
-    void (*collision_response)(AABB a, AABB b, V2 dir, Game* game);
-    V2 (*try_move_into)(AABB a, AABB b, V2 dir, Game* game);
-
-    Entity* get_entity(int index){
-        return (Entity*)(((char*)entity_list) + (sizeof_entity * index));
-    }
-
-    void allocate_memory(Game* game, Arena* arena);
-
-private:
-    Entity* entity_list;
-};
-
-
 
 struct ColliderEntity : Entity
 {
@@ -99,6 +51,63 @@ struct ObjectiveEntity : ColliderEntity
 struct Player
 {
     V3 pos;
+};
+
+
+
+enum EntityTypeId
+{
+    EntityType_Wall = 0,
+    EntityType_Crate = 1,
+    EntityType_Objective = 2,
+};
+
+
+struct Game;
+struct AABB;
+
+class EntityType
+{
+private:
+    //'entity_list' list will usually not store Entity struct instances, but instances of a struct that inherits from Entity.
+    Entity* entity_list;
+public:
+    //'sizeof_entity' should specify how large the struct is whose instances get stored in 'entity_list'.
+    u32 sizeof_entity;
+
+    //Entries of the 'entity_list' should be accessed using this get function. 'entity_list' has been made private to prevent other accesses.
+    Entity* get_entity(int index){
+        return (Entity*)(((char*)entity_list) + (sizeof_entity * index));
+    }
+
+    void set_entity_list(Entity* new_entity_list){
+        entity_list = new_entity_list;
+    }
+
+    EntityTypeId id;
+    u32 count;
+    u32 cap;
+
+    //Render data
+    TextureHandle* texture;
+    V3 render_color;
+
+    //Data for loading entities of this type from png
+    u32 load_tile_red;
+    u32 load_tile_green;
+    u32 load_tile_blue;
+
+    //Every entity type need to implement its own init, update and render function.
+    void (*init)(Entity* entity, Game* game, u32 x, u32 y);
+    void (*update)(Entity* entity, Game* game);
+    void (*render)(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
+
+    //The physics system ignores this entity type if collideable is false.
+    bool collideable;
+    //Every collideable entity type needs to implement a collision_response and try_move_into function.
+    void (*collision_response)(AABB a, AABB b, V2 dir, Game* game);
+    V2 (*try_move_into)(AABB a, AABB b, V2 dir, Game* game);
+
 };
 
 struct Game
