@@ -19,5 +19,7 @@ float read_float(const char** ptr);
 
 i32 read_int(const char** ptr);
 
+bool hit_bounding_box(V3 pos, V3 dir, V3 box_pos, V3 box_r, V3* hit, float* t);
+
 
 #endif

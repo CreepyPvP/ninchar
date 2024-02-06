@@ -193,7 +193,7 @@ i32 main()
 
         game_update(&game, pressed, 1.0f / 60.0f);
         game_render(&game, &main_group, &debug_group);
-        push_line(&debug_group, v3(0, 0, 2), v3(10, 10, 2), v3(1, 0, 0));
+        //push_line(&debug_group, v3(0, 0, 2), v3(10, 10, 2), v3(1, 0, 0));
 
         double render_duration = end_timestamp(&profiler_renderer);
 

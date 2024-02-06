@@ -5,14 +5,19 @@
 
 #define FOR_POS_COLLIDER(game, block) \
 {   \
-    for (u32 i = 0; i < game->type_count; i++){   \
-        for(u32 j = 0; j < game->types[i].count; j++){  \
-            V3* pos = &game->types[i].entity_list[j].pos;   \
-            Entity* entity = &game->types[i].entity_list[j];  \
-            block;   \
+    for (u32 i = 0; i < game->type_count; i++){ \
+        if (game->types[i].collideable){  \
+            for (u32 j = 0; j < game->types[i].count; j++){  \
+                V3* pos = &game->types[i].get_entity(j)->pos;   \
+                ColliderEntity* entity = (ColliderEntity*)(game->types[i].get_entity(j));  \
+                block;   \
+            }   \
         }   \
     }   \
 }
+
+
+
 
 #include "include/types.h"
 #include "include/arena.h"
@@ -48,9 +53,12 @@ struct ObjectiveEntity : ColliderEntity
 };
 
 
-struct Player
+struct PlayerEntity : ColliderEntity {};
+
+struct EnemyEntity : ColliderEntity
 {
-    V3 pos;
+    float rotation;
+    float rotation_speed;
 };
 
 
@@ -60,6 +68,8 @@ enum EntityTypeId
     EntityType_Wall = 0,
     EntityType_Crate = 1,
     EntityType_Objective = 2,
+    EntityType_Player = 3,
+    EntityType_Enemy = 4,
 };
 
 
@@ -113,6 +123,9 @@ public:
     void (*collision_response)(AABB a, AABB b, V2 dir, Game* game);
     V2 (*try_move_into)(AABB a, AABB b, V2 dir, Game* game);
 
+    //transparent entities are ignored by raycasting.
+    bool transparent;
+
 };
 
 struct Game
@@ -123,7 +136,7 @@ struct Game
     u32 width;
     u32 height;
 
-    Player player;
+    PlayerEntity* player;
 
     Camera camera;
     u32 camera_state;
@@ -139,6 +152,7 @@ void game_init_entity_types(Game* game);
 void game_init(Game* game, Arena* arena, u32 stage);
 void game_update(Game* game, u8 inputs, float delta);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
+void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg);
 
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);

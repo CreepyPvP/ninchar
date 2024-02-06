@@ -7,6 +7,7 @@
 
 #include "include/stb_image.h"
 
+#include "include/util.h"
 
 TextureHandle ground_texture;
 TextureHandle wall_texture;
@@ -69,6 +70,7 @@ void game_init_entity_types(Game* game){
     wall.try_move_into = &static_try_move_into;
     wall.collision_response = &standard_collision_response;
     wall.render_data = &wall_texture;
+    wall.transparent = false;
 
     wall.load_tile_red = 0;
     wall.load_tile_green = 0;
@@ -87,6 +89,7 @@ void game_init_entity_types(Game* game){
     crate.try_move_into = &moveable_try_move_into;
     crate.collision_response = &moveable_collision_response;
     crate.render_data = &crate_texture;
+    crate.transparent = false;
 
     crate.load_tile_red = 88;
     crate.load_tile_green = 57;
@@ -105,6 +108,7 @@ void game_init_entity_types(Game* game){
     objective.try_move_into = &noclip_try_move_into;
     objective.collision_response = &objective_collision_response;
     objective.render_data = &green_color;
+    objective.transparent = false;
 
     objective.load_tile_red = 1;
     objective.load_tile_green = 125;
@@ -112,7 +116,43 @@ void game_init_entity_types(Game* game){
     
     add_entity_type(objective,game);
 
+    //Player
+    EntityType player;
+    player.id = EntityType_Player;
+    player.sizeof_entity = sizeof(PlayerEntity);
+    player.collideable = true;
+    player.init = &player_init;
+    player.update = &player_update;
+    player.render = &player_render;
+    player.try_move_into = &moveable_try_move_into;
+    player.collision_response = &moveable_collision_response;
+    player.render_data = NULL;
+    player.transparent = false;
 
+    player.load_tile_red = 255;
+    player.load_tile_green = 0;
+    player.load_tile_blue = 0;
+
+    add_entity_type(player, game);
+
+    //Enemies
+    EntityType enemy;
+    enemy.id = EntityType_Enemy;
+    enemy.sizeof_entity = sizeof(EnemyEntity);
+    enemy.collideable = true;
+    enemy.init = &enemy_init;
+    enemy.update = &enemy_update;
+    enemy.render = &enemy_render;
+    enemy.try_move_into = &static_try_move_into;
+    enemy.collision_response = &standard_collision_response;
+    enemy.render_data = &crate_texture;
+    enemy.transparent = true;
+    
+    enemy.load_tile_red = 0;
+    enemy.load_tile_green = 255;
+    enemy.load_tile_blue = 0;
+
+    add_entity_type(enemy, game);
     
 }
 
@@ -174,10 +214,6 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 }
             }
 
-            if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
-                game->player.pos = v3(x, y, 1);
-            }
-
             curr += 3;
         }
     }
@@ -197,43 +233,7 @@ void game_update(Game* game, u8 inputs, float delta)
             game->types[i].update(game->types[i].get_entity(j), game, inputs, delta);
         }
     }
-
-
-    // Update Player
-    if (game->camera_state == CameraState_Free) {
-        update_camera(&game->camera, inputs, delta);
-    } else {
-
-        V2 movement = v2(0);
-
-        // w
-        if (inputs & (1 << 0)) {
-            movement.y += 1;
-        }
-        // s
-        if (inputs & (1 << 1)) {
-            movement.y -= 1;
-        }
-        // a
-        if (inputs & (1 << 2)) {
-            movement.x -= 1;
-        }
-        // d
-        if (inputs & (1 << 3)) {
-            movement.x += 1;
-        }
-
-        movement = norm(movement);
-
-        ColliderEntity player_collider;
-        player_collider.radius = v3(0.35, 0.35, 0.7);
-
-        movement.x *= delta * 10;
-        movement.y *= delta * 10;
-
-        move_and_collide(aabb(&game->player.pos, &player_collider), v2(movement.x, 0), game);
-        move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
-    }
+    
 
     // Check level completion
     bool level_completed = true;
@@ -265,11 +265,6 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
             game->types[i].render(game->types[i].get_entity(j), game, group, dbg);
         }
     }
-
-
-
-    // Render Player
-    push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
 }
 
 void game_reset_camera(Game* game)
@@ -284,5 +279,35 @@ void game_toggle_camera_state(Game* game)
         game_reset_camera(game);
     } else {
         game->camera_state = CameraState_Free;
+    }
+}
+
+
+
+void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
+{
+    float t;
+    bool hit_found = false;
+    V3 hit;
+    
+    for (u32 i = 0; i < game->type_count; i++){ 
+        if (!game->types[i].transparent){  
+            for (u32 j = 0; j < game->types[i].count; j++){  
+                V3* pos = &game->types[i].get_entity(j)->pos;   
+                ColliderEntity* entity = (ColliderEntity*)(game->types[i].get_entity(j));  
+                V3 chit;
+                float ct;
+                if (hit_bounding_box(origin, dir, *pos, entity->radius, &chit, &ct)) {
+                    if (!hit_found || ct < t) {
+                        hit_found = true;
+                        t = ct;
+                        hit = chit;
+                    }
+                }
+            }
+        }
+    }
+    if (hit_found) {
+        push_line(dbg, origin, hit, v3(1, 0, 0));
     }
 }
