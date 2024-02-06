@@ -170,7 +170,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg)
         move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
     }
 
-    // Update enemies
+    // Update Enemies
     for (u32 i = 0; i < game->enemy_count; ++i) {
         Enemy* enemy = game->enemy + i;
         V3 facing = v3(sin(enemy->rotation), cos(enemy->rotation), 0);
@@ -180,9 +180,8 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg)
         V3 left = v3(fov * side.x + (1 - fov) * facing.x, fov * side.y + (1 - fov) * facing.y, facing.z);
         V3 right = v3(-fov * side.x + (1 - fov) * facing.x, -fov * side.y + (1 - fov) * facing.y, facing.z);
 
-        game_raycast(game, enemy->pos, facing, NULL, dbg);
-
 #ifdef DEBUG
+        game_raycast(game, enemy->pos, facing, NULL, dbg);
         game_raycast(game, enemy->pos, left, NULL, dbg);
         game_raycast(game, enemy->pos, right, NULL, dbg);
 #endif
@@ -194,7 +193,9 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg)
         EntityRef ray_res;
         if (game_raycast(game, enemy->pos, player_dir, &ray_res, dbg)) {
             if (ray_res.type == EntityType_Player) {
-                game->reset_stage = true;
+                if (dot(norm(player_dir), facing) > dot(norm(left), facing)) {
+                    game->reset_stage = true;
+                }
             }
         }
 

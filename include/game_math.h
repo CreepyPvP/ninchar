@@ -38,6 +38,11 @@ inline V3 cross(V3 a, V3 b)
     return result;
 }
 
+inline float dot(V3 a, V3 b)
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
 V3 norm(V3 a);
 V2 norm(V2 a);
 float radians(float degrees);
