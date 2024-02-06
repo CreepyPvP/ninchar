@@ -80,6 +80,7 @@ enum EntityTypeId
     EntityType_Objective = 2,
     EntityType_Player = 3,
     EntityType_Enemy = 4,
+    EntityType_GlassWall = 5,
 };
 
 

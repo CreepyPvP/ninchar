@@ -156,6 +156,10 @@ void enemy_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* d
 void entity_standard_update(Entity* entity, Game* game, u8 inputs, float delta) {}
 
 
+void entity_glass_wall_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg){
+    push_cube(group, entity->pos, v3(0.5), group->commands->white, v3(0.5,1,1));
+}
+
 //Assumes render_data is a TextureHandle
 void entity_texture_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
 {

@@ -153,7 +153,27 @@ void game_init_entity_types(Game* game){
     enemy.load_tile_blue = 0;
 
     add_entity_type(enemy, game);
+
+    //Glass Wall
     
+    EntityType glass_wall;
+    glass_wall.id = EntityType_Wall;
+    glass_wall.sizeof_entity = sizeof(ColliderEntity);
+    glass_wall.collideable = true;
+    glass_wall.init = &collider_entity_standard_init;
+    glass_wall.update = &entity_standard_update;
+    glass_wall.render = &entity_glass_wall_render;
+    glass_wall.try_move_into = &static_try_move_into;
+    glass_wall.collision_response = &standard_collision_response;
+    glass_wall.render_data = NULL;
+    glass_wall.always_transparent = true;
+
+    glass_wall.load_tile_red = 208;
+    glass_wall.load_tile_green = 251;
+    glass_wall.load_tile_blue = 255;
+
+    add_entity_type(glass_wall,game);
+
 }
 
 
