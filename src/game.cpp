@@ -116,9 +116,6 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
 }
 
 
-void EntityType::allocate_memory(Game* game, Arena* arena){
-    entity_list = (Entity*) push_size(arena, sizeof_entity * cap);
-}
 
 
 void game_init(Game* game, Arena* arena, u32 stage)
@@ -155,7 +152,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     
 
     for (u32 i=0;i<game->type_count;i++) {
-        game->types[i].allocate_memory(game, arena);
+        game->types[i].set_entity_list((Entity*) push_size(arena, game->types[i].sizeof_entity * game->types[i].cap));
     }
 
 
