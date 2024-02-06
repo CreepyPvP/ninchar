@@ -29,16 +29,20 @@ void objective_init(Entity* entity, Game* game, u32 x, u32 y){
 
 void entity_standard_update(Entity* entity, Game* game) {}
 
-void entity_standard_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
+void entity_texture_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
 {
-    push_cube(group, entity->pos, v3(0.5), *entity->type->texture, entity->type->render_color);
+    push_cube(group, entity->pos, v3(0.5),  *(TextureHandle*)(entity->type->render_data), v3(1));
+}
+
+void entity_color_cube_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg){
+    push_cube(group, entity->pos, v3(0.5), group->commands->white, ((ColorHandle*)entity->type->render_data)->color);
 }
 
 
 void objective_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
 {
     if(!((ObjectiveEntity*)entity)->broken){
-        entity_standard_render(entity, game, group, dbg);
+        entity_color_cube_render(entity, game, group, dbg);
     }
 }
 

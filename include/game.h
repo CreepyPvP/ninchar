@@ -63,6 +63,11 @@ enum EntityTypeId
 };
 
 
+
+
+
+
+
 struct Game;
 struct AABB;
 
@@ -89,8 +94,7 @@ public:
     u32 cap;
 
     //Render data
-    TextureHandle* texture;
-    V3 render_color;
+    RenderData* render_data;
 
     //Data for loading entities of this type from png
     u32 load_tile_red;
@@ -130,7 +134,7 @@ struct Game
 
 
 void game_load_assets();
-void game_init_entity_types(Game* game, TextureHandle* white_texture);
+void game_init_entity_types(Game* game);
 void game_init(Game* game, Arena* arena, u32 stage);
 void game_update(Game* game, u8 inputs, float delta);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);

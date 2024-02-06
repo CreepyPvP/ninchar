@@ -12,6 +12,8 @@ TextureHandle ground_texture;
 TextureHandle wall_texture;
 TextureHandle crate_texture;
 
+ColorHandle green_color;
+
 ModelHandle teapot;
 
 
@@ -33,6 +35,8 @@ void game_load_assets()
     opengl_load_texture(&load_wall);
     free_texture_load_op(&load_wall);
 
+    green_color.color = v3(0,1,0);
+
     ModelLoadOp load_teapot = model_load_op(&teapot, "assets/teapot.obj", &asset_arena);
     opengl_load_model(&load_teapot);
 
@@ -51,7 +55,7 @@ void add_entity_type(EntityType type, Game* game){
     game->type_count++;
 }
 
-void game_init_entity_types(Game* game, TextureHandle* white_texture){
+void game_init_entity_types(Game* game){
     game->type_count = 0;
 
     //Wall
@@ -61,11 +65,10 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     wall.collideable = true;
     wall.init = &collider_entity_standard_init;
     wall.update = &entity_standard_update;
-    wall.render = &entity_standard_render;
+    wall.render = &entity_texture_render;
     wall.try_move_into = &static_try_move_into;
     wall.collision_response = &standard_collision_response;
-    wall.texture = &wall_texture;
-    wall.render_color = v3(1);
+    wall.render_data = &wall_texture;
 
     wall.load_tile_red = 0;
     wall.load_tile_green = 0;
@@ -80,11 +83,10 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     crate.collideable = true;
     crate.init = &collider_entity_standard_init;
     crate.update = &entity_standard_update;
-    crate.render = &entity_standard_render;
+    crate.render = &entity_texture_render;
     crate.try_move_into = &moveable_try_move_into;
     crate.collision_response = &moveable_collision_response;
-    crate.texture = &crate_texture;
-    crate.render_color = v3(1);
+    crate.render_data = &crate_texture;
 
     crate.load_tile_red = 88;
     crate.load_tile_green = 57;
@@ -102,8 +104,7 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     objective.render = &objective_render;
     objective.try_move_into = &noclip_try_move_into;
     objective.collision_response = &objective_collision_response;
-    objective.texture = white_texture;
-    objective.render_color = v3(0,1,0);
+    objective.render_data = &green_color;
 
     objective.load_tile_red = 1;
     objective.load_tile_green = 125;
@@ -261,7 +262,6 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
     // Render Entities
     for (u32 i = 0; i < game->type_count; i++){
         for (u32 j = 0; j < game->types[i].count; j++){
-            assert(game->types[0].render_color.x == 1);
             game->types[i].render(game->types[i].get_entity(j), game, group, dbg);
         }
     }

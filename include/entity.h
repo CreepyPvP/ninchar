@@ -7,7 +7,9 @@ void collider_entity_standard_init(Entity* entity, Game* game, u32 x, u32 y);
 
 void entity_standard_update(Entity* entity, Game* game);
 
-void entity_standard_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
+void entity_texture_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
+
+void entity_color_cube_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg);
 
 void objective_init(Entity* entity, Game* game, u32 x, u32 y);
 

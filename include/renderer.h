@@ -7,13 +7,19 @@
 
 struct RenderGroup;
 
+struct RenderData{};
 
-struct TextureHandle
+struct ColorHandle : RenderData
+{
+    V3 color;
+};
+
+struct TextureHandle : RenderData
 {
     u32 id;
 };
 
-struct ModelHandle
+struct ModelHandle : RenderData
 {
     u32 id;
     u32 index_count;

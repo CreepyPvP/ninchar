@@ -130,10 +130,6 @@ void push_quad(RenderGroup* group,
 
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color)
 {
-    if(color.x == 0 && color.y == 1 && color.z == 0){
-        printf("Pushing green cube");
-    }
-
     CommandEntryDrawQuads* entry = get_current_draw(group, 6);
     if (!entry) {
         return;
