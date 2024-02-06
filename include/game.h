@@ -19,6 +19,7 @@
 
 
 
+
 #include "include/types.h"
 #include "include/arena.h"
 #include "include/renderer.h"
@@ -31,6 +32,7 @@ enum CameraState
     CameraState_Locked = 0,
     CameraState_Free = 1,
 };
+
 
 
 
@@ -59,6 +61,13 @@ struct EnemyEntity : ColliderEntity
 {
     float rotation;
     float rotation_speed;
+};
+
+struct RaycastResult{
+    float t;
+    bool hit_found;
+    V3 hit;
+    ColliderEntity* hit_entity;
 };
 
 
@@ -152,7 +161,9 @@ void game_init_entity_types(Game* game);
 void game_init(Game* game, Arena* arena, u32 stage);
 void game_update(Game* game, u8 inputs, float delta);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
-void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg);
+void game_render_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg);
+
+RaycastResult game_raycast(Game* game, V3 origin, V3 dir);
 
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);

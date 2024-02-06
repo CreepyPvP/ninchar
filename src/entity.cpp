@@ -1,6 +1,7 @@
 #include "include/entity.h"
 
 #include "include/game_math.h"
+#include "include/util.h"
 
 
 
@@ -83,45 +84,38 @@ void enemy_init(Entity* entity, Game* game, u32 x, u32 y, u8 r, u8 g, u8 b)
 }
 
 
+#define ENEMY_RAY_COUNT 80
 
 void enemy_update(Entity* entity, Game* game, u8 inputs, float delta)
 {
     EnemyEntity* enemy = (EnemyEntity*)entity;
     enemy->rotation -= (enemy->rotation_speed * delta);
 
-    //PlayerEntity* player = game->player;
+    PlayerEntity* player = game->player;
 
-    //V2 player_vertices[4] = {
-    //    player_node->aabb.position,
-    //    v2(player_node->aabb.position.x + player_node->aabb.size.x,player_node->aabb.position.y),
-    //    v2(player_node->aabb.position.x, player_node->aabb.position.y + player_node->aabb.size.y),
-    //    v2(player_node->aabb.position.x + player_node->aabb.size.x,player_node->aabb.position.y  + player_node->aabb.size.y),
-    //};
+    V3 enemy_to_player = v3(player->pos.x - enemy->pos.x, player->pos.y - enemy->pos.y, 0);
 
-//    V2 enemy_to_player = v2(player->pos.x - enemy->pos.x, player->pos.y - enemy->pos.y);
-//
-//    V2 normed_etp = norm(enemy_to_player);
-//    float squared_distance = (enemy_to_player.x*enemy_to_player.x) + (enemy_to_player.y* enemy_to_player.y);
-//
-//    float view_distance = game_Raycast(game, {enemy->pos.x, enemy->pos.y}, normed_etp);
-//    if(view_distance*view_distance >= squared_distance){
-//        const V2 facing = v2(-sin(enemy->rotation),
-//                     cos(enemy->rotation));
-//        const V2 side = v2(-facing.y, facing.x);
-//        const float fov = 0.3;
+    V3 normed_etp = norm(enemy_to_player);
+    float squared_distance = (enemy_to_player.x*enemy_to_player.x) + (enemy_to_player.y* enemy_to_player.y);
+
+    RaycastResult etp_ray = game_raycast(game, enemy->pos, normed_etp);
+
+    if(etp_ray.hit_entity->type->id == EntityType_Player){
+        const V2 facing = v2(-sin(enemy->rotation),
+                     cos(enemy->rotation));
+        const V2 side = v2(-facing.y, facing.x);
+        const float fov = 0.3;
 
         
-//        const V2 r = norm(v2((1 - fov) * facing.x - fov * side.x,
-//                (1 - fov) * facing.y - fov * side.y));
-//
-//        if ((normed_etp.x *facing.x) + (normed_etp.y * facing.y) >= 
-//            (r.x * facing.x) + (r.y * facing.y) ){
-//            game->reset_stage = true;
-//        }
-//    }
+        const V2 r = norm(v2((1 - fov) * facing.x - fov * side.x,
+                (1 - fov) * facing.y - fov * side.y));
 
-
-
+        if ((normed_etp.x *facing.x) + (normed_etp.y * facing.y) >= 
+            (r.x * facing.x) + (r.y * facing.y) ){
+            game->reset_stage = true;
+        }
+    }
+    
 
 }
 
@@ -131,9 +125,26 @@ void enemy_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* d
     push_cube(group, entity->pos, v3(0.5), *(TextureHandle*)(entity->type->render_data), v3(0.5, 0, 0));
     //TODO: Render field of view.
     float rotation = ((EnemyEntity*)entity)->rotation;
-    V3 facing = v3(-sin(rotation), cos(rotation),0);
 
-    game_raycast(game, entity->pos, facing  ,dbg);
+
+    const V3 pos = entity->pos;
+    const V2 facing = v2(-sin(rotation),
+                         cos(rotation));
+    const V2 side = v2(-facing.y, facing.x);
+    const float fov = 0.3;
+
+    float o = 2.0f / ENEMY_RAY_COUNT - 1;
+    for (u32 i = 0; i < ENEMY_RAY_COUNT - 1; ++i) {
+        o += 2.0f / ENEMY_RAY_COUNT;
+
+        V3 r = v3((1 - fov) * facing.x + o * fov * side.x,
+                  (1 - fov) * facing.y + o * fov * side.y, 0);
+        game_render_raycast(game, pos, r, dbg);
+
+    }
+
+
+
 }
 
 

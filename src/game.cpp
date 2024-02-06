@@ -284,11 +284,12 @@ void game_toggle_camera_state(Game* game)
 
 
 
-void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
-{
+
+RaycastResult game_raycast(Game* game, V3 origin, V3 dir){
     float t;
     bool hit_found = false;
     V3 hit;
+    ColliderEntity* hit_entity;
     
     for (u32 i = 0; i < game->type_count; i++){ 
         if (game->types[i].collideable && !game->types[i].transparent){  
@@ -302,16 +303,19 @@ void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
                         hit_found = true;
                         t = ct;
                         hit = chit;
-
-                        if(entity->type->id == EntityType_Player){
-                            game->reset_stage = true;
-                        }
+                        hit_entity = entity;
                     }
                 }
             }
         }
     }
-    if (hit_found) {
-        push_line(dbg, origin, hit, v3(1, 0, 0));
+    return {t, hit_found, hit, hit_entity};
+}
+
+void game_render_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
+{
+    RaycastResult res = game_raycast(game, origin, dir);
+    if (res.hit_found) {
+        push_line(dbg, origin, res.hit, v3(1, 0, 0));
     }
 }
