@@ -105,6 +105,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
 
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
                 game->player.pos = v3(x, y, 1);
+                game->player.collider.radius = v3(0.35, 0.35, 0.7);
             }
 
             if (curr[0] == 1 && curr[1] == 125) {

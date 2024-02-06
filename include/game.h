@@ -29,6 +29,11 @@
         entity_ref.id = i; \
         block;  \
     }   \
+    entity_ref.type = EntityType_Player; \
+    pos = &game->player.pos;    \
+    collider = &game->player.collider;   \
+    entity_ref.id = 0;  \
+    block;  \
 }
 
 #include "include/types.h"
@@ -105,6 +110,7 @@ struct Enemy
 struct Player
 {
     V3 pos;
+    Collider collider;
 };
 
 struct Game
