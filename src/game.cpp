@@ -169,11 +169,35 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg)
         move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
     }
 
+    // Update enemies
     for (u32 i = 0; i < game->enemy_count; ++i) {
         Enemy* enemy = game->enemy + i;
         V3 facing = v3(sin(enemy->rotation), cos(enemy->rotation), 0);
-        game_raycast(game, enemy->pos, facing, dbg);
-        enemy->rotation += 1 * delta;
+        V3 side = v3(-facing.y, facing.x, facing.z);
+
+        float fov = 0.275;
+        V3 left = v3(fov * side.x + (1 - fov) * facing.x, fov * side.y + (1 - fov) * facing.y, facing.z);
+        V3 right = v3(-fov * side.x + (1 - fov) * facing.x, -fov * side.y + (1 - fov) * facing.y, facing.z);
+
+        game_raycast(game, enemy->pos, facing, NULL, dbg);
+
+#ifdef DEBUG
+        game_raycast(game, enemy->pos, left, NULL, dbg);
+        game_raycast(game, enemy->pos, right, NULL, dbg);
+#endif
+
+        V3 player_dir = v3(game->player.pos.x - enemy->pos.x, 
+                           game->player.pos.y - enemy->pos.y, 
+                           game->player.pos.z - enemy->pos.z);
+
+        EntityRef ray_res;
+        if (game_raycast(game, enemy->pos, player_dir, &ray_res, dbg)) {
+            if (ray_res.type == EntityType_Player) {
+                game->reset_stage = true;
+            }
+        }
+
+        enemy->rotation += 0.4 * delta;
     }
 
     // Update Objective
@@ -239,7 +263,7 @@ void game_toggle_camera_state(Game* game)
     }
 }
 
-void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
+bool game_raycast(Game* game, V3 origin, V3 dir, EntityRef* ref, RenderGroup* dbg)
 {
     float t;
     bool hit_found = false;
@@ -252,10 +276,16 @@ void game_raycast(Game* game, V3 origin, V3 dir, RenderGroup* dbg)
                 hit_found = true;
                 t = ct;
                 hit = chit;
+                if (ref) {
+                    *ref = entity_ref;
+                }
             }
         }
     });
+#ifdef DEBUG
     if (hit_found) {
         push_line(dbg, origin, hit, v3(1, 0, 0));
     }
+#endif
+    return hit_found;
 }

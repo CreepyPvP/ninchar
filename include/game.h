@@ -5,19 +5,28 @@
 
 #define FOR_POS_COLLIDER(game, block) \
 {   \
+    V3* pos;    \
+    Collider* collider;  \
+    EntityRef entity_ref;  \
+    entity_ref.type = EntityType_Wall; \
     for (u32 i = 0; i < game->wall_count; ++i) {    \
-        V3* pos = &game->wall[i].pos; \
-        Collider* collider = &game->wall[i].collider; \
+        pos = &game->wall[i].pos; \
+        collider = &game->wall[i].collider; \
+        entity_ref.id = i; \
         block;  \
     }   \
+    entity_ref.type = EntityType_Crate; \
     for (u32 i = 0; i < game->crate_count; ++i) {    \
-        V3* pos = &game->crate[i].pos; \
-        Collider* collider = &game->crate[i].collider; \
+        pos = &game->crate[i].pos; \
+        collider = &game->crate[i].collider; \
+        entity_ref.id = i; \
         block;  \
     }   \
+    entity_ref.type = EntityType_Objective; \
     for (u32 i = 0; i < game->objective_count; ++i) {    \
-        V3* pos = &game->objective[i].pos; \
-        Collider* collider = &game->objective[i].collider; \
+        pos = &game->objective[i].pos; \
+        collider = &game->objective[i].collider; \
+        entity_ref.id = i; \
         block;  \
     }   \
 }
@@ -40,6 +49,22 @@ enum ColliderType
     ColliderType_Objective = 2,
 };
 
+enum EntityType
+{
+    EntityType_Player = 0,
+    EntityType_Crate = 1,
+    EntityType_Wall = 2,
+    EntityType_Objective = 3,
+    EntityType_Enemy = 4,
+};
+
+
+struct EntityRef
+{
+    u32 type;
+    u32 id;
+    // TODO: Add generation here
+};
 
 struct Collider
 {
@@ -119,7 +144,7 @@ void game_init(Game* game, Arena* arena, u32 stage);
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* dbg);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 
-void game_raycast(Game* game, V3 pos, V3 dir, RenderGroup* dbg);
+bool game_raycast(Game* game, V3 origin, V3 dir, EntityRef* ref, RenderGroup* dbg);
 
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);
