@@ -16,14 +16,14 @@ u32 get_entity_type_index(EntityTypeId id, Game* game){
     return -1;
 }
 
-void entity_standard_init(Entity* entity, Game* game, u32 x, u32 y)
+void collider_entity_standard_init(Entity* entity, Game* game, u32 x, u32 y)
 {
         entity->pos = v3(x, y, 1);
-        entity->radius = v3(0.5);
+        ((ColliderEntity*)entity)->radius = v3(0.5);
 }
 void objective_init(Entity* entity, Game* game, u32 x, u32 y){
-    entity_standard_init(entity, game, x, y);
-    ((ObjectiveExtraData*)entity->extra_data)->broken = false;
+    collider_entity_standard_init(entity, game, x, y);
+    ((ObjectiveEntity*)entity)->broken = false;
 }
 
 
@@ -37,7 +37,7 @@ void entity_standard_render(Entity* entity, Game* game, RenderGroup* group, Rend
 
 void objective_render(Entity* entity, Game* game, RenderGroup* group, RenderGroup* dbg)
 {
-    if(!((ObjectiveExtraData*)entity->extra_data)->broken){
+    if(!((ObjectiveEntity*)entity)->broken){
         entity_standard_render(entity, game, group, dbg);
     }
 }

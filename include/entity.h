@@ -3,7 +3,7 @@
 
 u32 get_entity_type_index(EntityTypeId id, Game* game);
 
-void entity_standard_init(Entity* entity, Game* game, u32 x, u32 y);
+void collider_entity_standard_init(Entity* entity, Game* game, u32 x, u32 y);
 
 void entity_standard_update(Entity* entity, Game* game);
 

@@ -27,10 +27,11 @@ enum CameraState
     CameraState_Free = 1,
 };
 
-struct Entity;
+
 struct Game;
 struct AABB;
 
+class EntityType;
 
 enum EntityTypeId
 {
@@ -40,6 +41,12 @@ enum EntityTypeId
 };
 
 
+struct Entity
+{
+    EntityType* type;
+    V3 pos;
+};
+
 class EntityType
 {
 public:
@@ -47,9 +54,9 @@ public:
     u32 count;
     u32 cap;
 
-    Entity* entity_list;
+    bool collideable;
 
-    u32 extra_data_size;
+    u32 sizeof_entity;
 
     TextureHandle* texture;
     V3 render_color;
@@ -65,19 +72,25 @@ public:
 
     void (*collision_response)(AABB a, AABB b, V2 dir, Game* game);
     V2 (*try_move_into)(AABB a, AABB b, V2 dir, Game* game);
+
+    Entity* get_entity(int index){
+        return (Entity*)(((char*)entity_list) + (sizeof_entity * index));
+    }
+
+    void allocate_memory(Game* game, Arena* arena);
+
+private:
+    Entity* entity_list;
 };
 
 
-struct Entity
+
+struct ColliderEntity : Entity
 {
-    EntityType* type;
-    V3 pos;
     V3 radius;
-    void* extra_data;
 };
 
-
-struct ObjectiveExtraData
+struct ObjectiveEntity : ColliderEntity
 {
     bool broken;
 };
@@ -121,10 +134,10 @@ void add_entity_type(EntityType* type, Game* game);
 struct AABB
 {
     V3* pos;
-    Entity* entity;
+    ColliderEntity* entity;
 };
 
-inline AABB aabb(V3* pos, Entity* entity) 
+inline AABB aabb(V3* pos, ColliderEntity* entity) 
 {
     return { pos, entity };
 }

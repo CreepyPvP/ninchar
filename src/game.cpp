@@ -46,8 +46,8 @@ void game_load_assets()
 
 
 
-void add_entity_type(EntityType* type, Game* game){
-    game->types[game->type_count] = *type;
+void add_entity_type(EntityType type, Game* game){
+    game->types[game->type_count] = type;
     game->type_count++;
 }
 
@@ -57,8 +57,9 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     //Wall
     EntityType wall;
     wall.id = EntityType_Wall;
-    wall.extra_data_size = 0;
-    wall.init = &entity_standard_init;
+    wall.sizeof_entity = sizeof(ColliderEntity);
+    wall.collideable = true;
+    wall.init = &collider_entity_standard_init;
     wall.update = &entity_standard_update;
     wall.render = &entity_standard_render;
     wall.try_move_into = &static_try_move_into;
@@ -70,13 +71,14 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     wall.load_tile_green = 0;
     wall.load_tile_blue = 0;
 
-    add_entity_type(&wall,game);
+    add_entity_type(wall,game);
 
     //Crate
     EntityType crate;
     crate.id = EntityType_Crate;
-    crate.extra_data_size = 0;
-    crate.init = &entity_standard_init;
+    crate.sizeof_entity = sizeof(ColliderEntity);
+    crate.collideable = true;
+    crate.init = &collider_entity_standard_init;
     crate.update = &entity_standard_update;
     crate.render = &entity_standard_render;
     crate.try_move_into = &moveable_try_move_into;
@@ -88,12 +90,13 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     crate.load_tile_green = 57;
     crate.load_tile_blue = 39;
     
-    add_entity_type(&crate,game);
+    add_entity_type(crate,game);
     
     //Objective
     EntityType objective;
     objective.id = EntityType_Objective;
-    objective.extra_data_size = sizeof(ObjectiveExtraData);
+    objective.sizeof_entity = sizeof(ObjectiveEntity);
+    objective.collideable = true;
     objective.init = &objective_init;
     objective.update = &entity_standard_update;
     objective.render = &objective_render;
@@ -106,13 +109,16 @@ void game_init_entity_types(Game* game, TextureHandle* white_texture){
     objective.load_tile_green = 125;
     objective.load_tile_blue = 10;
     
-    add_entity_type(&objective,game);
+    add_entity_type(objective,game);
 
 
     
 }
 
 
+void EntityType::allocate_memory(Game* game, Arena* arena){
+    entity_list = (Entity*) push_size(arena, sizeof_entity * cap);
+}
 
 
 void game_init(Game* game, Arena* arena, u32 stage)
@@ -149,15 +155,7 @@ void game_init(Game* game, Arena* arena, u32 stage)
     
 
     for (u32 i=0;i<game->type_count;i++) {
-        game->types[i].entity_list = (Entity*) push_size(arena, sizeof(Entity) * game->types[i].cap);
-
-        if (game->types[i].extra_data_size != 0) {
-            char* extra_data_list = (char*) push_size(arena, game->types[i].extra_data_size * game->types[i].cap);
-            for(u32 j = 0; j < game->types[i].cap; j++){
-                game->types[i].entity_list[j].extra_data = (void*) extra_data_list;
-                extra_data_list += game->types[i].extra_data_size;
-            }
-        }
+        game->types[i].allocate_memory(game, arena);
     }
 
 
@@ -172,8 +170,8 @@ void game_init(Game* game, Arena* arena, u32 stage)
                 if (curr[0] == game->types[i].load_tile_red &&
                     curr[1] == game->types[i].load_tile_green &&
                     curr[2] == game->types[i].load_tile_blue) {
-                    game->types[i].entity_list[game->types[i].count].type = &game->types[i];
-                    game->types[i].init( &game->types[i].entity_list[game->types[i].count], game, x, y);
+                    game->types[i].get_entity(game->types[i].count)->type = &game->types[i];
+                    game->types[i].init(game->types[i].get_entity(game->types[i].count), game, x, y);
                     game->types[i].count++;
                 }
             }
@@ -198,7 +196,7 @@ void game_update(Game* game, u8 inputs, float delta)
     // Update all entities
     for (u32 i=0;i<game->type_count;i++) {
         for (u32 j=0;j<game->types[i].count; j++) {
-            game->types[i].update(&game->types[i].entity_list[j], game);
+            game->types[i].update(game->types[i].get_entity(j), game);
         }
     }
 
@@ -229,7 +227,7 @@ void game_update(Game* game, u8 inputs, float delta)
 
         movement = norm(movement);
 
-        Entity player_collider;
+        ColliderEntity player_collider;
         player_collider.radius = v3(0.35, 0.35, 0.7);
 
         movement.x *= delta * 10;
@@ -243,7 +241,7 @@ void game_update(Game* game, u8 inputs, float delta)
     bool level_completed = true;
     int objective_index = get_entity_type_index(EntityType_Objective, game);
     for (u32 i = 0; i < game->types[objective_index].count; ++i) {
-        if (! ((ObjectiveExtraData*) game->types[objective_index].entity_list[i].extra_data)->broken) {
+        if (! ((ObjectiveEntity*) game->types[objective_index].get_entity(i))->broken) {
             level_completed = false;
         }
     }
@@ -262,12 +260,16 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
         }
     }
 
+
     // Render Entities
     for (u32 i = 0; i < game->type_count; i++){
         for (u32 j = 0; j < game->types[i].count; j++){
-            game->types[i].render(&game->types[i].entity_list[j], game, group, dbg);
+            assert(game->types[0].render_color.x == 1);
+            game->types[i].render(game->types[i].get_entity(j), game, group, dbg);
         }
     }
+
+
 
     // Render Player
     push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
