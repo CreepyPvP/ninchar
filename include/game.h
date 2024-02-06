@@ -47,6 +47,7 @@ struct Entity
 struct ColliderEntity : Entity
 {
     V3 radius;
+    bool transparent;
 };
 
 struct ObjectiveEntity : ColliderEntity
@@ -133,7 +134,7 @@ public:
     V2 (*try_move_into)(AABB a, AABB b, V2 dir, Game* game);
 
     //transparent entities are ignored by raycasting.
-    bool transparent;
+    bool always_transparent;
 
 };
 

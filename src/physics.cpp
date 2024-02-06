@@ -67,8 +67,8 @@ void moveable_collision_response(AABB a, AABB b, V2 dir, Game* game)
 
 void objective_collision_response(AABB a, AABB b, V2 dir, Game* game)
 {
-    printf("Colliding with %p\n\n\n\n", b.entity);
     ((ObjectiveEntity*)b.entity)->broken = true;
+    ((ObjectiveEntity*)b.entity)->transparent = true;
 }
 
 

@@ -70,7 +70,7 @@ void game_init_entity_types(Game* game){
     wall.try_move_into = &static_try_move_into;
     wall.collision_response = &standard_collision_response;
     wall.render_data = &wall_texture;
-    wall.transparent = false;
+    wall.always_transparent = false;
 
     wall.load_tile_red = 0;
     wall.load_tile_green = 0;
@@ -89,7 +89,7 @@ void game_init_entity_types(Game* game){
     crate.try_move_into = &moveable_try_move_into;
     crate.collision_response = &moveable_collision_response;
     crate.render_data = &crate_texture;
-    crate.transparent = false;
+    crate.always_transparent = false;
 
     crate.load_tile_red = 88;
     crate.load_tile_green = 57;
@@ -108,7 +108,7 @@ void game_init_entity_types(Game* game){
     objective.try_move_into = &noclip_try_move_into;
     objective.collision_response = &objective_collision_response;
     objective.render_data = &green_color;
-    objective.transparent = false;
+    objective.always_transparent = false;
 
     objective.load_tile_red = 1;
     objective.load_tile_green = 125;
@@ -127,7 +127,7 @@ void game_init_entity_types(Game* game){
     player.try_move_into = &moveable_try_move_into;
     player.collision_response = &moveable_collision_response;
     player.render_data = NULL;
-    player.transparent = false;
+    player.always_transparent = false;
 
     player.load_tile_red = 255;
     player.load_tile_green = 0;
@@ -146,7 +146,7 @@ void game_init_entity_types(Game* game){
     enemy.try_move_into = &static_try_move_into;
     enemy.collision_response = &standard_collision_response;
     enemy.render_data = &crate_texture;
-    enemy.transparent = true;
+    enemy.always_transparent = true;
     
     enemy.load_tile_red = 0;
     enemy.load_tile_green = 255;
@@ -292,13 +292,13 @@ RaycastResult game_raycast(Game* game, V3 origin, V3 dir){
     ColliderEntity* hit_entity;
     
     for (u32 i = 0; i < game->type_count; i++){ 
-        if (game->types[i].collideable && !game->types[i].transparent){  
+        if (game->types[i].collideable && !game->types[i].always_transparent){  
             for (u32 j = 0; j < game->types[i].count; j++){  
                 V3* pos = &game->types[i].get_entity(j)->pos;   
                 ColliderEntity* entity = (ColliderEntity*)(game->types[i].get_entity(j));  
                 V3 chit;
                 float ct;
-                if (hit_bounding_box(origin, dir, *pos, entity->radius, &chit, &ct)) {
+                if (!entity->transparent && hit_bounding_box(origin, dir, *pos, entity->radius, &chit, &ct)) {
                     if (!hit_found || ct < t) {
                         hit_found = true;
                         t = ct;
