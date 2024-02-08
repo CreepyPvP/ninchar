@@ -9,6 +9,9 @@
 #define ENTITY_CAP 1000
 #define ACCESS_ENITTY_CAP 10
 
+#define ENEMY_VISION    (1 << EntityType_Player) | (1 << EntityType_Wall) |     \
+                        (1 << EntityType_Crate) | (1 << EntityType_Objective)
+
 enum CameraState
 {
     CameraState_Locked,
@@ -32,7 +35,6 @@ enum EntityType
 
     EntityType_Count,
 };
-
 
 struct EntityRef
 {
@@ -99,7 +101,7 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white);
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 
-bool game_raycast(Game* game, V3 origin, V3 dir, EntityRef* ref, RenderGroup* dbg);
+bool game_raycast(Game* game, V3 origin, V3 dir, u32 mask, EntityRef* ref, RenderGroup* dbg);
 
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);

@@ -177,18 +177,18 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         push_spotlight(group, enemy->pos, facing, fov);
 
 #ifdef DEBUG
-        game_raycast(game, enemy->pos, facing, NULL, dbg);
-        game_raycast(game, enemy->pos, left, NULL, dbg);
-        game_raycast(game, enemy->pos, right, NULL, dbg);
+        game_raycast(game, enemy->pos, facing, ENEMY_VISION, NULL, dbg);
+        game_raycast(game, enemy->pos, left, ENEMY_VISION, NULL, dbg);
+        game_raycast(game, enemy->pos, right, ENEMY_VISION, NULL, dbg);
 #endif
 
         Entity* player = get_entity(game->player, game);
-        V3 player_dir = v3(player->pos.x - player->pos.x, 
-                           player->pos.y - player->pos.y, 
-                           player->pos.z - player->pos.z);
+        V3 player_dir = v3(player->pos.x - enemy->pos.x, 
+                           player->pos.y - enemy->pos.y, 
+                           player->pos.z - enemy->pos.z);
 
         EntityRef ray_res;
-        if (game_raycast(game, enemy->pos, player_dir, &ray_res, dbg)) {
+        if (game_raycast(game, enemy->pos, player_dir, ENEMY_VISION, &ray_res, dbg)) {
             if (ray_res.id == game->player.id) {
                 if (dot(norm(player_dir), facing) > dot(norm(left), facing)) {
                     game->reset_stage = true;
@@ -230,7 +230,7 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
             continue;
         }
 
-        if (entity->type == EntityType_Objective && !entity->objective.broken) {
+        if (entity->type == EntityType_Objective && entity->objective.broken) {
             continue;
         }
 
@@ -253,7 +253,7 @@ void game_toggle_camera_state(Game* game)
     }
 }
 
-bool game_raycast(Game* game, V3 origin, V3 dir, EntityRef* ref, RenderGroup* dbg)
+bool game_raycast(Game* game, V3 origin, V3 dir, u32 mask, EntityRef* ref, RenderGroup* dbg)
 {
     float t;
     bool hit_found = false;
@@ -261,6 +261,10 @@ bool game_raycast(Game* game, V3 origin, V3 dir, EntityRef* ref, RenderGroup* db
     
     for (u32 i = 0; i < game->entity_count; ++i) {
         Entity* entity = game->entities + i;
+
+        if (!(1 & (mask >> entity->type))) {
+            continue;
+        }
 
         V3 chit;
         float ct;
