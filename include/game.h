@@ -30,6 +30,7 @@ enum EntityType
     EntityType_Player,
     EntityType_Crate,
     EntityType_Wall,
+    EntityType_GlassWall,
     EntityType_Objective,
     EntityType_Enemy,
 

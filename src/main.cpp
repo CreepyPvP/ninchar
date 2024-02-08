@@ -31,8 +31,6 @@ double last_mouse_pos_y;
 
 Game game;
 
-int total_level_count = 7;
-
 
 void resize_callback(GLFWwindow* window, i32 width, i32 height) 
 {
@@ -108,14 +106,13 @@ i32 main()
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
-
     Arena game_arena;
     init_arena(&game_arena, &pool);
     game_load_assets();
     game = {};
 
-    u32 current_level = 6;
-    u32 total_level_count = 7;
+    u32 current_level = 7;
+    u32 total_level_count = 8;
     game_init(&game, &game_arena, current_level, white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {

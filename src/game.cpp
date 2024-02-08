@@ -64,6 +64,14 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
                 push_entity(entity, game);
             }
 
+            if (curr[0] == 50 && curr[1] == 50 && curr[2] == 5) {
+                entity.type = EntityType_GlassWall;
+                entity.collider.type = ColliderType_Static;
+                entity.texture = wall_texture;
+                entity.color = v3(0, 2, 0.5);
+                push_entity(entity, game);
+            }
+
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
                 entity.type = EntityType_Crate;
                 entity.collider.type = ColliderType_Moveable;
