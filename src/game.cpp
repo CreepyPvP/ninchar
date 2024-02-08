@@ -38,89 +38,57 @@ void game_load_assets()
     dispose(&asset_arena);
 };
 
-void game_init(Game* game, Arena* arena, u32 stage)
+void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
 {
-    game->reset_stage = false;
     game->current_level = stage;
-
-    game->camera_state = CameraState_Locked;
 
     char path[1024];
     sprintf(path, "assets/stages/%u.png", stage);
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
     assert(tmp);
 
-    game->wall_cap = 0;
-    game->wall_count = 0;
-    game->crate_cap = 0;
-    game->crate_count = 0;
-    game->objective_cap = 0;
-    game->objective_count = 0;
-    game->enemy_cap = 0;
-    game->enemy_count = 0;
+    game->entities = (Entity*) push_size(arena, sizeof(Entity) * ENTITY_CAP);
 
+    // TODO: Clean this up some more
     u8* curr = tmp;
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
+            Entity entity = {};
+            entity.pos = v3(x, y, 1);
+            entity.collider.radius = v3(0.5);
+            entity.color = v3(1);
+            entity.texture = white;
+
             if (curr[0] == 0 && curr[1] == 0 && curr[2] == 0) {
-                ++game->wall_cap;
-            }
-            if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
-                ++game->crate_cap;
-            }
-            if (curr[0] == 1 && curr[1] == 125) {
-                ++game->objective_cap;
-            }
-            if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
-                ++game->enemy_cap;
-            }
-
-            curr += 3;
-        }
-    }
-
-    game->crate = (Crate*) push_size(arena, sizeof(Crate) * game->crate_cap);
-    game->wall = (Wall*) push_size(arena, sizeof(Wall) * game->wall_cap);
-    game->objective = (Objective*) push_size(arena, sizeof(Objective) * game->objective_cap);
-    game->enemy = (Enemy*) push_size(arena, sizeof(Enemy) * game->enemy_cap);
-
-    curr = tmp;
-    for (u32 y = 0; y < game->height; ++y) {
-        for (u32 x = 0; x < game->width; ++x) {
-            if (curr[0] == 0 && curr[1] == 0 && curr[2] == 0) {
-                game->wall[game->wall_count].pos = v3(x, y, 1);
-                game->wall[game->wall_count].collider.radius = v3(0.5);
-                game->wall[game->wall_count].collider.type = ColliderType_Static;
-                game->wall[game->wall_count].collider.extra_data = NULL;
-                ++game->wall_count;
+                entity.type = EntityType_Wall;
+                entity.collider.type = ColliderType_Static;
+                entity.texture = wall_texture;
+                push_entity(entity, game);
             }
 
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
-                game->crate[game->crate_count].pos = v3(x, y, 1);
-                game->crate[game->crate_count].collider.radius = v3(0.5);
-                game->crate[game->crate_count].collider.type = ColliderType_Moveable;
-                game->crate[game->crate_count].collider.extra_data = NULL;
-                ++game->crate_count;
+                entity.type = EntityType_Crate;
+                entity.collider.type = ColliderType_Moveable;
+                entity.texture = crate_texture;
+                push_entity(entity, game);
             }
 
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
-                game->player.pos = v3(x, y, 1);
-                game->player.collider.radius = v3(0.35, 0.35, 0.7);
+                entity.type = EntityType_Player;
+                entity.collider.radius = v3(0.35, 0.35, 0.7);
+                entity.color = v3(0, 0, 1);
+                game->player = push_entity(entity, game);
             }
 
             if (curr[0] == 1 && curr[1] == 125) {
-                game->objective[game->objective_count].pos = v3(x, y, 1);
-                game->objective[game->objective_count].collider.radius = v3(0.5);
-                game->objective[game->objective_count].collider.type = ColliderType_Objective;
-                game->objective[game->objective_count].collider.extra_data = game->objective + game->objective_count;
-                game->objective[game->objective_count].broken = false;
-                ++game->objective_count;
+                entity.type = EntityType_Objective;
+                entity.color = v3(0, 1, 0);
+                push_entity(entity, game);
             }
 
             if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
-                game->enemy[game->enemy_count].pos = v3(x, y, 1);
-                game->enemy[game->enemy_count].rotation = 0;
-                ++game->enemy_count;
+                entity.type = EntityType_Enemy;
+                push_entity(entity, game);
             }
 
             curr += 3;
@@ -130,6 +98,36 @@ void game_init(Game* game, Arena* arena, u32 stage)
     stbi_image_free(tmp);
 
     game_reset_camera(game);
+}
+
+void push_entity_to_list(EntityList* list, EntityRef ref)
+{
+    assert(list->entity_count < ACCESS_ENITTY_CAP);
+    list->entity_refs[list->entity_count] = ref;
+    ++list->entity_count;
+}
+
+EntityRef push_entity(Entity entity, Game* game)
+{
+    assert(game->entity_count < ENTITY_CAP);
+    game->entities[game->entity_count] = entity;
+    EntityRef ref;
+    ref.id = game->entity_count;
+    ++game->entity_count;
+
+    if (entity.type == EntityType_Enemy) {
+        push_entity_to_list(&game->enemies, ref);
+    }
+    if (entity.type == EntityType_Objective) {
+        push_entity_to_list(&game->objectives, ref);
+    }
+
+    return ref;
+}
+
+Entity* get_entity(EntityRef ref, Game* game)
+{
+    return game->entities + ref.id;
 }
 
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg)
@@ -159,20 +157,16 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         }
 
         movement = norm(movement);
-
-        Collider player_collider;
-        player_collider.radius = v3(0.35, 0.35, 0.7);
-
         movement.x *= delta * 10;
         movement.y *= delta * 10;
 
-        move_and_collide(aabb(&game->player.pos, &player_collider), v2(movement.x, 0), game);
-        move_and_collide(aabb(&game->player.pos, &player_collider), v2(0, movement.y), game);
+        Entity* player = get_entity(game->player, game);
+        move_and_collide(player, v2(movement.x, 0), game);
+        move_and_collide(player, v2(0, movement.y), game);
     }
 
-    // Update Enemies
-    for (u32 i = 0; i < game->enemy_count; ++i) {
-        Enemy* enemy = game->enemy + i;
+    for (u32 i = 0; i < game->enemies.entity_count; ++i) {
+        Entity* enemy = get_entity(game->enemies.entity_refs[i], game);
         V3 facing = v3(sin(enemy->rotation), cos(enemy->rotation), 0);
         V3 side = v3(-facing.y, facing.x, facing.z);
 
@@ -188,13 +182,14 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         game_raycast(game, enemy->pos, right, NULL, dbg);
 #endif
 
-        V3 player_dir = v3(game->player.pos.x - enemy->pos.x, 
-                           game->player.pos.y - enemy->pos.y, 
-                           game->player.pos.z - enemy->pos.z);
+        Entity* player = get_entity(game->player, game);
+        V3 player_dir = v3(player->pos.x - player->pos.x, 
+                           player->pos.y - player->pos.y, 
+                           player->pos.z - player->pos.z);
 
         EntityRef ray_res;
         if (game_raycast(game, enemy->pos, player_dir, &ray_res, dbg)) {
-            if (ray_res.type == EntityType_Player) {
+            if (ray_res.id == game->player.id) {
                 if (dot(norm(player_dir), facing) > dot(norm(left), facing)) {
                     game->reset_stage = true;
                 }
@@ -206,8 +201,9 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
 
     // Update Objective
     bool level_completed = true;
-    for (u32 i = 0; i < game->objective_count; ++i) {
-        if (!game->objective[i].broken){
+    for (u32 i = 0; i < game->objectives.entity_count; ++i) {
+        Entity* entity = get_entity(game->objectives.entity_refs[i], game);
+        if (!entity->objective.broken) {
             level_completed = false;
         }
     }
@@ -226,30 +222,20 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
         }
     }
 
-    // Render Crates
-    for (u32 i = 0; i < game->crate_count; ++i) {
-        push_cube(group, game->crate[i].pos, v3(0.5), crate_texture, v3(1));
-    }
+    for (u32 i = 0; i < game->entity_count; ++i) {
+        Entity* entity = game->entities + i;
 
-    // Render Walls
-    for (u32 i = 0; i < game->wall_count; ++i) {
-        push_cube(group, game->wall[i].pos, v3(0.5), wall_texture, v3(1));
-    }
-
-    // Render Enemies
-    for (u32 i = 0; i < game->enemy_count; ++i) {
-        push_model(dbg, teapot, game->enemy[i].pos, v3(0.5));
-    }
-
-    // Render Objectives
-    for (u32 i = 0; i < game->objective_count; ++i) {
-        if (!game->objective[i].broken){
-            push_cube(group, game->objective[i].pos, v3(0.5), group->commands->white, v3(0, 1, 0));
+        if (entity->type == EntityType_Enemy) {
+            push_model(dbg, teapot, entity->pos, entity->collider.radius);
+            continue;
         }
-    }
 
-    // Render Player
-    push_cube(group, game->player.pos, v3(0.35, 0.35, 0.7), group->commands->white, v3(0, 0, 1));
+        if (entity->type == EntityType_Objective && !entity->objective.broken) {
+            continue;
+        }
+
+        push_cube(group, entity->pos, entity->collider.radius, entity->texture, entity->color);
+    }
 }
 
 void game_reset_camera(Game* game)
@@ -272,20 +258,24 @@ bool game_raycast(Game* game, V3 origin, V3 dir, EntityRef* ref, RenderGroup* db
     float t;
     bool hit_found = false;
     V3 hit;
-    FOR_POS_COLLIDER(game, {
+    
+    for (u32 i = 0; i < game->entity_count; ++i) {
+        Entity* entity = game->entities + i;
+
         V3 chit;
         float ct;
-        if (hit_bounding_box(origin, dir, *pos, collider->radius, &chit, &ct)) {
+        if (hit_bounding_box(origin, dir, entity->pos, entity->collider.radius, &chit, &ct)) {
             if (!hit_found || ct < t) {
                 hit_found = true;
                 t = ct;
                 hit = chit;
                 if (ref) {
-                    *ref = entity_ref;
+                    ref->id = i;
                 }
             }
         }
-    });
+    }
+
 #ifdef DEBUG
     if (hit_found) {
         push_line(dbg, origin, hit, v3(1, 0, 0));

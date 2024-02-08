@@ -1,116 +1,76 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <iostream>
-
-#define FOR_POS_COLLIDER(game, block) \
-{   \
-    V3* pos;    \
-    Collider* collider;  \
-    EntityRef entity_ref;  \
-    entity_ref.type = EntityType_Wall; \
-    for (u32 i = 0; i < game->wall_count; ++i) {    \
-        pos = &game->wall[i].pos; \
-        collider = &game->wall[i].collider; \
-        entity_ref.id = i; \
-        block;  \
-    }   \
-    entity_ref.type = EntityType_Crate; \
-    for (u32 i = 0; i < game->crate_count; ++i) {    \
-        pos = &game->crate[i].pos; \
-        collider = &game->crate[i].collider; \
-        entity_ref.id = i; \
-        block;  \
-    }   \
-    entity_ref.type = EntityType_Objective; \
-    for (u32 i = 0; i < game->objective_count; ++i) {    \
-        pos = &game->objective[i].pos; \
-        collider = &game->objective[i].collider; \
-        entity_ref.id = i; \
-        block;  \
-    }   \
-    entity_ref.type = EntityType_Player; \
-    pos = &game->player.pos;    \
-    collider = &game->player.collider;   \
-    entity_ref.id = 0;  \
-    block;  \
-}
-
 #include "include/types.h"
 #include "include/arena.h"
 #include "include/renderer.h"
 #include "include/camera.h"
 
+#define ENTITY_CAP 1000
+#define ACCESS_ENITTY_CAP 10
+
 enum CameraState
 {
-    CameraState_Locked = 0,
-    CameraState_Free = 1,
+    CameraState_Locked,
+    CameraState_Free,
 };
 
 enum ColliderType
 {
-    ColliderType_Static = 0,
-    ColliderType_Moveable = 1,
-    ColliderType_Objective = 2,
+    ColliderType_None,
+    ColliderType_Static,
+    ColliderType_Moveable,
 };
 
 enum EntityType
 {
-    EntityType_Player = 0,
-    EntityType_Crate = 1,
-    EntityType_Wall = 2,
-    EntityType_Objective = 3,
-    EntityType_Enemy = 4,
+    EntityType_Player,
+    EntityType_Crate,
+    EntityType_Wall,
+    EntityType_Objective,
+    EntityType_Enemy,
+
+    EntityType_Count,
 };
 
 
 struct EntityRef
 {
-    u32 type;
     u32 id;
     // TODO: Add generation here
 };
 
 struct Collider
 {
-    u32 type;
+    ColliderType type;
     V3 radius;
-    void* extra_data;
-};
-
-struct Crate
-{
-    V3 pos;
-    Collider collider;
-};
-
-struct Wall
-{
-    V3 pos;
-    Collider collider;
 };
 
 struct Objective
 {
-    V3 pos;
-    Collider collider;
     bool broken;
-
-    static void on_collide(Objective* this_objective) {
-        this_objective->broken = true;
-    }
 };
 
-struct Enemy
+struct Entity 
 {
-    V3 pos;
-    float rotation;
-};
+    EntityType type;
 
-struct Player
-{
     V3 pos;
     Collider collider;
+    float rotation;
+
+    V3 color;
+    TextureHandle texture;
+
+    union {
+        Objective objective;
+    };
+};
+
+struct EntityList
+{
+    u32 entity_count;
+    EntityRef entity_refs[ACCESS_ENITTY_CAP];
 };
 
 struct Game
@@ -118,23 +78,12 @@ struct Game
     u32 width;
     u32 height;
 
-    Wall* wall;
-    u32 wall_count;
-    u32 wall_cap;
+    Entity* entities;
+    u32 entity_count;
 
-    Crate* crate;
-    u32 crate_count;
-    u32 crate_cap;
-
-    Objective* objective;
-    u32 objective_count;
-    u32 objective_cap;
-
-    Enemy* enemy;
-    u32 enemy_count;
-    u32 enemy_cap;
-
-    Player player;
+    EntityRef player;
+    EntityList enemies;
+    EntityList objectives;
 
     Camera camera;
     u32 camera_state;
@@ -146,7 +95,7 @@ struct Game
 
 
 void game_load_assets();
-void game_init(Game* game, Arena* arena, u32 stage);
+void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white);
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 
@@ -155,18 +104,10 @@ bool game_raycast(Game* game, V3 origin, V3 dir, EntityRef* ref, RenderGroup* db
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);
 
+EntityRef push_entity(Entity entity, Game* game);
+Entity* get_entity(EntityRef ref, Game* game);
+void push_entity_to_list(EntityList* list, EntityRef ref);
 
-struct AABB
-{
-    V3* pos;
-    Collider* collider;
-};
-
-inline AABB aabb(V3* pos, Collider* collider) 
-{
-    return { pos, collider };
-}
-
-void move_and_collide(AABB aabb, V2 dir, Game* game);
+void move_and_collide(Entity* entity, V2 dir, Game* game);
 
 #endif

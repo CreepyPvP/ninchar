@@ -112,7 +112,8 @@ i32 main()
     Arena game_arena;
     init_arena(&game_arena, &pool);
     game_load_assets();
-    game_init(&game, &game_arena, 6);
+    game = {};
+    game_init(&game, &game_arena, 6, white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -155,7 +156,8 @@ i32 main()
 
         if (game.reset_stage){
             dispose(&game_arena);
-            game_init(&game, &game_arena, game.current_level);
+            game = {};
+            game_init(&game, &game_arena, game.current_level, white);
         }
 
 
