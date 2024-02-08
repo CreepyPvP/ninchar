@@ -128,6 +128,7 @@ V2 get_collided_movement(Entity* a, V2 dir, Game* game)
         Entity* b = game->entities + i;
         tmp.pos = new_pos;
         if (intersects(&tmp, b)) {
+            tmp.pos = old_pos;
             V2 move_into = try_move_into(&tmp, b, expand_slightly(dir), game);
             res.x = clamp_abs(res.x, move_into.x);
             res.y = clamp_abs(res.y, move_into.y);
