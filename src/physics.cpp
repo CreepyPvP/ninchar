@@ -67,12 +67,15 @@ void move_and_push_boxes(Entity* a, V2 dir, Game* game)
 
     a->pos = far_away;
 
-    // for (u32 i = 0; i < game->entity_count; ++i) {
-    //     Entity* b = game->entities + i;
-    //     if (intersects(new_aabb, b)) {
-    //         do_collision_response(old_aabb, b, expand_slightly(dir), game);
-    //     }
-    // }
+    Entity tmp = *a;
+    for (u32 i = 0; i < game->entity_count; ++i) {
+        tmp.pos = new_pos;
+        Entity* b = game->entities + i;
+        if (intersects(&tmp, b)) {
+            tmp.pos = old_pos;
+            do_collision_response(&tmp, b, expand_slightly(dir), game);
+        }
+    }
 
     a->pos = new_pos;
 }
@@ -119,18 +122,17 @@ V2 get_collided_movement(Entity* a, V2 dir, Game* game)
     a->pos = far_away;
 
     V2 res = dir;
-    
-    // Entity* new_aabb = aabb(&new_pos, a.collider);
-    // Entity* old_aabb = aabb(&old_pos, a.collider);
-    //
-    // FOR_POS_COLLIDER(game, {
-    //     Entity* b = aabb(pos, collider);
-    //     if (intersects(new_aabb, b)) {
-    //         V2 move_into = try_move_into(old_aabb, b, expand_slightly(dir), game);
-    //         res.x = clamp_abs(res.x, move_into.x);
-    //         res.y = clamp_abs(res.y, move_into.y);
-    //     }
-    // });
+
+    Entity tmp = *a;
+    for (u32 i = 0; i < game->entity_count; ++i) {
+        Entity* b = game->entities + i;
+        tmp.pos = new_pos;
+        if (intersects(&tmp, b)) {
+            V2 move_into = try_move_into(&tmp, b, expand_slightly(dir), game);
+            res.x = clamp_abs(res.x, move_into.x);
+            res.y = clamp_abs(res.y, move_into.y);
+        }
+    }
 
     a->pos = old_pos;
     return res;
