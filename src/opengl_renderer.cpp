@@ -199,6 +199,9 @@ void opengl_init()
     glGetIntegerv(GL_MAX_SAMPLES, &opengl.max_samples);
     glFrontFace(GL_CW);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 #ifdef DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
@@ -298,12 +301,10 @@ void opengl_render_commands(CommandBuffer* buffer)
 
     glViewport(0, 0, settings.width, settings.height);
     glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-    // glEnable(GL_SAMPLE_ALPHA_TO_ONE);
+    glEnable(GL_BLEND);
     glEnable(GL_MULTISAMPLE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer.id);
-    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(opengl.quad_vao);
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
@@ -364,6 +365,7 @@ void opengl_render_commands(CommandBuffer* buffer)
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_MULTISAMPLE);
+    glDisable(GL_BLEND);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(opengl.post_vao);

@@ -9,6 +9,7 @@
 
 TextureHandle ground_texture;
 TextureHandle wall_texture;
+TextureHandle glass_wall_texture;
 TextureHandle crate_texture;
 
 ModelHandle teapot;
@@ -31,6 +32,10 @@ void game_load_assets()
     TextureLoadOp load_wall = texture_load_op(&wall_texture, "assets/wall.png");
     opengl_load_texture(&load_wall);
     free_texture_load_op(&load_wall);
+
+    TextureLoadOp load_glass_wall = texture_load_op(&glass_wall_texture, "assets/glasswall.png");
+    opengl_load_texture(&load_glass_wall);
+    free_texture_load_op(&load_glass_wall);
 
     ModelLoadOp load_teapot = model_load_op(&teapot, "assets/teapot.obj", &asset_arena);
     opengl_load_model(&load_teapot);
@@ -67,8 +72,7 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
             if (curr[0] == 50 && curr[1] == 50 && curr[2] == 5) {
                 entity.type = EntityType_GlassWall;
                 entity.collider.type = ColliderType_Static;
-                entity.texture = wall_texture;
-                entity.color = v3(0, 2, 0.5);
+                entity.texture = glass_wall_texture;
                 push_entity(entity, game);
             }
 
