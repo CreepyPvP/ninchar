@@ -40,8 +40,6 @@ void game_load_assets()
 
 void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
 {
-    game->current_level = stage;
-
     char path[1024];
     sprintf(path, "assets/stages/%u.png", stage);
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
@@ -209,8 +207,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
     }
 
     if (level_completed){
-        game->reset_stage = true;
-        game->current_level = (game->current_level + 1) % game->total_level_count;
+        game->next_stage = true;
     }
 }
 

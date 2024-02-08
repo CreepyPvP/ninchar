@@ -7,7 +7,7 @@
 #include "include/camera.h"
 
 #define ENTITY_CAP 1000
-#define ACCESS_ENITTY_CAP 10
+#define ACCESS_ENITTY_CAP 100
 
 #define ENEMY_VISION    (1 << EntityType_Player) | (1 << EntityType_Wall) |     \
                         (1 << EntityType_Crate) | (1 << EntityType_Objective)
@@ -90,8 +90,7 @@ struct Game
     Camera camera;
     u32 camera_state;
 
-    int current_level;
-    int total_level_count = 7;
+    bool next_stage;
     bool reset_stage;
 };
 
