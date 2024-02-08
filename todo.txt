@@ -1,3 +1,10 @@
+Fix camera update / render order
+
+camera cone
+    Fix if no cone is present
+    Multiple cones
+    Directional shadows
+
 obj importing
     asset queue
     attrib managment
@@ -13,8 +20,9 @@ player acceleration
 
 fake cube ambient occlusion? - probably not
 
-cameras
-camera cone
+
+physics
+    Fix player getting stuck on walls
 
 ui rendering
 
