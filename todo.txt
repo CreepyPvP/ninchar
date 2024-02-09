@@ -1,9 +1,8 @@
-Fix camera update / render order
+Directional shadows
 
 camera cone
     Fix if no cone is present
     Multiple cones
-    Directional shadows
 
 obj importing
     asset queue
@@ -17,6 +16,8 @@ player acceleration
     0.4 (max speed => 0)
     0.2 (left to right)
 
+
+order independant transparency
 
 fake cube ambient occlusion? - probably not
 
@@ -32,7 +33,6 @@ bloom
 color correction
 
 multithreading?
-constraint based physics?
 
 anime toon shader
 cut scene slystem

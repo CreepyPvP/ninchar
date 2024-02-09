@@ -8,6 +8,8 @@
 #include "include/game_math.h"
 #include "include/util.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #define MAX_MODEL_VERT 10000
 #define MAX_MODEL_INDEX 20000
 
@@ -35,15 +37,16 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     return commands;
 }
 
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool culling)
+RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool culling, 
+                         bool shadow_caster)
 {
-    RenderGroup group;
+    RenderGroup group = {};
     group.commands = commands;
     group.current_draw = NULL;
     group.setup.proj = proj;
     group.setup.lit = lit;
     group.setup.culling = culling;
-    group.setup.spotlight_count = 0;
+    group.setup.shadow_caster = shadow_caster;
     return group;
 }
 
@@ -224,6 +227,24 @@ void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
               v3(0, 0, 1), group->commands->white, color);
 }
 
+void push_spotlight(CommandBuffer* commands, V3 pos, V3 dir, float fov)
+{
+    CommandEntryPushLight* light =  (CommandEntryPushLight*) push_entry(commands, sizeof(CommandEntryPushLight));
+    light->header.type = EntryType_PushLight;
+    light->pos = pos;
+    light->dir = dir;
+    light->fov = fov;
+
+    // TODO?
+    float near_plane = 1;
+    float far_plane = 100;
+    Mat4 light_proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+    Mat4 light_view = glm::lookAt(glm::vec3(pos.x, pos.y, pos.z), 
+                                  glm::vec3(pos.x + dir.x, pos.y + dir.y, pos.z + dir.z), 
+                                  glm::vec3( 0.0f, 0.0f,  1.0f));     
+    light->light_space = light_proj * light_view;
+}
+
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path)
 {
     stbi_set_flip_vertically_on_load(true);
@@ -291,18 +312,6 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
     load.vert_stride = vert_stride;
     load.handle = handle;
     return load;
-}
-
-void push_spotlight(RenderGroup* group, V3 pos, V3 dir, float fov)
-{
-    if (group->setup.spotlight_count >= 1) {
-        return;
-    }
-
-    group->setup.spotlights[group->setup.spotlight_count].pos = pos;
-    group->setup.spotlights[group->setup.spotlight_count].dir = dir;
-    group->setup.spotlights[group->setup.spotlight_count].fov = fov;
-    ++group->setup.spotlight_count;
 }
 
 void free_texture_load_op(TextureLoadOp* load_op)

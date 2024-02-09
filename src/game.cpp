@@ -184,7 +184,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         V3 left = v3(fov * side.x + (1 - fov) * facing.x, fov * side.y + (1 - fov) * facing.y, facing.z);
         V3 right = v3(-fov * side.x + (1 - fov) * facing.x, -fov * side.y + (1 - fov) * facing.y, facing.z);
 
-        push_spotlight(group, enemy->pos, facing, fov);
+        push_spotlight(group->commands, enemy->pos, facing, fov);
 
 #ifdef DEBUG
         game_raycast(game, enemy->pos, facing, ENEMY_VISION, NULL, dbg);
