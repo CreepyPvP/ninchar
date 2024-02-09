@@ -57,6 +57,7 @@ void do_collision_response(Entity* a, Entity* b, V2 dir, Game* game)
         move_and_collide(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
     } else if (b->type == EntityType_Objective) {
         b->objective.broken = true;
+        b->collider.transparency_type = TransparencyType_Transparent;
     }
 }
 

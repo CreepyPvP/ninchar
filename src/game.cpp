@@ -61,6 +61,8 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
             entity.collider.radius = v3(0.5);
             entity.color = v3(1);
             entity.texture = white;
+            entity.collider.transparency_type = TransparencyType_Opaque;
+            entity.collider.camouflage_color = 0;
 
             if (curr[0] == 0 && curr[1] == 0 && curr[2] == 0) {
                 entity.type = EntityType_Wall;
@@ -72,6 +74,7 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
             if (curr[0] == 50 && curr[1] == 50 && curr[2] == 5) {
                 entity.type = EntityType_GlassWall;
                 entity.collider.type = ColliderType_Static;
+                entity.collider.transparency_type = TransparencyType_Transparent;
                 entity.texture = glass_wall_texture;
                 push_entity(entity, game);
             }
@@ -85,6 +88,9 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
 
             if (curr[0] == 255 && curr[1] == 0 && curr[2] == 0) {
                 entity.type = EntityType_Player;
+                entity.collider.type = ColliderType_Moveable;
+                entity.collider.transparency_type = TransparencyType_Camouflage;
+                entity.collider.camouflage_color = 1;
                 entity.collider.radius = v3(0.35, 0.35, 0.7);
                 entity.color = v3(0, 0, 1);
                 game->player = push_entity(entity, game);
@@ -92,12 +98,37 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
 
             if (curr[0] == 1 && curr[1] == 125) {
                 entity.type = EntityType_Objective;
+                entity.collider.type = ColliderType_None;
+                entity.collider.transparency_type = TransparencyType_Opaque;
+                entity.collider.camouflage_color = 0;
                 entity.color = v3(0, 1, 0);
                 push_entity(entity, game);
             }
 
             if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
                 entity.type = EntityType_Enemy;
+                entity.collider.type = ColliderType_Static;
+                entity.collider.transparency_type = TransparencyType_Opaque;
+                entity.rotation = 1.2;
+                push_entity(entity, game);
+            }
+
+            if (curr[0] == 195 && curr[1] == 195 && curr[2] == 195) {
+                entity.type = EntityType_MirrorWall;
+                entity.collider.type = ColliderType_Static;
+                entity.collider.transparency_type = TransparencyType_Mirror;
+                entity.texture = wall_texture;
+                entity.color = v3(0.5, 0.5, 0.5);
+                push_entity(entity, game);
+            }
+
+            if (curr[0] == 50 && curr[1] == 50 && curr[2] == 209) {
+                entity.type = EntityType_ColoredWall;
+                entity.collider.type = ColliderType_Static;
+                entity.collider.transparency_type = TransparencyType_Opaque;
+                entity.collider.camouflage_color = 1;
+                entity.texture = wall_texture;
+                entity.color = v3(0, 0, 1);
                 push_entity(entity, game);
             }
 
@@ -184,29 +215,52 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         V3 left = v3(fov * side.x + (1 - fov) * facing.x, fov * side.y + (1 - fov) * facing.y, facing.z);
         V3 right = v3(-fov * side.x + (1 - fov) * facing.x, -fov * side.y + (1 - fov) * facing.y, facing.z);
 
-        push_spotlight(group->commands, enemy->pos, facing, fov);
+        //Pushing multiple spotlights seems to currently cause an error.
+        if(i==0){
+            //push_spotlight(group->commands, enemy->pos, facing, fov);
+        }
 
-#ifdef DEBUG
-        game_raycast(game, enemy->pos, facing, ENEMY_VISION, NULL, dbg);
-        game_raycast(game, enemy->pos, left, ENEMY_VISION, NULL, dbg);
-        game_raycast(game, enemy->pos, right, ENEMY_VISION, NULL, dbg);
-#endif
+        bool enemy_use_many_rays = true;
 
-        Entity* player = get_entity(game->player, game);
-        V3 player_dir = v3(player->pos.x - enemy->pos.x, 
+        if (enemy_use_many_rays){
+            u32 ENEMY_RAY_COUNT = 40;
+            float o = 2.0f / ENEMY_RAY_COUNT - 1;
+            for (u32 j = 0; j < ENEMY_RAY_COUNT - 1; ++j) {
+                o += 2.0f / ENEMY_RAY_COUNT;
+
+                V3 r = v3((1 - fov) * facing.x + o * fov * side.x,
+                    (1 - fov) * facing.y + o * fov * side.y, 0);
+                RaycastResult raycast_result = game_raycast(game, enemy, enemy->pos, r, ENEMY_VISION, dbg);
+                
+                if (raycast_result.hit_found && raycast_result.final_hit_entity->type == EntityType_Player){
+                    game->reset_stage = true;
+                }
+            }
+        }else{
+            //Old deprecated code for enemies seeing players.
+            //Deprecated because it doesn't work with mirrors.
+    #ifdef DEBUG
+            game_raycast(game, enemy, enemy->pos, facing, ENEMY_VISION, dbg);
+            game_raycast(game, enemy, enemy->pos, left, ENEMY_VISION, dbg);
+            game_raycast(game, enemy, enemy->pos, right, ENEMY_VISION, dbg);
+    #endif
+
+            Entity* player = get_entity(game->player, game);
+            V3 player_dir = v3(player->pos.x - enemy->pos.x, 
                            player->pos.y - enemy->pos.y, 
                            player->pos.z - enemy->pos.z);
 
-        EntityRef ray_res;
-        if (game_raycast(game, enemy->pos, player_dir, ENEMY_VISION, &ray_res, dbg)) {
-            if (ray_res.id == game->player.id) {
-                if (dot(norm(player_dir), facing) > dot(norm(left), facing)) {
-                    game->reset_stage = true;
+            RaycastResult ray_res = game_raycast(game, enemy, enemy->pos, player_dir, ENEMY_VISION, dbg);
+            if (ray_res.hit_found) {
+                if (ray_res.final_hit_entity->type == EntityType_Player) {
+                    if (dot(norm(player_dir), facing) > dot(norm(left), facing)) {
+                        game->reset_stage = true;
+                    }
                 }
             }
         }
 
-        enemy->rotation += 0.4 * delta;
+        enemy->rotation += 0.8 * delta;
     }
 
     // Update Objective
@@ -262,37 +316,93 @@ void game_toggle_camera_state(Game* game)
     }
 }
 
-bool game_raycast(Game* game, V3 origin, V3 dir, u32 mask, EntityRef* ref, RenderGroup* dbg)
+RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir, u32 mask, RenderGroup* dbg)
 {
-    float t;
-    bool hit_found = false;
-    V3 hit;
+    RaycastResult res;
+    res.hit_found = false;
+    res.t = INFINITY;
+    res.directly_hit_entity = NULL;
+    res.final_hit_entity = NULL;
     
     for (u32 i = 0; i < game->entity_count; ++i) {
         Entity* entity = game->entities + i;
 
-        if (!(1 & (mask >> entity->type))) {
+        if (entity->collider.transparency_type == TransparencyType_Transparent ||
+            entity == origin_entity ||
+          !(1 & (mask >> entity->type))) {
             continue;
         }
 
         V3 chit;
         float ct;
         if (hit_bounding_box(origin, dir, entity->pos, entity->collider.radius, &chit, &ct)) {
-            if (!hit_found || ct < t) {
-                hit_found = true;
-                t = ct;
-                hit = chit;
-                if (ref) {
-                    ref->id = i;
-                }
+            if (!res.hit_found || ct < res.t) {
+                res.hit_found = true;
+                res.t = ct;
+                res.hit_pos = chit;
+                res.directly_hit_entity = entity;
+                res.final_hit_entity = entity;
             }
         }
     }
 
+    if(res.hit_found && res.directly_hit_entity->collider.transparency_type == TransparencyType_Mirror){
+        Entity* mirror = res.directly_hit_entity;
+        V3 mirrored_dir = dir;
+        float precision = 0.0001f;
+        bool mirror_x = abs(res.hit_pos.x - mirror->pos.x - mirror->collider.radius.x) < precision ||
+            abs(res.hit_pos.x - mirror->pos.x + mirror->collider.radius.x) < precision;
+        bool mirror_y = abs(res.hit_pos.y - mirror->pos.y - mirror->collider.radius.y) < precision ||
+            abs(res.hit_pos.y - mirror->pos.y + mirror->collider.radius.y) < precision;
+
+         if ( mirror_x ){
+            mirrored_dir.x = -mirrored_dir.x;
+        } else if ( mirror_y ){
+            mirrored_dir.y = -mirrored_dir.y;
+        }
+        if(mirror_x || mirror_y){
+            mirror->collider.transparency_type = TransparencyType_Opaque;
+
+            mirror->last_raycast = 
+                game_raycast(game, res.directly_hit_entity, res.hit_pos, mirrored_dir, mask, dbg); 
+
+            //If a ray reaches the same mirror twice we declare that hit_found is false,
+            //because it is likely to go in an infinite loop.
+            if (mirror->last_raycast.final_hit_entity == mirror){
+                res.hit_found = false;
+                res.final_hit_entity = NULL;
+            }else if (mirror->last_raycast.hit_found){
+                res.final_hit_entity = mirror->last_raycast.final_hit_entity;
+            }
+
+            mirror->collider.transparency_type = TransparencyType_Mirror;
+        }else{
+            printf("Ray hit mirror, but we can't determine whether vertically or horizontally");
+            res.hit_found = false;
+        }
+
+    }
+    if(res.hit_found && res.directly_hit_entity->collider.transparency_type == TransparencyType_Camouflage){
+        printf("Ray hits camouflage entity");
+        Entity* entity = res.directly_hit_entity;
+        entity->collider.transparency_type = TransparencyType_Transparent;
+        entity->last_raycast = game_raycast(game, origin_entity, origin, dir, mask, dbg);
+        entity->collider.transparency_type = TransparencyType_Camouflage;
+        if(entity->last_raycast.hit_found && 
+            entity->last_raycast.final_hit_entity->collider.camouflage_color == entity->collider.camouflage_color){
+            
+            printf("Camouflage worked.");
+            res.final_hit_entity = entity->last_raycast.final_hit_entity;
+        }else{
+            printf("Camouflage failed: %d, %d\n", entity->last_raycast.final_hit_entity->type);
+        }
+    }
+
+
 #ifdef DEBUG
-    if (hit_found) {
-        push_line(dbg, origin, hit, v3(1, 0, 0));
+    if (res.hit_found) {
+        push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
     }
 #endif
-    return hit_found;
+    return res;
 }

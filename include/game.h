@@ -10,7 +10,9 @@
 #define ACCESS_ENITTY_CAP 100
 
 #define ENEMY_VISION    (1 << EntityType_Player) | (1 << EntityType_Wall) |     \
-                        (1 << EntityType_Crate) | (1 << EntityType_Objective)
+                        (1 << EntityType_Crate) | (1 << EntityType_Objective) |  \
+                        (1 << EntityType_Enemy) | (1 << EntityType_MirrorWall) | \
+                        (1 << EntityType_ColoredWall)
 
 enum CameraState
 {
@@ -25,6 +27,26 @@ enum ColliderType
     ColliderType_Moveable,
 };
 
+enum TransparencyType
+{
+    TransparencyType_Opaque,
+    TransparencyType_Transparent,
+    TransparencyType_Mirror,
+    TransparencyType_Camouflage,
+};
+
+struct Entity;
+
+struct RaycastResult
+{
+    bool hit_found;
+    float t;
+    V3 origin;
+    V3 hit_pos;
+    Entity* directly_hit_entity;
+    Entity* final_hit_entity;
+};
+
 enum EntityType
 {
     EntityType_Player,
@@ -33,6 +55,8 @@ enum EntityType
     EntityType_GlassWall,
     EntityType_Objective,
     EntityType_Enemy,
+    EntityType_MirrorWall,
+    EntityType_ColoredWall,
 
     EntityType_Count,
 };
@@ -46,7 +70,12 @@ struct EntityRef
 struct Collider
 {
     ColliderType type;
+    TransparencyType transparency_type;
     V3 radius;
+
+    //The player is invisible to enemies if behind the player 
+    //is a wall of the same camouflage color as the player.
+    u32 camouflage_color;
 };
 
 struct Objective
@@ -64,6 +93,9 @@ struct Entity
 
     V3 color;
     TextureHandle texture;
+
+    //If a ray hits a mirror, the mirror stores the ray that bounces away from the mirror.
+    RaycastResult last_raycast;
 
     union {
         Objective objective;
@@ -101,7 +133,7 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white);
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg);
 void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
 
-bool game_raycast(Game* game, V3 origin, V3 dir, u32 mask, EntityRef* ref, RenderGroup* dbg);
+RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir, u32 mask, RenderGroup* dbg);
 
 void game_reset_camera(Game* game);
 void game_toggle_camera_state(Game* game);
