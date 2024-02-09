@@ -235,14 +235,13 @@ void push_spotlight(CommandBuffer* commands, V3 pos, V3 dir, float fov)
     light->dir = dir;
     light->fov = fov;
 
-    // TODO?
     float near_plane = 1;
     float far_plane = 20;
-    Mat4 light_proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-    Mat4 light_view = glm::lookAt(glm::vec3(pos.x, pos.y, pos.z), 
-                                  glm::vec3(pos.x + dir.x, pos.y + dir.y, pos.z + dir.z), 
-                                  glm::vec3( 0.0f, 0.0f,  1.0f));     
-    light->light_space = light_proj * light_view;
+    Mat4 proj = glm::perspective(45.0f, 1.0f, near_plane, far_plane);
+    Mat4 view = glm::lookAt(glm::vec3(pos.x, pos.y, pos.z), 
+                            glm::vec3(pos.x + dir.x, pos.y + dir.y, pos.z + dir.z), 
+                            glm::vec3( 0.0f, 0.0f,  1.0f));     
+    light->light_space = proj * view;
 }
 
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path)

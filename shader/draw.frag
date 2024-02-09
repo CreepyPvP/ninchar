@@ -1,5 +1,7 @@
 #version 440
 
+#define SHADOW_BIAS 0.002
+
 uniform sampler2D base_color;
 
 in vec3 world_pos;
@@ -22,7 +24,7 @@ float shadow_calc(vec4 light_space_pos) {
     proj_coords = proj_coords * 0.5 + 0.5;
     float closest = texture(sl_shadowmap, proj_coords.xy).r;
     float curr = proj_coords.z;
-    float shadow = curr - 0.0 < closest ? 1.0 : 0.0;
+    float shadow = curr - SHADOW_BIAS < closest ? 1.0 : 0.0;
 
     return shadow;
 }
@@ -40,7 +42,7 @@ void main() {
     vec3 sl_left = normalize(fov * sl_side + (1 - fov) * sl_dir.xyz);
 
     if (dot(sl_dir.xyz, normalize(world_pos - sl_pos)) > dot(sl_dir.xyz, sl_left)) {
-        vec3 light_color = vec3(2.0, 1.4, 1.4) * clamp(dot(normalize(sl_pos - world_pos), n), 0, 1);
+        vec3 light_color = vec3(4.0, 1.4, 2.4) * clamp(dot(normalize(sl_pos - world_pos), n), 0, 1);
         light += light_color * shadow_calc(light_space_pos);
     }
 

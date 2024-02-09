@@ -1,4 +1,4 @@
-Directional shadows
+Properly handle transparency / non shadow casting in shadow pass
 
 camera cone
     Fix if no cone is present
