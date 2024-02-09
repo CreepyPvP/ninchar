@@ -346,7 +346,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         }
     }
 
-    if(res.hit_found && res.directly_hit_entity->collider.transparency_type == TransparencyType_Mirror){
+    if (res.hit_found && res.directly_hit_entity->collider.transparency_type == TransparencyType_Mirror){
         Entity* mirror = res.directly_hit_entity;
         V3 mirrored_dir = dir;
         float precision = 0.0001f;
@@ -355,7 +355,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         bool mirror_y = abs(res.hit_pos.y - mirror->pos.y - mirror->collider.radius.y) < precision ||
             abs(res.hit_pos.y - mirror->pos.y + mirror->collider.radius.y) < precision;
 
-         if ( mirror_x ){
+        if ( mirror_x ){
             mirrored_dir.x = -mirrored_dir.x;
         } else if ( mirror_y ){
             mirrored_dir.y = -mirrored_dir.y;
@@ -377,24 +377,18 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
 
             mirror->collider.transparency_type = TransparencyType_Mirror;
         }else{
-            printf("Ray hit mirror, but we can't determine whether vertically or horizontally");
             res.hit_found = false;
         }
 
     }
-    if(res.hit_found && res.directly_hit_entity->collider.transparency_type == TransparencyType_Camouflage){
-        printf("Ray hits camouflage entity");
+    if (res.hit_found && res.directly_hit_entity->collider.transparency_type == TransparencyType_Camouflage){
         Entity* entity = res.directly_hit_entity;
         entity->collider.transparency_type = TransparencyType_Transparent;
         entity->last_raycast = game_raycast(game, origin_entity, origin, dir, mask, dbg);
         entity->collider.transparency_type = TransparencyType_Camouflage;
         if(entity->last_raycast.hit_found && 
             entity->last_raycast.final_hit_entity->collider.camouflage_color == entity->collider.camouflage_color){
-            
-            printf("Camouflage worked.");
             res.final_hit_entity = entity->last_raycast.final_hit_entity;
-        }else{
-            printf("Camouflage failed: %d, %d\n", entity->last_raycast.final_hit_entity->type);
         }
     }
 
