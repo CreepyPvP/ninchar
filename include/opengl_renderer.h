@@ -22,6 +22,8 @@ struct SpotLight
     V3 dir;
     float fov;
 
+    Mat4 light_space;
+
     u32 shadow_map;
 };
 
@@ -37,6 +39,7 @@ struct DrawShader
     u32 proj;
     u32 spotlight_pos;
     u32 spotlight_dir;
+    u32 light_space;
 };
 
 struct ShadowShader

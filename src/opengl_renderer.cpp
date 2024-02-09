@@ -113,8 +113,15 @@ DrawShader load_draw_program(const char* vertex_file, const char* frag_file)
     DrawShader shader;
     shader.base = load_program(vertex_file, frag_file);
     shader.proj = glGetUniformLocation(shader.base.id, "proj");
+    shader.light_space = glGetUniformLocation(shader.base.id, "light_space");
     shader.spotlight_pos = glGetUniformLocation(shader.base.id, "sl_pos");
     shader.spotlight_dir = glGetUniformLocation(shader.base.id, "sl_dir");
+    
+    u32 shadowmap = glGetUniformLocation(shader.base.id, "sl_shadowmap");
+
+    glUseProgram(shader.base.id);
+    glUniform1i(shadowmap, 1);
+
     return shader;
 }
 
@@ -207,6 +214,11 @@ Framebuffer create_framebuffer(u32 width, u32 height, u32 flags)
     assert(status == GL_FRAMEBUFFER_COMPLETE);
 
     return res;
+}
+
+void set_uniform_mat4(u32 id, Mat4* mat)
+{
+    glUniformMatrix4fv(id, 1, GL_FALSE, (GLfloat*) mat);
 }
 
 void opengl_init()
@@ -308,11 +320,15 @@ void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lig
         glDisable(GL_CULL_FACE);
     }
     glUseProgram(shader->base.id);
-    glUniformMatrix4fv(shader->proj, 1, GL_FALSE, 
-                       &(setup->proj)[0][0]);
+    set_uniform_mat4(shader->proj, &setup->proj);
 
     if (setup->lit) {
         for (u32 i = 0; i < light_count; ++i) {
+            set_uniform_mat4(shader->light_space, &lights[i].light_space);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, opengl.shadow_maps[lights[i].shadow_map].depth_tex);
+
             // TODO: Bind to correct light slot
             glUniform3f(shader->spotlight_pos, lights[i].pos.x,
                         lights[i].pos.y, lights[i].pos.z);
@@ -323,11 +339,12 @@ void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lig
     }
 }
 
-void do_shadowpass(CommandBuffer* buffer, SpotLight* light, Mat4 light_space)
+void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
 {
+    glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.shadow_maps[light->shadow_map].id);
     glUseProgram(opengl.shadow_shader.base.id);
-    glUniformMatrix4fv(opengl.shadow_shader.light_space, 1, GL_FALSE, &(light_space)[0][0]);
+    set_uniform_mat4(opengl.shadow_shader.light_space, &light->light_space);
 
     glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -406,6 +423,8 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 prepare_render_setup(&draw->setup, &opengl.quad_shader, lights, light_count);
 
+                glActiveTexture(GL_TEXTURE0);
+
                 // TODO: glMultiDraw and BindLess Texture
                 for (u32 i = 0; i < draw->quad_count; ++i) {
                     u32 quad_offset = i + draw->quad_offset;
@@ -421,8 +440,7 @@ void opengl_render_commands(CommandBuffer* buffer)
                 glBindVertexArray(draw->model.id);
 
                 prepare_render_setup(&draw->setup, &opengl.model_shader.draw, lights, light_count);
-                glUniformMatrix4fv(opengl.model_shader.trans, 1, GL_FALSE, 
-                                   &(draw->trans)[0][0]);
+                set_uniform_mat4(opengl.model_shader.trans, &draw->trans);
 
                 glDrawElements(GL_TRIANGLES, draw->model.index_count, GL_UNSIGNED_INT, (void*) 0);
             } break;
@@ -435,14 +453,16 @@ void opengl_render_commands(CommandBuffer* buffer)
                 lights[light_count].pos = light->pos;
                 lights[light_count].dir = light->dir;
                 lights[light_count].fov = light->fov;
+                lights[light_count].light_space = light->light_space;
 
                 assert(shadow_map_count < SHADOW_MAP_COUNT);
                 lights[light_count].shadow_map = shadow_map_count;
                 ++shadow_map_count;
 
-                do_shadowpass(buffer, lights + light_count, light->light_space);
+                do_shadowpass(buffer, lights + light_count);
                 ++light_count;
                 glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer.id);
+                glViewport(0, 0, settings.width, settings.height);
             } break;
 
             default: {
