@@ -342,6 +342,20 @@ void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lig
     }
 }
 
+void draw_quads(CommandEntryDrawQuads* draw)
+{
+    begin_tmp(&opengl.render_arena);
+    i32* count = (i32*) push_size(&opengl.render_arena, sizeof(i32) * draw->quad_count);
+    void** indices = (void**) push_size(&opengl.render_arena, sizeof(void*) * draw->quad_count);
+
+    for (u32 i = 0; i < draw->quad_count; ++i) {
+        count[i] = 6;
+        indices[i] = (void*) ((draw->index_offset + 6 * i) * sizeof(u32));
+    }
+
+    glMultiDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, indices, draw->quad_count);
+    end_tmp(&opengl.render_arena);
+}
 void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
 {
     glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
@@ -371,8 +385,7 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
                 CommandEntryDrawQuads* draw = (CommandEntryDrawQuads*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryDrawQuads);
 
-                glDrawElements(GL_TRIANGLES, draw->quad_count * 6, GL_UNSIGNED_INT, 
-                               (void*) (draw->index_offset * sizeof(u32)));
+                draw_quads(draw);
             } break;
 
             case EntryType_DrawModel: {
@@ -430,8 +443,10 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, buffer->white.id);
-                glDrawElements(GL_TRIANGLES, draw->quad_count * 6, GL_UNSIGNED_INT, 
-                               (void*) (draw->index_offset * sizeof(u32)));
+                // glDrawElements(GL_TRIANGLES, draw->quad_count * 6, GL_UNSIGNED_INT, 
+                //                (void*) (draw->index_offset * sizeof(u32)));
+
+                draw_quads(draw);
             } break;
 
             case EntryType_DrawModel: {
