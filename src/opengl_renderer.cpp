@@ -252,11 +252,14 @@ void opengl_init()
     opengl.quad_vao = vaos[0];
     glBindVertexArray(opengl.quad_vao);
 
-    u32 buffers[2];
-    glGenBuffers(2, buffers);
+    u32 buffers[3];
+    glGenBuffers(3, buffers);
 
     opengl.vertex_buffer = buffers[0];
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
+
+    opengl.index_buffer = buffers[1];
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opengl.index_buffer);
 
     // 0: pos
     // 1: uv
@@ -279,7 +282,7 @@ void opengl_init()
     };
     opengl.post_vao = vaos[1];
     glBindVertexArray(opengl.post_vao);
-    u32 post_buffer = buffers[1];
+    u32 post_buffer = buffers[2];
     glBindBuffer(GL_ARRAY_BUFFER, post_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 4 * 2, quad_verts, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
@@ -368,10 +371,8 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
                 CommandEntryDrawQuads* draw = (CommandEntryDrawQuads*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryDrawQuads);
 
-                for (u32 i = 0; i < draw->quad_count; ++i) {
-                    u32 quad_offset = i + draw->quad_offset;
-                    glDrawArrays(GL_TRIANGLE_STRIP, 4 * quad_offset, 4);
-                }
+                glDrawElements(GL_TRIANGLES, draw->quad_count * 6, GL_UNSIGNED_INT, 
+                               (void*) (draw->index_offset * sizeof(u32)));
             } break;
 
             case EntryType_DrawModel: {
@@ -395,9 +396,13 @@ void opengl_render_commands(CommandBuffer* buffer)
 
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer.id);
     glBindVertexArray(opengl.quad_vao);
+
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->vert_count, 
                  buffer->vert_buffer, GL_STREAM_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opengl.index_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * buffer->index_count, 
+                 buffer->index_buffer, GL_STREAM_DRAW);
 
     u32 light_count = 0;
     u32 shadow_map_count = 0;
@@ -424,13 +429,9 @@ void opengl_render_commands(CommandBuffer* buffer)
                 prepare_render_setup(&draw->setup, &opengl.quad_shader, lights, light_count);
 
                 glActiveTexture(GL_TEXTURE0);
-
-                // TODO: glMultiDraw and BindLess Texture
-                for (u32 i = 0; i < draw->quad_count; ++i) {
-                    u32 quad_offset = i + draw->quad_offset;
-                    glBindTexture(GL_TEXTURE_2D, buffer->texture_buffer[quad_offset].id);
-                    glDrawArrays(GL_TRIANGLE_STRIP, 4 * quad_offset, 4);
-                }
+                glBindTexture(GL_TEXTURE_2D, buffer->white.id);
+                glDrawElements(GL_TRIANGLES, draw->quad_count * 6, GL_UNSIGNED_INT, 
+                               (void*) (draw->index_offset * sizeof(u32)));
             } break;
 
             case EntryType_DrawModel: {

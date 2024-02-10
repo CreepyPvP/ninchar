@@ -92,9 +92,10 @@ i32 main()
     CommandBuffer cmd;
     u32 entry_size = 10000;
     u8* entry_buffer = (u8*) push_size(&arena, entry_size);
-    u32 quad_cap = 10000;
-    Vertex* vert_buffer = (Vertex*) push_size(&arena, quad_cap * 4 * sizeof(Vertex));
-    TextureHandle* texture_buffer = (TextureHandle*) push_size(&arena, quad_cap * sizeof(TextureHandle));
+    u32 vert_cap = 100000;
+    Vertex* vert_buffer = (Vertex*) push_size(&arena, vert_cap * sizeof(Vertex));
+    u32 index_cap = 100000;
+    u32* index_buffer = (u32*) push_size(&arena, index_cap * sizeof(u32));
 
     TextureHandle white;
     TextureLoadOp load_white = texture_load_op(&white, "assets/white.png");
@@ -177,7 +178,9 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
-        cmd = command_buffer(entry_size, entry_buffer, quad_cap, vert_buffer, texture_buffer, 
+        cmd = command_buffer(entry_size, entry_buffer, 
+                             vert_cap, vert_buffer, 
+                             index_cap, index_buffer, 
                              global_window.width, global_window.height, white);
 
         Mat4 view = glm::lookAt(
@@ -204,8 +207,8 @@ i32 main()
         opengl_render_commands(&cmd);
         double opengl_backend_duration = end_timestamp(&profiler_opengl_backend);
 
-        // printf("Renderer: %f, Backend %f ms\n", 
-        //        render_duration * 1000, opengl_backend_duration * 1000);
+        printf("Renderer: %f, Backend %f ms\n", 
+               render_duration * 1000, opengl_backend_duration * 1000);
 
         glfwSwapBuffers(global_window.handle);
         glfwPollEvents();
