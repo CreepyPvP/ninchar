@@ -110,7 +110,11 @@ i32 main()
     game_load_assets();
     game = {};
 
+<<<<<<< HEAD
     u32 current_level = 9;
+=======
+    u32 current_level = 7;
+>>>>>>> 7d38658d91c0276e1ecf2e9eb8e0e7059898c4c8
     u32 total_level_count = 10;
     game_init(&game, &game_arena, current_level, white);
 
