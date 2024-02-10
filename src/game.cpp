@@ -215,10 +215,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         V3 left = v3(fov * side.x + (1 - fov) * facing.x, fov * side.y + (1 - fov) * facing.y, facing.z);
         V3 right = v3(-fov * side.x + (1 - fov) * facing.x, -fov * side.y + (1 - fov) * facing.y, facing.z);
 
-        //Pushing multiple spotlights seems to currently cause an error.
-        if(i==0){
-            //push_spotlight(group->commands, enemy->pos, facing, fov);
-        }
+        push_spotlight(group->commands, enemy->pos, facing, fov);
 
         bool enemy_use_many_rays = true;
 

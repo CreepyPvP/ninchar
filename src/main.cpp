@@ -111,15 +111,14 @@ i32 main()
     game_load_assets();
     game = {};
 
-    u32 current_level = 7;
-    u32 total_level_count = 8;
+    u32 current_level = 9;
+    u32 total_level_count = 10;
     game_init(&game, &game_arena, current_level, white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(global_window.handle, true);
         }
-
 
 #ifdef DEBUG
         static bool c_pressed = false;

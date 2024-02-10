@@ -4,6 +4,10 @@ camera cone
     Fix if no cone is present
     Multiple cones
 
+generational entity allocator
+Fix scene system
+
+
 Peter panning
 Properly handle transparency / non shadow casting in shadow pass
 
