@@ -10,7 +10,7 @@ struct RenderGroup;
 
 struct TextureHandle
 {
-    u32 id;
+    u64 id;
 };
 
 struct ModelHandle
@@ -48,7 +48,7 @@ struct Vertex
     V3 norm;
     V3 color;
 
-    TextureHandle texture;
+    u64 texture;
 };
 
 struct RenderSetup
@@ -86,10 +86,6 @@ struct CommandBuffer
     u32 vert_count;
     u32 vert_cap;
 
-    u32* index_buffer;
-    u32 index_cap;
-    u32 index_count;
-
     u8* entry_buffer;
     u32 entry_cap;
     u32 entry_size;
@@ -108,7 +104,7 @@ struct CommandEntryClear
 struct CommandEntryDrawQuads
 {
     CommandEntryHeader header;
-    u32 index_offset;
+    u32 vert_offset;
     u32 quad_count;
     RenderSetup setup;
 };
@@ -142,7 +138,6 @@ struct RenderGroup
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
                              u32 vert_cap, Vertex* vert_buffer, 
-                             u32 index_cap, u32* index_buffer,
                              u32 width, u32 height, TextureHandle white);
 
 RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool culling, 

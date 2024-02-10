@@ -68,7 +68,6 @@ struct OpenGLContext
 {
     RenderSettings prev_settings;
     u32 vertex_buffer;
-    u32 index_buffer;
 
     Arena render_arena;
     ModelShader model_shader;

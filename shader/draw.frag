@@ -1,13 +1,13 @@
 #version 440
+#extension GL_ARB_bindless_texture: require
 
 #define SHADOW_BIAS 0.002
-
-uniform sampler2D base_color;
 
 in vec3 world_pos;
 in vec2 uv;
 in vec3 norm;
 in vec3 color;
+flat in uvec2 base_color;
 
 in vec4 light_space_pos;
 
@@ -32,7 +32,8 @@ float shadow_calc(vec4 light_space_pos) {
 void main() {
     vec3 n = normalize(norm);
 
-    out_Color = texture(base_color, uv);
+    out_Color = texture(sampler2D(base_color), uv);
+    // out_Color = vec4(uv, 0, 1);
     out_Color.rgb *= color;
 
     vec3 light = vec3(0.3 + 0.5 * clamp(dot(n, l), 0, 1));

@@ -94,8 +94,6 @@ i32 main()
     u8* entry_buffer = (u8*) push_size(&arena, entry_size);
     u32 vert_cap = 100000;
     Vertex* vert_buffer = (Vertex*) push_size(&arena, vert_cap * sizeof(Vertex));
-    u32 index_cap = 100000;
-    u32* index_buffer = (u32*) push_size(&arena, index_cap * sizeof(u32));
 
     TextureHandle white;
     TextureLoadOp load_white = texture_load_op(&white, "assets/white.png");
@@ -180,7 +178,6 @@ i32 main()
 
         cmd = command_buffer(entry_size, entry_buffer, 
                              vert_cap, vert_buffer, 
-                             index_cap, index_buffer, 
                              global_window.width, global_window.height, white);
 
         Mat4 view = glm::lookAt(
