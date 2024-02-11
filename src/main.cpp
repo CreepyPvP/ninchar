@@ -115,9 +115,6 @@ i32 main()
     opengl_load_texture(&load_white);
     free_texture_load_op(&load_white);
 
-    Profiler profiler_renderer;
-    Profiler profiler_opengl_backend;
-
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
     Arena game_arena;
@@ -129,6 +126,8 @@ i32 main()
     game_init(&game, &game_arena, levels[current_level], white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
+        start_frame();
+
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(global_window.handle, true);
         }
@@ -209,19 +208,12 @@ i32 main()
         RenderGroup transparent_group = render_group(&cmd, proj, true, true, false);
         RenderGroup debug_group = render_group(&cmd, proj, false, false, false);
 
-        start_timestamp(&profiler_renderer);
-
         game_update(&game, pressed, 1.0f / 60.0f, &main_group, &debug_group);
         game_render(&game, &main_group, &transparent_group, &debug_group);
 
-        double render_duration = end_timestamp(&profiler_renderer);
-
-        start_timestamp(&profiler_opengl_backend);
         opengl_render_commands(&cmd);
-        double opengl_backend_duration = end_timestamp(&profiler_opengl_backend);
 
-        printf("Renderer: %f, Backend %f ms\n", 
-               render_duration * 1000, opengl_backend_duration * 1000);
+        end_frame();
 
         glfwSwapBuffers(global_window.handle);
         glfwPollEvents();

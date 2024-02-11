@@ -4,6 +4,7 @@
 #include "include/game_math.h"
 #include "include/arena.h"
 #include "include/util.h"
+#include "include/profiler.h"
 
 #include "include/stb_image.h"
 
@@ -321,6 +322,8 @@ void game_toggle_camera_state(Game* game)
 
 RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir, u32 mask, RenderGroup* dbg)
 {
+    LogEntryInfo info = start_log(LogTarget_GameRaycast);
+
     RaycastResult res;
     res.hit_found = false;
     res.t = INFINITY;
@@ -401,5 +404,8 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
     }
 #endif
+
+    end_log(info);
+
     return res;
 }

@@ -3,13 +3,35 @@
 
 #include "include/types.h"
 
-struct Profiler {
+enum LogTarget
+{
+    LogTarget_GameRaycast,
+    LogTarget_Backend,
+
+    LogTarget_Count
+};
+
+struct LogEntry
+{
+    u32 count;
+    float total_duration;
+};
+
+struct LogEntryInfo
+{
+    LogTarget target;
     double start;
 };
 
-void start_timestamp(Profiler* profiler);
+struct FrameLog
+{
+    LogEntry entries[LogTarget_Count];
+};
 
-// NOTE: elapsed time in seconds
-double end_timestamp(Profiler* profiler);
+void start_frame();
+void end_frame();
+
+LogEntryInfo start_log(LogTarget target);
+void end_log(LogEntryInfo info);
 
 #endif 

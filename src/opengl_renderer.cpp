@@ -7,6 +7,7 @@
 
 #include "include/types.h"
 #include "include/util.h"
+#include "include/profiler.h"
 
 OpenGLContext opengl;
 
@@ -412,6 +413,8 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
 
 void opengl_render_commands(CommandBuffer* buffer)
 {
+    LogEntryInfo info = start_log(LogTarget_Backend);
+
     RenderSettings settings = buffer->settings;
     if (!equal_settings(&settings, &opengl.prev_settings)) {
         apply_settings(&settings);
@@ -491,6 +494,7 @@ void opengl_render_commands(CommandBuffer* buffer)
             } break;
 
             default: {
+                end_log(info);
                 return;
             }
         }
@@ -512,6 +516,8 @@ void opengl_render_commands(CommandBuffer* buffer)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, opengl.post_framebuffer.color);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    end_log(info);
 }
 
 void opengl_load_texture(TextureLoadOp* load_op)

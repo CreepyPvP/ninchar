@@ -1,13 +1,12 @@
-generational entity allocator
-Profiler / Profiler logging
-
-
-Peter panning
-
 obj importing
     asset queue
     attrib managment
     vao creation cleanup
+
+generational entity allocator
+
+
+Fix peter panning?
 
 fix camera jump
 
@@ -18,9 +17,6 @@ player acceleration
 
 
 order independant transparency
-
-physics
-    Fix player getting stuck on walls
 
 ui rendering
 
@@ -33,3 +29,15 @@ multithreading?
 
 anime toon shader
 cut scene slystem
+
+
+
+
+Mit peter bereden:
+- Boxen ziehen. Box zu ziehbahrer Box converter Tile?
+- Time mechanic
+- Dash?
+- Sliding box
+- Box in Schine? Directional box?
+- Verschiedene box groessen / formen? (Tetris)
+- Gegenstaenden auf boxen (Trex modell)
