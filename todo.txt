@@ -1,6 +1,5 @@
-camera cone
-    Fix if no cone is present
-    Multiple cones
+Properly handle transparency / non shadow casting in shadow pass
+Shadow map culling / Near plane
 
 generational entity allocator
 Fix scene system
@@ -8,7 +7,6 @@ Profile raycast
 
 
 Peter panning
-Properly handle transparency / non shadow casting in shadow pass
 
 obj importing
     asset queue

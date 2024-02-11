@@ -5,7 +5,8 @@
 #include "include/arena.h"
 #include "include/renderer.h"
 
-#define SHADOW_MAP_COUNT 10
+#define SHADOW_MAP_COUNT 6
+#define MAX_SPOTLIGHTS 6
 #define SHADOW_MAP_SIZE 1024
 
 #define FRAMEBUFFER_INITIALIZED (1 << 0)
@@ -37,8 +38,10 @@ struct DrawShader
 {
     ProgramBase base;
     u32 proj;
+    u32 spotlight_count;
     u32 spotlight_pos;
     u32 spotlight_dir;
+    u32 spotlight_fov;
     u32 light_space;
 
     u32 shadow_map;

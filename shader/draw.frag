@@ -2,6 +2,7 @@
 #extension GL_ARB_bindless_texture: require
 
 #define SHADOW_BIAS 0.002
+#define MAX_SPOTLIGHTS 6
 
 in vec3 world_pos;
 in vec2 uv;
@@ -9,20 +10,22 @@ in vec3 norm;
 in vec3 color;
 flat in uvec2 base_color;
 
-in vec4 light_space_pos;
+in vec4 sl_light_space_pos[MAX_SPOTLIGHTS];
 
-uniform uvec2 sl_shadowmap;
-uniform vec3 sl_pos;
-uniform vec4 sl_dir;
+uniform uint sl_count;
+uniform uvec2 sl_shadowmap[MAX_SPOTLIGHTS];
+uniform vec3 sl_pos[MAX_SPOTLIGHTS];
+uniform vec3 sl_dir[MAX_SPOTLIGHTS];
+uniform float sl_fov[MAX_SPOTLIGHTS];
 
 out vec4 out_Color;
 
 vec3 l = normalize(vec3(1, 2, 3));
 
-float shadow_calc(vec4 light_space_pos) {
+float shadow_calc(vec4 light_space_pos, sampler2D shadowmap) {
     vec3 proj_coords = light_space_pos.xyz / light_space_pos.w;
     proj_coords = proj_coords * 0.5 + 0.5;
-    float closest = texture(sampler2D(sl_shadowmap), proj_coords.xy).r;
+    float closest = texture(shadowmap, proj_coords.xy).r;
     float curr = proj_coords.z;
     float shadow = curr - SHADOW_BIAS < closest ? 1.0 : 0.0;
 
@@ -37,13 +40,19 @@ void main() {
 
     vec3 light = vec3(0.3 + 0.5 * clamp(dot(n, l), 0, 1));
 
-    float fov = sl_dir.w;
-    vec3 sl_side = vec3(-sl_dir.y, sl_dir.x, sl_dir.z);
-    vec3 sl_left = normalize(fov * sl_side + (1 - fov) * sl_dir.xyz);
+    for (uint i = 0; i < sl_count; ++i) {
+        sampler2D shadowmap = sampler2D(sl_shadowmap[i]);
+        vec3 pos = sl_pos[i];
+        vec3 dir = sl_dir[i];
+        float fov = sl_fov[i];
 
-    if (dot(sl_dir.xyz, normalize(world_pos - sl_pos)) > dot(sl_dir.xyz, sl_left)) {
-        vec3 light_color = vec3(4.0, 1.4, 2.4) * clamp(dot(normalize(sl_pos - world_pos), n), 0, 1);
-        light += light_color * shadow_calc(light_space_pos);
+        vec3 side = vec3(-dir.y, dir.x, dir.z);
+        vec3 left = normalize(fov * side + (1 - fov) * dir);
+
+        if (dot(dir, normalize(world_pos - pos)) > dot(dir, left)) {
+            vec3 light_color = vec3(4.0, 1.4, 2.4) * clamp(dot(normalize(pos - world_pos), n), 0, 1);
+            light += light_color * shadow_calc(sl_light_space_pos[i], shadowmap);
+        }
     }
 
     out_Color.rgb *= light;
