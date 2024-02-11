@@ -1,5 +1,3 @@
-Optimize draw call usage
-
 camera cone
     Fix if no cone is present
     Multiple cones

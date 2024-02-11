@@ -11,7 +11,7 @@ flat in uvec2 base_color;
 
 in vec4 light_space_pos;
 
-uniform sampler2D sl_shadowmap;
+uniform uvec2 sl_shadowmap;
 uniform vec3 sl_pos;
 uniform vec4 sl_dir;
 
@@ -22,7 +22,7 @@ vec3 l = normalize(vec3(1, 2, 3));
 float shadow_calc(vec4 light_space_pos) {
     vec3 proj_coords = light_space_pos.xyz / light_space_pos.w;
     proj_coords = proj_coords * 0.5 + 0.5;
-    float closest = texture(sl_shadowmap, proj_coords.xy).r;
+    float closest = texture(sampler2D(sl_shadowmap), proj_coords.xy).r;
     float curr = proj_coords.z;
     float shadow = curr - SHADOW_BIAS < closest ? 1.0 : 0.0;
 
@@ -33,7 +33,6 @@ void main() {
     vec3 n = normalize(norm);
 
     out_Color = texture(sampler2D(base_color), uv);
-    // out_Color = vec4(uv, 0, 1);
     out_Color.rgb *= color;
 
     vec3 light = vec3(0.3 + 0.5 * clamp(dot(n, l), 0, 1));

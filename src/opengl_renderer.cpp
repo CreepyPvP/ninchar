@@ -117,10 +117,7 @@ DrawShader load_draw_program(const char* vertex_file, const char* frag_file)
     shader.spotlight_pos = glGetUniformLocation(shader.base.id, "sl_pos");
     shader.spotlight_dir = glGetUniformLocation(shader.base.id, "sl_dir");
     
-    u32 shadowmap = glGetUniformLocation(shader.base.id, "sl_shadowmap");
-
-    glUseProgram(shader.base.id);
-    glUniform1i(shadowmap, 1);
+    shader.shadow_map = glGetUniformLocation(shader.base.id, "sl_shadowmap");
 
     return shader;
 }
@@ -299,6 +296,9 @@ void opengl_init()
     for (u32 i = 0; i < SHADOW_MAP_COUNT; ++i) {
         opengl.shadow_maps[i] = create_framebuffer(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 
                                                    FRAMEBUFFER_DEPTH_TEX);
+
+        opengl.shadow_map_handles[i] = glGetTextureHandleARB(opengl.shadow_maps[i].depth_tex);
+        glMakeTextureHandleResidentARB(opengl.shadow_map_handles[i]);
     }
 }
 
@@ -329,8 +329,10 @@ void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lig
         for (u32 i = 0; i < light_count; ++i) {
             set_uniform_mat4(shader->light_space, &lights[i].light_space);
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, opengl.shadow_maps[lights[i].shadow_map].depth_tex);
+            // glActiveTexture(GL_TEXTURE1);
+            // glBindTexture(GL_TEXTURE_2D, opengl.shadow_maps[lights[i].shadow_map].depth_tex);
+            // glUniformHandleui64ARB(shader->shadow_map, opengl.shadow_map_handles[lights[i].shadow_map]);
+            glUniform2uiv(shader->shadow_map, 1, (const u32*) &opengl.shadow_map_handles[lights[i].shadow_map]);
 
             // TODO: Bind to correct light slot
             glUniform3f(shader->spotlight_pos, lights[i].pos.x,
