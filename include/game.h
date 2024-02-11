@@ -130,7 +130,7 @@ struct Game
 
 
 void game_load_assets();
-void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white);
+void game_init(Game* game, Arena* arena, char* stage, TextureHandle white);
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg);
 void game_render(Game* game, RenderGroup* group, RenderGroup* transparent, RenderGroup* dbg);
 

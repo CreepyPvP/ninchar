@@ -43,10 +43,10 @@ void game_load_assets()
     dispose(&asset_arena);
 };
 
-void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
+void game_init(Game* game, Arena* arena, char* stage, TextureHandle white)
 {
     char path[1024];
-    sprintf(path, "assets/stages/%u.png", stage);
+    sprintf(path, "assets/stages/%s.png", stage);
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
     assert(tmp);
 

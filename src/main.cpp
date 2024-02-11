@@ -31,6 +31,21 @@ double last_mouse_pos_y;
 
 Game game;
 
+u32 level_count = 11;
+
+char* levels[] = {
+    "align_crates",
+    "align_crates_2",
+    "corner",
+    "dont_destroy",
+    "down_then_up",
+    "jam_level",
+    "jam_level_2",
+    "many_objectives",
+    "reflection_test",
+    "reflections",
+    "renderer_test"
+};
 
 void resize_callback(GLFWwindow* window, i32 width, i32 height) 
 {
@@ -110,9 +125,8 @@ i32 main()
     game_load_assets();
     game = {};
 
-    u32 current_level = 9;
-    u32 total_level_count = 11;
-    game_init(&game, &game_arena, current_level, white);
+    u32 current_level = 10;
+    game_init(&game, &game_arena, levels[current_level], white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -143,7 +157,7 @@ i32 main()
         static bool n_pressed = false;
         if (glfwGetKey(global_window.handle, GLFW_KEY_N) == GLFW_PRESS) {
             if (!n_pressed) {
-                current_level = (current_level + 1) % total_level_count;
+                current_level = (current_level + 1) % level_count;
                 game.reset_stage = true;
             }
             n_pressed = true;
@@ -153,13 +167,13 @@ i32 main()
 #endif
 
         if (game.next_stage) {
-            current_level = (current_level + 1) % total_level_count;
+            current_level = (current_level + 1) % level_count;
             game.reset_stage = true;
         }
         if (game.reset_stage){
             dispose(&game_arena);
             game = {};
-            game_init(&game, &game_arena, current_level, white);
+            game_init(&game, &game_arena, levels[current_level], white);
         }
 
 
