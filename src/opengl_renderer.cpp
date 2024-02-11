@@ -397,7 +397,9 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
                 CommandEntryDrawQuads* draw = (CommandEntryDrawQuads*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryDrawQuads);
 
-                draw_quads(draw);
+                if (draw->setup.shadow_caster) {
+                    draw_quads(draw);
+                }
             } break;
 
             case EntryType_DrawModel: {

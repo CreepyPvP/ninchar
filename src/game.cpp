@@ -76,6 +76,7 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
                 entity.collider.type = ColliderType_Static;
                 entity.collider.transparency_type = TransparencyType_Transparent;
                 entity.texture = glass_wall_texture;
+                entity.transparent = true;
                 push_entity(entity, game);
             }
 
@@ -274,11 +275,11 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
     }
 }
 
-void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
+void game_render(Game* game, RenderGroup* default, RenderGroup* transparent, RenderGroup* dbg){
     // Render Ground
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            push_cube(group, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
+            push_cube(default, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
         }
     }
 
@@ -292,6 +293,11 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
 
         if (entity->type == EntityType_Objective && entity->objective.broken) {
             continue;
+        }
+
+        RenderGroup* group = default;
+        if (entity->transparent) {
+            group = transparent;
         }
 
         push_cube(group, entity->pos, entity->collider.radius, entity->texture, entity->color);
@@ -363,8 +369,8 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
             mirror->last_raycast = 
                 game_raycast(game, res.directly_hit_entity, res.hit_pos, mirrored_dir, mask, dbg); 
 
-            //If a ray reaches the same mirror twice we declare that hit_found is false,
-            //because it is likely to go in an infinite loop.
+            // If a ray reaches the same mirror twice we declare that hit_found is false,
+            // because it is likely to go in an infinite loop.
             if (mirror->last_raycast.final_hit_entity == mirror){
                 res.hit_found = false;
                 res.final_hit_entity = NULL;

@@ -1,4 +1,3 @@
-Properly handle transparency / non shadow casting in shadow pass
 Shadow map culling / Near plane
 
 generational entity allocator

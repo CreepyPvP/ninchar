@@ -190,13 +190,15 @@ i32 main()
         Mat4 proj = projection * view;
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
+
         RenderGroup main_group = render_group(&cmd, proj, true, true, true);
+        RenderGroup transparent_group = render_group(&cmd, proj, true, true, false);
         RenderGroup debug_group = render_group(&cmd, proj, false, false, false);
 
         start_timestamp(&profiler_renderer);
 
         game_update(&game, pressed, 1.0f / 60.0f, &main_group, &debug_group);
-        game_render(&game, &main_group, &debug_group);
+        game_render(&game, &main_group, &transparent_group, &debug_group);
 
         double render_duration = end_timestamp(&profiler_renderer);
 
