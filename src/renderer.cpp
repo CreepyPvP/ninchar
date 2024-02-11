@@ -233,7 +233,7 @@ void push_spotlight(CommandBuffer* commands, V3 pos, V3 dir, float fov)
     light->dir = dir;
     light->fov = fov;
 
-    float near_plane = 0.1;
+    float near_plane = 0.4;
     float far_plane = 20;
     Mat4 proj = glm::perspective(45.0f, 1.0f, near_plane, far_plane);
     Mat4 view = glm::lookAt(glm::vec3(pos.x, pos.y, pos.z), 

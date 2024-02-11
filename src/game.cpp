@@ -363,7 +363,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         } else if ( mirror_y ){
             mirrored_dir.y = -mirrored_dir.y;
         }
-        if(mirror_x || mirror_y){
+        if (mirror_x || mirror_y) {
             mirror->collider.transparency_type = TransparencyType_Opaque;
 
             mirror->last_raycast = 
@@ -379,7 +379,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
             }
 
             mirror->collider.transparency_type = TransparencyType_Mirror;
-        }else{
+        } else {
             res.hit_found = false;
         }
 
@@ -389,7 +389,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         entity->collider.transparency_type = TransparencyType_Transparent;
         entity->last_raycast = game_raycast(game, origin_entity, origin, dir, mask, dbg);
         entity->collider.transparency_type = TransparencyType_Camouflage;
-        if(entity->last_raycast.hit_found && 
+        if (entity->last_raycast.hit_found && 
             entity->last_raycast.final_hit_entity->collider.camouflage_color == entity->collider.camouflage_color){
             res.final_hit_entity = entity->last_raycast.final_hit_entity;
         }
