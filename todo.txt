@@ -1,8 +1,6 @@
-Shadow map culling / Near plane
-
 generational entity allocator
 Fix scene system
-Profile raycast
+Profiler / Profiler logging
 
 
 Peter panning

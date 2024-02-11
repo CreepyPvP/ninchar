@@ -370,6 +370,7 @@ void draw_quads(CommandEntryDrawQuads* draw)
 
 void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
 {
+    glDisable(GL_CULL_FACE);
     glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.shadow_maps[light->shadow_map].id);
     glUseProgram(opengl.shadow_shader.base.id);
@@ -483,8 +484,10 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 do_shadowpass(buffer, lights + light_count);
                 ++light_count;
+
                 glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer.id);
                 glViewport(0, 0, settings.width, settings.height);
+                glEnable(GL_CULL_FACE);
             } break;
 
             default: {
