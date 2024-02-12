@@ -1,4 +1,5 @@
 #include "include/profiler.h"
+#include <stdio.h>
 
 
 // NOTE: wall_time() returns current wall time in seconds

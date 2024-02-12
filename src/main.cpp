@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string>
+
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -17,7 +19,6 @@
 #include "include/game_math.h"
 #include "include/game.h"
 
-
 struct GameWindow {
     GLFWwindow* handle;
     u32 width;
@@ -33,7 +34,7 @@ Game game;
 
 u32 level_count = 11;
 
-char* levels[] = {
+std::string levels[] = {
     "align_crates",
     "align_crates_2",
     "corner",
@@ -122,7 +123,7 @@ i32 main()
     game_load_assets();
     game = {};
 
-    u32 current_level = 10;
+    u32 current_level = 2;
     game_init(&game, &game_arena, levels[current_level], white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {

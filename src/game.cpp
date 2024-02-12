@@ -44,10 +44,10 @@ void game_load_assets()
     dispose(&asset_arena);
 };
 
-void game_init(Game* game, Arena* arena, char* stage, TextureHandle white)
+void game_init(Game* game, Arena* arena, std::string stage, TextureHandle white)
 {
     char path[1024];
-    sprintf(path, "assets/stages/%s.png", stage);
+    sprintf(path, "assets/stages/%s.png", stage.c_str());
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
     assert(tmp);
 
@@ -277,11 +277,11 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
     }
 }
 
-void game_render(Game* game, RenderGroup* default, RenderGroup* transparent, RenderGroup* dbg){
+void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparent, RenderGroup* dbg){
     // Render Ground
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            push_cube(default, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
+            push_cube(default_group, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
         }
     }
 
@@ -297,7 +297,7 @@ void game_render(Game* game, RenderGroup* default, RenderGroup* transparent, Ren
             continue;
         }
 
-        RenderGroup* group = default;
+        RenderGroup* group = default_group;
         if (entity->transparent) {
             group = transparent;
         }

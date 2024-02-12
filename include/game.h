@@ -5,6 +5,7 @@
 #include "include/arena.h"
 #include "include/renderer.h"
 #include "include/camera.h"
+#include <string>
 
 #define ENTITY_CAP 1000
 #define ACCESS_ENITTY_CAP 100
@@ -132,7 +133,7 @@ struct Game
 
 
 void game_load_assets();
-void game_init(Game* game, Arena* arena, char* stage, TextureHandle white);
+void game_init(Game* game, Arena* arena, std::string stage, TextureHandle white);
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg);
 void game_render(Game* game, RenderGroup* group, RenderGroup* transparent, RenderGroup* dbg);
 
