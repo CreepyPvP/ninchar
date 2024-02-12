@@ -68,15 +68,20 @@ struct EntityRef
     // TODO: Add generation here
 };
 
+
+
 struct Collider
 {
     ColliderType type;
     TransparencyType transparency_type;
-    V3 radius;
+    V3 float_radius;
+    V2int int_radius;
 
     // The player is invisible to enemies if behind the player 
     // is a wall of the same camouflage color as the player.
     u32 camouflage_color;
+
+    void set_radius(int new_int_radius, float z);
 };
 
 struct Objective
@@ -88,7 +93,9 @@ struct Entity
 {
     EntityType type;
 
+    V2int int_pos;
     V3 pos;
+
     Collider collider;
     
     float rotation;
@@ -146,6 +153,6 @@ EntityRef push_entity(Entity entity, Game* game);
 Entity* get_entity(EntityRef ref, Game* game);
 void push_entity_to_list(EntityList* list, EntityRef ref);
 
-void move_and_collide(Entity* entity, V2 dir, Game* game);
+void move_and_collide(Entity* entity, V2int dir, Game* game);
 
 #endif

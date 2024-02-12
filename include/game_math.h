@@ -29,6 +29,11 @@ inline u32 max(u32 a, u32 b)
     return a > b? a : b;
 }
 
+inline u32 int_max(int a, int b)
+{
+    return a > b? a : b;
+}
+
 inline V3 cross(V3 a, V3 b)
 {
     V3 result;
@@ -52,8 +57,9 @@ bool is_zero(float x);
 
 float halton(u32 i, u32 b);
 
+#define INT_TILE_SIZE 1024
 
-V2 v2int_to_v2float(V2int v2);
-V2int v2float_to_v2int(V2 v2);
+V3 v2int_to_v3float(V2int v2, float z);
+V2int v3float_to_v2int(V3 v3);
 
 #endif

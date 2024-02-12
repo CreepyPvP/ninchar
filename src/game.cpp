@@ -55,11 +55,12 @@ void game_init(Game* game, Arena* arena, std::string stage, TextureHandle white)
 
     // TODO: Clean this up some more
     u8* curr = tmp;
-    for (u32 y = 0; y < game->height; ++y) {
-        for (u32 x = 0; x < game->width; ++x) {
+    for (int y = 0; y < game->height; ++y) {
+        for (int x = 0; x < game->width; ++x) {
             Entity entity = {};
-            entity.pos = v3(x, y, 1);
-            entity.collider.radius = v3(0.5);
+            entity.int_pos = {x*INT_TILE_SIZE, y*INT_TILE_SIZE};
+            entity.pos = v2int_to_v3float(entity.int_pos, 1.0f);
+            entity.collider.set_radius(INT_TILE_SIZE/2, 0.5f);
             entity.color = v3(1);
             entity.texture = white;
             entity.collider.transparency_type = TransparencyType_Opaque;
@@ -93,7 +94,7 @@ void game_init(Game* game, Arena* arena, std::string stage, TextureHandle white)
                 entity.collider.type = ColliderType_Moveable;
                 entity.collider.transparency_type = TransparencyType_Camouflage;
                 entity.collider.camouflage_color = 1;
-                entity.collider.radius = v3(0.35, 0.35, 0.7);
+                entity.collider.set_radius(0.35 * INT_TILE_SIZE, 0.7f);
                 entity.color = v3(0, 0, 1);
                 game->player = push_entity(entity, game);
             }
@@ -205,8 +206,8 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         movement.y *= delta * 10;
 
         Entity* player = get_entity(game->player, game);
-        move_and_collide(player, v2(movement.x, 0), game);
-        move_and_collide(player, v2(0, movement.y), game);
+        move_and_collide(player, v3float_to_v2int({movement.x, 0,0}), game);
+        move_and_collide(player, v3float_to_v2int({0,movement.y, 0}), game);
     }
 
     for (u32 i = 0; i < game->enemies.entity_count; ++i) {
@@ -289,7 +290,7 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
         Entity* entity = game->entities + i;
 
         if (entity->type == EntityType_Enemy) {
-            push_model(dbg, teapot, entity->pos, entity->collider.radius);
+            push_model(dbg, teapot, entity->pos, entity->collider.float_radius);
             continue;
         }
 
@@ -302,7 +303,7 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
             group = transparent;
         }
 
-        push_cube(group, entity->pos, entity->collider.radius, entity->texture, entity->color);
+        push_cube(group, entity->pos, entity->collider.float_radius, entity->texture, entity->color);
     }
 }
 
@@ -342,7 +343,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
 
         V3 chit;
         float ct;
-        if (hit_bounding_box(origin, dir, entity->pos, entity->collider.radius, &chit, &ct)) {
+        if (hit_bounding_box(origin, dir, entity->pos, entity->collider.float_radius, &chit, &ct)) {
             if (!res.hit_found || ct < res.t) {
                 res.hit_found = true;
                 res.t = ct;
@@ -357,10 +358,10 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         Entity* mirror = res.directly_hit_entity;
         V3 mirrored_dir = dir;
         float precision = 0.0001f;
-        bool mirror_x = abs(res.hit_pos.x - mirror->pos.x - mirror->collider.radius.x) < precision ||
-            abs(res.hit_pos.x - mirror->pos.x + mirror->collider.radius.x) < precision;
-        bool mirror_y = abs(res.hit_pos.y - mirror->pos.y - mirror->collider.radius.y) < precision ||
-            abs(res.hit_pos.y - mirror->pos.y + mirror->collider.radius.y) < precision;
+        bool mirror_x = abs(res.hit_pos.x - mirror->pos.x - mirror->collider.float_radius.x) < precision ||
+            abs(res.hit_pos.x - mirror->pos.x + mirror->collider.float_radius.x) < precision;
+        bool mirror_y = abs(res.hit_pos.y - mirror->pos.y - mirror->collider.float_radius.y) < precision ||
+            abs(res.hit_pos.y - mirror->pos.y + mirror->collider.float_radius.y) < precision;
 
         if ( mirror_x ){
             mirrored_dir.x = -mirrored_dir.x;

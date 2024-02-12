@@ -54,9 +54,9 @@ Mat4 mat4(V3 pos, V3 scale)
 }
 
 
-V2 v2int_to_v2float(V2int v2){
-    return {v2.x/1000.0f, v2.y/1000.0f};
+V3 v2int_to_v3float(V2int v2, float z){
+    return {v2.x/(float)INT_TILE_SIZE, v2.y/(float)INT_TILE_SIZE, 1};
 }
-V2int v2float_to_v2int(V2 v2){
-    return {(int) (v2.x * 1000.0f), (int) (v2.y*1000.0f) };
+V2int v3float_to_v2int(V3 v3){
+    return {(int) (v3.x * INT_TILE_SIZE), (int) (v3.y*INT_TILE_SIZE) };
 }

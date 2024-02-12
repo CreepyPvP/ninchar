@@ -4,102 +4,90 @@
 #include "include/game_math.h"
 
 
-V3 far_away = v3(1000000, 1000000, 1000000);
+V2int far_away = {-1000000, -1000000};
 float box_gap = 0.00001f;
 
-V2 get_collided_movement(Entity* a, V2 dir, Game* game);
-V2 distance_towards(Entity* a, Entity* b, V2 dir);
+V2int get_collided_movement(Entity* a, V2int dir, Game* game);
+V2int distance_towards(Entity* a, Entity* b, V2int dir);
 
-float clamp_abs(float a, float b){
-    if (is_zero(b)){
+
+
+void Collider::set_radius(int new_int_radius, float z){
+        int_radius = {new_int_radius, new_int_radius};
+        float_radius = v2int_to_v3float(int_radius, z);
+}
+
+
+int clamp_abs(int a, int b){
+    if (b == 0){
         return 0;
     } else if (b > 0){
         return min(a, b);
     } else{
-        return max(a, b);
+        return int_max(a, b);
     }
 }
 
 
 bool intersects(Entity* a, Entity* b)
 {
-    return a->pos.x - a->collider.radius.x < b->pos.x + b->collider.radius.x &&
-           a->pos.x + a->collider.radius.x > b->pos.x - b->collider.radius.x &&
-           a->pos.y - a->collider.radius.y < b->pos.y + b->collider.radius.y &&
-           a->pos.y + a->collider.radius.y > b->pos.y - b->collider.radius.y &&
-           a->pos.z - a->collider.radius.z < b->pos.z + b->collider.radius.z &&
-           a->pos.z + a->collider.radius.z > b->pos.z - b->collider.radius.z;
+    return a->int_pos.x - a->collider.int_radius.x < b->int_pos.x + b->collider.int_radius.x &&
+           a->int_pos.x + a->collider.int_radius.x > b->int_pos.x - b->collider.int_radius.x &&
+           a->int_pos.y - a->collider.int_radius.y < b->int_pos.y + b->collider.int_radius.y &&
+           a->int_pos.y + a->collider.int_radius.y > b->int_pos.y - b->collider.int_radius.y;
 }
 
-V2 expand_slightly(V2 dir){
-    V2 res;
-    if (is_zero(dir.x)){
-        res.x = dir.x;
-    } else if (dir.x > 0) {
-        res.x = dir.x + box_gap;
-    } else {
-        res.x = dir.x - box_gap;
-    }
-    if (is_zero(dir.y)){
-        res.y = dir.y;
-    } else if (dir.y > 0) {
-        res.y = dir.y + box_gap;
-    } else {
-        res.y = dir.y - box_gap;
-    }
-    return res;
-}
-
-void do_collision_response(Entity* a, Entity* b, V2 dir, Game* game) 
+void do_collision_response(Entity* a, Entity* b, V2int dir, Game* game) 
 {
     if (b->collider.type == ColliderType_Moveable) {
-        V2 to = distance_towards(a, b, dir);
-        move_and_collide(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
+        V2int to = distance_towards(a, b, dir);
+        move_and_collide(b, {clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)}, game);
     } else if (b->type == EntityType_Objective) {
         b->objective.broken = true;
         b->collider.transparency_type = TransparencyType_Transparent;
     }
 }
 
-void move_and_push_boxes(Entity* a, V2 dir, Game* game)
+void move_and_push_boxes(Entity* a, V2int dir, Game* game)
 {
-    V3 new_pos = v3(a->pos.x + dir.x, a->pos.y + dir.y, a->pos.z);
-    V3 old_pos = a->pos;
+    V2int new_pos = {a->int_pos.x + dir.x, a->int_pos.y + dir.y};
+    V2int old_pos = a->int_pos;
 
-    a->pos = far_away;
+    a->int_pos = far_away;
 
     Entity tmp = *a;
     for (u32 i = 0; i < game->entity_count; ++i) {
-        tmp.pos = new_pos;
+        tmp.int_pos = new_pos;
         Entity* b = game->entities + i;
         if (intersects(&tmp, b)) {
-            tmp.pos = old_pos;
-            do_collision_response(&tmp, b, expand_slightly(dir), game);
+            tmp.int_pos = old_pos;
+            do_collision_response(&tmp, b, dir, game);
         }
     }
 
-    a->pos = new_pos;
+    a->int_pos = new_pos;
+    a->pos = v2int_to_v3float(a->int_pos, a->pos.z);
 }
 
-V2 distance_towards(Entity* a, Entity* b, V2 dir) 
+V2int distance_towards(Entity* a, Entity* b, V2int dir) 
 {
-    V2 res;
+    V2int res;
     if (dir.x >= 0) {
-        res.x = b->pos.x - a->pos.x - a->collider.radius.x - b->collider.radius.x;
+        res.x = b->int_pos.x - a->int_pos.x - a->collider.int_radius.x - b->collider.int_radius.x;
     } else {
-        res.x = b->pos.x - a->pos.x + a->collider.radius.x + b->collider.radius.x;
+        res.x = b->int_pos.x - a->int_pos.x + a->collider.int_radius.x + b->collider.int_radius.x;
     }
 
     if (dir.y >= 0) {
-        res.y = b->pos.y - a->pos.y - a->collider.radius.y - b->collider.radius.y;
+        res.y = b->int_pos.y - a->int_pos.y - a->collider.int_radius.y - b->collider.int_radius.y;
     } else {
-        res.y = b->pos.y - a->pos.y + a->collider.radius.y + b->collider.radius.y;
+        res.y = b->int_pos.y - a->int_pos.y + a->collider.int_radius.y + b->collider.int_radius.y;
     }
 
     return res;
 }
 
-V2 try_move_into(Entity* a, Entity* b, V2 dir, Game* game) 
+V2int try_move_into(Entity* a, Entity* b, V2int dir, Game* game) 
 {
     switch (b->collider.type) {
         case ColliderType_Static: {
@@ -107,42 +95,42 @@ V2 try_move_into(Entity* a, Entity* b, V2 dir, Game* game)
         } break;
 
         case ColliderType_Moveable: {
-            V2 to = distance_towards(a, b, dir);
-            V2 tmp = get_collided_movement(b, v2(clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)), game);
-            return v2(to.x + tmp.x, to.y + tmp.y);
+            V2int to = distance_towards(a, b, dir);
+            V2int tmp = get_collided_movement(b, {clamp_abs(dir.x, dir.x - to.x), clamp_abs(dir.y, dir.y - to.y)}, game);
+            return {to.x + tmp.x, to.y + tmp.y};
         } break;
     }
 
     return dir;
 }
 
-V2 get_collided_movement(Entity* a, V2 dir, Game* game)
+V2int get_collided_movement(Entity* a, V2int dir, Game* game)
 {
-    V3 new_pos = v3(a->pos.x + dir.x, a->pos.y + dir.y, a->pos.z);
-    V3 old_pos = a->pos;
-    a->pos = far_away;
+    V2int new_pos = {a->int_pos.x + dir.x, a->int_pos.y + dir.y};
+    V2int old_pos = a->int_pos;
+    a->int_pos = far_away;
 
-    V2 res = dir;
+    V2int res = dir;
 
     Entity tmp = *a;
     for (u32 i = 0; i < game->entity_count; ++i) {
         Entity* b = game->entities + i;
-        tmp.pos = new_pos;
+        tmp.int_pos = new_pos;
         if (intersects(&tmp, b)) {
-            tmp.pos = old_pos;
-            V2 move_into = try_move_into(&tmp, b, expand_slightly(dir), game);
+            tmp.int_pos = old_pos;
+            V2int move_into = try_move_into(&tmp, b, dir, game);
             res.x = clamp_abs(res.x, move_into.x);
             res.y = clamp_abs(res.y, move_into.y);
         }
     }
 
-    a->pos = old_pos;
+    a->int_pos = old_pos;
     return res;
 }
 
-void move_and_collide(Entity* a, V2 dir, Game* game)
+void move_and_collide(Entity* a, V2int dir, Game* game)
 {
-    V2 actual_movement = get_collided_movement(a, dir, game);
+    V2int actual_movement = get_collided_movement(a, dir, game);
     if (!is_zero(actual_movement.x) || !is_zero(actual_movement.y)) {
         move_and_push_boxes(a, actual_movement, game);
     }
