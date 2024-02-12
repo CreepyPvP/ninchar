@@ -89,7 +89,9 @@ struct Entity
 
     V3 pos;
     Collider collider;
+    
     float rotation;
+    float rotation_speed;
 
     V3 color;
     TextureHandle texture;

@@ -112,7 +112,7 @@ i32 main()
     game = {};
 
     u32 current_level = 7;
-    u32 total_level_count = 10;
+    u32 total_level_count = 11;
     game_init(&game, &game_arena, current_level, white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {

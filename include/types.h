@@ -26,6 +26,12 @@ typedef int64_t i64;
 typedef glm::mat4 Mat4;
 
 
+struct V2int{
+    int x;
+    int y;
+};
+
+
 struct V2
 {
     float x;

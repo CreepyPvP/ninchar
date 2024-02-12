@@ -52,3 +52,11 @@ Mat4 mat4(V3 pos, V3 scale)
     res = glm::scale(res, glm::vec3(scale.x, scale.y, scale.z));
     return res;
 }
+
+
+V2 v2int_to_v2float(V2int v2){
+    return {v2.x/1000.0f, v2.y/1000.0f};
+}
+V2int v2float_to_v2int(V2 v2){
+    return {(int) (v2.x * 1000.0f), (int) (v2.y*1000.0f) };
+}

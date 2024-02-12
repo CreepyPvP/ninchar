@@ -52,4 +52,8 @@ bool is_zero(float x);
 
 float halton(u32 i, u32 b);
 
+
+V2 v2int_to_v2float(V2int v2);
+V2int v2float_to_v2int(V2 v2);
+
 #endif

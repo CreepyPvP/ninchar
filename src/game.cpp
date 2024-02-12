@@ -105,11 +105,12 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
                 push_entity(entity, game);
             }
 
-            if (curr[0] == 0 && curr[1] == 255 && curr[2] == 0) {
+            if (curr[0] == 0 && curr[1] >= 254 && curr[2] <= 3) {
                 entity.type = EntityType_Enemy;
                 entity.collider.type = ColliderType_Static;
                 entity.collider.transparency_type = TransparencyType_Opaque;
-                entity.rotation = 1.2;
+                entity.rotation = curr[2] * (PI/2);
+                entity.rotation_speed = curr[1] == 254 ? -1 : 1;
                 push_entity(entity, game);
             }
 
@@ -260,7 +261,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
             }
         }
 
-        enemy->rotation += 0.8 * delta;
+        enemy->rotation += enemy->rotation_speed * 1.2 * delta;
     }
 
     // Update Objective
