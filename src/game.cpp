@@ -4,6 +4,7 @@
 #include "include/game_math.h"
 #include "include/arena.h"
 #include "include/util.h"
+#include "include/profiler.h"
 
 #include "include/stb_image.h"
 
@@ -43,10 +44,10 @@ void game_load_assets()
     dispose(&asset_arena);
 };
 
-void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
+void game_init(Game* game, Arena* arena, char* stage, TextureHandle white)
 {
     char path[1024];
-    sprintf(path, "assets/stages/%u.png", stage);
+    sprintf(path, "assets/stages/%s.png", stage);
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
     assert(tmp);
 
@@ -76,6 +77,7 @@ void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white)
                 entity.collider.type = ColliderType_Static;
                 entity.collider.transparency_type = TransparencyType_Transparent;
                 entity.texture = glass_wall_texture;
+                entity.transparent = true;
                 push_entity(entity, game);
             }
 
@@ -216,10 +218,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         V3 left = v3(fov * side.x + (1 - fov) * facing.x, fov * side.y + (1 - fov) * facing.y, facing.z);
         V3 right = v3(-fov * side.x + (1 - fov) * facing.x, -fov * side.y + (1 - fov) * facing.y, facing.z);
 
-        //Pushing multiple spotlights seems to currently cause an error.
-        if(i==0){
-            //push_spotlight(group->commands, enemy->pos, facing, fov);
-        }
+        push_spotlight(group->commands, enemy->pos, facing, fov);
 
         bool enemy_use_many_rays = true;
 
@@ -278,11 +277,11 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
     }
 }
 
-void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
+void game_render(Game* game, RenderGroup* default, RenderGroup* transparent, RenderGroup* dbg){
     // Render Ground
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            push_cube(group, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
+            push_cube(default, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
         }
     }
 
@@ -296,6 +295,11 @@ void game_render(Game* game, RenderGroup* group, RenderGroup* dbg){
 
         if (entity->type == EntityType_Objective && entity->objective.broken) {
             continue;
+        }
+
+        RenderGroup* group = default;
+        if (entity->transparent) {
+            group = transparent;
         }
 
         push_cube(group, entity->pos, entity->collider.radius, entity->texture, entity->color);
@@ -319,6 +323,8 @@ void game_toggle_camera_state(Game* game)
 
 RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir, u32 mask, RenderGroup* dbg)
 {
+    LogEntryInfo info = start_log(LogTarget_GameRaycast);
+
     RaycastResult res;
     res.hit_found = false;
     res.t = INFINITY;
@@ -361,14 +367,14 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         } else if ( mirror_y ){
             mirrored_dir.y = -mirrored_dir.y;
         }
-        if(mirror_x || mirror_y){
+        if (mirror_x || mirror_y) {
             mirror->collider.transparency_type = TransparencyType_Opaque;
 
             mirror->last_raycast = 
                 game_raycast(game, res.directly_hit_entity, res.hit_pos, mirrored_dir, mask, dbg); 
 
-            //If a ray reaches the same mirror twice we declare that hit_found is false,
-            //because it is likely to go in an infinite loop.
+            // If a ray reaches the same mirror twice we declare that hit_found is false,
+            // because it is likely to go in an infinite loop.
             if (mirror->last_raycast.final_hit_entity == mirror){
                 res.hit_found = false;
                 res.final_hit_entity = NULL;
@@ -377,7 +383,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
             }
 
             mirror->collider.transparency_type = TransparencyType_Mirror;
-        }else{
+        } else {
             res.hit_found = false;
         }
 
@@ -387,7 +393,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         entity->collider.transparency_type = TransparencyType_Transparent;
         entity->last_raycast = game_raycast(game, origin_entity, origin, dir, mask, dbg);
         entity->collider.transparency_type = TransparencyType_Camouflage;
-        if(entity->last_raycast.hit_found && 
+        if (entity->last_raycast.hit_found && 
             entity->last_raycast.final_hit_entity->collider.camouflage_color == entity->collider.camouflage_color){
             res.final_hit_entity = entity->last_raycast.final_hit_entity;
         }
@@ -399,5 +405,8 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
         push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
     }
 #endif
+
+    end_log(info);
+
     return res;
 }

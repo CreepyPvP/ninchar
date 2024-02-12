@@ -15,7 +15,7 @@
 
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
-                             u32 quad_cap, Vertex* vert_buffer, TextureHandle* texture_buffer,
+                             u32 vert_cap, Vertex* vert_buffer, 
                              u32 width, u32 height, TextureHandle white)
 {
     CommandBuffer commands;
@@ -24,9 +24,8 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     commands.entry_size = 0;
 
     commands.vert_buffer = vert_buffer;
-    commands.texture_buffer = texture_buffer;
-    commands.quad_cap = quad_cap;
-    commands.quad_count = 0;
+    commands.vert_cap = vert_cap;
+    commands.vert_count = 0;
 
     commands.settings.width = width;
     commands.settings.height = height;
@@ -81,17 +80,14 @@ CommandEntryDrawQuads* get_current_draw(RenderGroup* group, u32 quad_count)
         group->current_draw = (CommandEntryDrawQuads*) push_entry(commands, sizeof(CommandEntryDrawQuads));
 
         group->current_draw->header.type = EntryType_DrawQuads;
-        group->current_draw->quad_offset = commands->quad_count;
+        group->current_draw->vert_offset = commands->vert_count;
         group->current_draw->quad_count = 0;
         group->current_draw->setup = group->setup;
 
         group->commands->active_group = group;
     }
 
-    if (commands->quad_count + quad_count > commands->quad_cap) {
-        printf("Warning: Vertex buffer size exceede\n");
-        return NULL;
-    }
+    assert(commands->vert_count + quad_count * 4 <= commands->vert_cap);
 
     return group->current_draw;
 }
@@ -109,27 +105,29 @@ void push_quad(RenderGroup* group,
 
     ++draw->quad_count;
 
-    u32 vcurr = commands->quad_count * 4;
+    u32 vcurr = commands->vert_count;
     commands->vert_buffer[vcurr + 0].pos = p1;
     commands->vert_buffer[vcurr + 0].uv = uv1;
     commands->vert_buffer[vcurr + 0].norm = norm;
     commands->vert_buffer[vcurr + 0].color = color;
+    commands->vert_buffer[vcurr + 0].texture = texture.id;
     commands->vert_buffer[vcurr + 1].pos = p2;
     commands->vert_buffer[vcurr + 1].uv = uv2;
     commands->vert_buffer[vcurr + 1].norm = norm;
     commands->vert_buffer[vcurr + 1].color = color;
+    commands->vert_buffer[vcurr + 1].texture = texture.id;
     commands->vert_buffer[vcurr + 2].pos = p3;
     commands->vert_buffer[vcurr + 2].uv = uv3;
     commands->vert_buffer[vcurr + 2].norm = norm;
     commands->vert_buffer[vcurr + 2].color = color;
+    commands->vert_buffer[vcurr + 2].texture = texture.id;
     commands->vert_buffer[vcurr + 3].pos = p4;
     commands->vert_buffer[vcurr + 3].uv = uv4;
     commands->vert_buffer[vcurr + 3].norm = norm;
     commands->vert_buffer[vcurr + 3].color = color;
+    commands->vert_buffer[vcurr + 3].texture = texture.id;
 
-    commands->texture_buffer[commands->quad_count] = texture;
-    
-    ++commands->quad_count;
+    commands->vert_count += 4;
 }
 
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color)
@@ -235,7 +233,7 @@ void push_spotlight(CommandBuffer* commands, V3 pos, V3 dir, float fov)
     light->dir = dir;
     light->fov = fov;
 
-    float near_plane = 1;
+    float near_plane = 0.4;
     float far_plane = 20;
     Mat4 proj = glm::perspective(45.0f, 1.0f, near_plane, far_plane);
     Mat4 view = glm::lookAt(glm::vec3(pos.x, pos.y, pos.z), 

@@ -73,8 +73,8 @@ struct Collider
     TransparencyType transparency_type;
     V3 radius;
 
-    //The player is invisible to enemies if behind the player 
-    //is a wall of the same camouflage color as the player.
+    // The player is invisible to enemies if behind the player 
+    // is a wall of the same camouflage color as the player.
     u32 camouflage_color;
 };
 
@@ -95,8 +95,9 @@ struct Entity
 
     V3 color;
     TextureHandle texture;
+    bool transparent;
 
-    //If a ray hits a mirror, the mirror stores the ray that bounces away from the mirror.
+    // If a ray hits a mirror, the mirror stores the ray that bounces away from the mirror.
     RaycastResult last_raycast;
 
     union {
@@ -131,9 +132,9 @@ struct Game
 
 
 void game_load_assets();
-void game_init(Game* game, Arena* arena, u32 stage, TextureHandle white);
+void game_init(Game* game, Arena* arena, char* stage, TextureHandle white);
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg);
-void game_render(Game* game, RenderGroup* group, RenderGroup* dbg);
+void game_render(Game* game, RenderGroup* group, RenderGroup* transparent, RenderGroup* dbg);
 
 RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir, u32 mask, RenderGroup* dbg);
 

@@ -7,6 +7,7 @@
 
 #include "include/types.h"
 #include "include/util.h"
+#include "include/profiler.h"
 
 OpenGLContext opengl;
 
@@ -113,14 +114,13 @@ DrawShader load_draw_program(const char* vertex_file, const char* frag_file)
     DrawShader shader;
     shader.base = load_program(vertex_file, frag_file);
     shader.proj = glGetUniformLocation(shader.base.id, "proj");
-    shader.light_space = glGetUniformLocation(shader.base.id, "light_space");
+    shader.light_space = glGetUniformLocation(shader.base.id, "sl_light_space");
+    shader.spotlight_count = glGetUniformLocation(shader.base.id, "sl_count");
     shader.spotlight_pos = glGetUniformLocation(shader.base.id, "sl_pos");
     shader.spotlight_dir = glGetUniformLocation(shader.base.id, "sl_dir");
+    shader.spotlight_fov = glGetUniformLocation(shader.base.id, "sl_fov");
     
-    u32 shadowmap = glGetUniformLocation(shader.base.id, "sl_shadowmap");
-
-    glUseProgram(shader.base.id);
-    glUniform1i(shadowmap, 1);
+    shader.shadow_map = glGetUniformLocation(shader.base.id, "sl_shadowmap");
 
     return shader;
 }
@@ -216,9 +216,9 @@ Framebuffer create_framebuffer(u32 width, u32 height, u32 flags)
     return res;
 }
 
-void set_uniform_mat4(u32 id, Mat4* mat)
+void set_uniform_mat4(u32 id, Mat4* mat, u32 count)
 {
-    glUniformMatrix4fv(id, 1, GL_FALSE, (GLfloat*) mat);
+    glUniformMatrix4fv(id, count, GL_FALSE, (GLfloat*) mat);
 }
 
 void opengl_init()
@@ -262,6 +262,7 @@ void opengl_init()
     // 1: uv
     // 2: norm
     // 3: color
+    // 4: texture
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, pos));
     glEnableVertexAttribArray(1);
@@ -270,6 +271,8 @@ void opengl_init()
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, norm));
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, color));
+    glEnableVertexAttribArray(4);
+    glVertexAttribIPointer(4, 2, GL_UNSIGNED_INT, sizeof(Vertex), (void*) offsetof(Vertex, texture));
 
     float quad_verts[] = {
         -1, -1,
@@ -296,6 +299,9 @@ void opengl_init()
     for (u32 i = 0; i < SHADOW_MAP_COUNT; ++i) {
         opengl.shadow_maps[i] = create_framebuffer(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 
                                                    FRAMEBUFFER_DEPTH_TEX);
+
+        opengl.shadow_map_handles[i] = glGetTextureHandleARB(opengl.shadow_maps[i].depth_tex);
+        glMakeTextureHandleResidentARB(opengl.shadow_map_handles[i]);
     }
 }
 
@@ -320,31 +326,56 @@ void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lig
         glDisable(GL_CULL_FACE);
     }
     glUseProgram(shader->base.id);
-    set_uniform_mat4(shader->proj, &setup->proj);
+    set_uniform_mat4(shader->proj, &setup->proj, 1);
 
     if (setup->lit) {
+        V3 pos_acc[MAX_SPOTLIGHTS];
+        V3 dir_acc[MAX_SPOTLIGHTS];
+        float fov_acc[MAX_SPOTLIGHTS];
+        Mat4 light_space_acc[MAX_SPOTLIGHTS];
+        u64 shadow_map_acc[MAX_SPOTLIGHTS];
+
+        glUniform1ui(shader->spotlight_count, light_count);
+
         for (u32 i = 0; i < light_count; ++i) {
-            set_uniform_mat4(shader->light_space, &lights[i].light_space);
+            light_space_acc[i] = lights[i].light_space;
+            shadow_map_acc[i] = opengl.shadow_map_handles[lights[i].shadow_map];
+            pos_acc[i] = lights[i].pos;
+            dir_acc[i] = lights[i].dir;
+            fov_acc[i] = lights[i].fov;
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, opengl.shadow_maps[lights[i].shadow_map].depth_tex);
-
-            // TODO: Bind to correct light slot
-            glUniform3f(shader->spotlight_pos, lights[i].pos.x,
-                        lights[i].pos.y, lights[i].pos.z);
-            glUniform4f(shader->spotlight_dir, lights[i].dir.x,
-                        lights[i].dir.y, lights[i].dir.z,
-                        lights[i].fov);
         }
+
+        set_uniform_mat4(shader->light_space, light_space_acc, light_count);
+        glUniform2uiv(shader->shadow_map, light_count, (u32*) shadow_map_acc);
+        glUniform3fv(shader->spotlight_pos, light_count, (float*) pos_acc);
+        glUniform3fv(shader->spotlight_dir, light_count, (float*) dir_acc);
+        glUniform1fv(shader->spotlight_fov, light_count, (float*) fov_acc);
     }
+}
+
+void draw_quads(CommandEntryDrawQuads* draw)
+{
+    begin_tmp(&opengl.render_arena);
+    i32* first = (i32*) push_size(&opengl.render_arena, sizeof(i32) * draw->quad_count);
+    i32* count = (i32*) push_size(&opengl.render_arena, sizeof(i32) * draw->quad_count);
+
+    for (u32 i = 0; i < draw->quad_count; ++i) {
+        first[i] = draw->vert_offset + 4 * i;
+        count[i] = 4;
+    }
+
+    glMultiDrawArrays(GL_TRIANGLE_STRIP, first, count, draw->quad_count);
+    end_tmp(&opengl.render_arena);
 }
 
 void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
 {
+    glDisable(GL_CULL_FACE);
     glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.shadow_maps[light->shadow_map].id);
     glUseProgram(opengl.shadow_shader.base.id);
-    set_uniform_mat4(opengl.shadow_shader.light_space, &light->light_space);
+    set_uniform_mat4(opengl.shadow_shader.light_space, &light->light_space, 1);
 
     glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -368,9 +399,8 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
                 CommandEntryDrawQuads* draw = (CommandEntryDrawQuads*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryDrawQuads);
 
-                for (u32 i = 0; i < draw->quad_count; ++i) {
-                    u32 quad_offset = i + draw->quad_offset;
-                    glDrawArrays(GL_TRIANGLE_STRIP, 4 * quad_offset, 4);
+                if (draw->setup.shadow_caster) {
+                    draw_quads(draw);
                 }
             } break;
 
@@ -383,6 +413,8 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
 
 void opengl_render_commands(CommandBuffer* buffer)
 {
+    LogEntryInfo info = start_log(LogTarget_Backend);
+
     RenderSettings settings = buffer->settings;
     if (!equal_settings(&settings, &opengl.prev_settings)) {
         apply_settings(&settings);
@@ -395,13 +427,14 @@ void opengl_render_commands(CommandBuffer* buffer)
 
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer.id);
     glBindVertexArray(opengl.quad_vao);
+
     glBindBuffer(GL_ARRAY_BUFFER, opengl.vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->quad_count * 4, 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * buffer->vert_count, 
                  buffer->vert_buffer, GL_STREAM_DRAW);
 
     u32 light_count = 0;
     u32 shadow_map_count = 0;
-    SpotLight lights[16];
+    SpotLight lights[MAX_SPOTLIGHTS];
 
     u32 offset = 0;
     while (offset < buffer->entry_size) {
@@ -423,14 +456,7 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 prepare_render_setup(&draw->setup, &opengl.quad_shader, lights, light_count);
 
-                glActiveTexture(GL_TEXTURE0);
-
-                // TODO: glMultiDraw and BindLess Texture
-                for (u32 i = 0; i < draw->quad_count; ++i) {
-                    u32 quad_offset = i + draw->quad_offset;
-                    glBindTexture(GL_TEXTURE_2D, buffer->texture_buffer[quad_offset].id);
-                    glDrawArrays(GL_TRIANGLE_STRIP, 4 * quad_offset, 4);
-                }
+                draw_quads(draw);
             } break;
 
             case EntryType_DrawModel: {
@@ -440,7 +466,7 @@ void opengl_render_commands(CommandBuffer* buffer)
                 glBindVertexArray(draw->model.id);
 
                 prepare_render_setup(&draw->setup, &opengl.model_shader.draw, lights, light_count);
-                set_uniform_mat4(opengl.model_shader.trans, &draw->trans);
+                set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
 
                 glDrawElements(GL_TRIANGLES, draw->model.index_count, GL_UNSIGNED_INT, (void*) 0);
             } break;
@@ -449,7 +475,7 @@ void opengl_render_commands(CommandBuffer* buffer)
                 CommandEntryPushLight* light = (CommandEntryPushLight*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryPushLight);
 
-                assert(light_count < 16);
+                assert(light_count < MAX_SPOTLIGHTS);
                 lights[light_count].pos = light->pos;
                 lights[light_count].dir = light->dir;
                 lights[light_count].fov = light->fov;
@@ -461,11 +487,14 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 do_shadowpass(buffer, lights + light_count);
                 ++light_count;
+
                 glBindFramebuffer(GL_FRAMEBUFFER, opengl.main_framebuffer.id);
                 glViewport(0, 0, settings.width, settings.height);
+                glEnable(GL_CULL_FACE);
             } break;
 
             default: {
+                end_log(info);
                 return;
             }
         }
@@ -484,8 +513,11 @@ void opengl_render_commands(CommandBuffer* buffer)
     glBindVertexArray(opengl.post_vao);
     glUseProgram(opengl.post_shader.id);
 
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, opengl.post_framebuffer.color);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    end_log(info);
 }
 
 void opengl_load_texture(TextureLoadOp* load_op)
@@ -509,7 +541,10 @@ void opengl_load_texture(TextureLoadOp* load_op)
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    load_op->handle->id = texture;
+    u64 handle = glGetTextureHandleARB(texture);
+    glMakeTextureHandleResidentARB(handle);
+
+    load_op->handle->id = handle;
 }
 
 void opengl_load_model(ModelLoadOp* load_op)

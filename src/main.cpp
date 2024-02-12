@@ -31,6 +31,21 @@ double last_mouse_pos_y;
 
 Game game;
 
+u32 level_count = 11;
+
+char* levels[] = {
+    "align_crates",
+    "align_crates_2",
+    "corner",
+    "dont_destroy",
+    "down_then_up",
+    "jam_level",
+    "jam_level_2",
+    "many_objectives",
+    "reflection_test",
+    "reflections",
+    "renderer_test"
+};
 
 void resize_callback(GLFWwindow* window, i32 width, i32 height) 
 {
@@ -92,17 +107,13 @@ i32 main()
     CommandBuffer cmd;
     u32 entry_size = 10000;
     u8* entry_buffer = (u8*) push_size(&arena, entry_size);
-    u32 quad_cap = 10000;
-    Vertex* vert_buffer = (Vertex*) push_size(&arena, quad_cap * 4 * sizeof(Vertex));
-    TextureHandle* texture_buffer = (TextureHandle*) push_size(&arena, quad_cap * sizeof(TextureHandle));
+    u32 vert_cap = 100000;
+    Vertex* vert_buffer = (Vertex*) push_size(&arena, vert_cap * sizeof(Vertex));
 
     TextureHandle white;
     TextureLoadOp load_white = texture_load_op(&white, "assets/white.png");
     opengl_load_texture(&load_white);
     free_texture_load_op(&load_white);
-
-    Profiler profiler_renderer;
-    Profiler profiler_opengl_backend;
 
     Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
@@ -111,15 +122,15 @@ i32 main()
     game_load_assets();
     game = {};
 
-    u32 current_level = 7;
-    u32 total_level_count = 11;
-    game_init(&game, &game_arena, current_level, white);
+    u32 current_level = 10;
+    game_init(&game, &game_arena, levels[current_level], white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
+        start_frame();
+
         if (glfwGetKey(global_window.handle, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(global_window.handle, true);
         }
-
 
 #ifdef DEBUG
         static bool c_pressed = false;
@@ -145,7 +156,7 @@ i32 main()
         static bool n_pressed = false;
         if (glfwGetKey(global_window.handle, GLFW_KEY_N) == GLFW_PRESS) {
             if (!n_pressed) {
-                current_level = (current_level + 1) % total_level_count;
+                current_level = (current_level + 1) % level_count;
                 game.reset_stage = true;
             }
             n_pressed = true;
@@ -155,13 +166,13 @@ i32 main()
 #endif
 
         if (game.next_stage) {
-            current_level = (current_level + 1) % total_level_count;
+            current_level = (current_level + 1) % level_count;
             game.reset_stage = true;
         }
         if (game.reset_stage){
             dispose(&game_arena);
             game = {};
-            game_init(&game, &game_arena, current_level, white);
+            game_init(&game, &game_arena, levels[current_level], white);
         }
 
 
@@ -178,7 +189,8 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
-        cmd = command_buffer(entry_size, entry_buffer, quad_cap, vert_buffer, texture_buffer, 
+        cmd = command_buffer(entry_size, entry_buffer, 
+                             vert_cap, vert_buffer, 
                              global_window.width, global_window.height, white);
 
         Mat4 view = glm::lookAt(
@@ -191,22 +203,17 @@ i32 main()
         Mat4 proj = projection * view;
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
+
         RenderGroup main_group = render_group(&cmd, proj, true, true, true);
+        RenderGroup transparent_group = render_group(&cmd, proj, true, true, false);
         RenderGroup debug_group = render_group(&cmd, proj, false, false, false);
 
-        start_timestamp(&profiler_renderer);
-
         game_update(&game, pressed, 1.0f / 60.0f, &main_group, &debug_group);
-        game_render(&game, &main_group, &debug_group);
+        game_render(&game, &main_group, &transparent_group, &debug_group);
 
-        double render_duration = end_timestamp(&profiler_renderer);
-
-        start_timestamp(&profiler_opengl_backend);
         opengl_render_commands(&cmd);
-        double opengl_backend_duration = end_timestamp(&profiler_opengl_backend);
 
-        // printf("Renderer: %f, Backend %f ms\n", 
-        //        render_duration * 1000, opengl_backend_duration * 1000);
+        end_frame();
 
         glfwSwapBuffers(global_window.handle);
         glfwPollEvents();

@@ -5,7 +5,8 @@
 #include "include/arena.h"
 #include "include/renderer.h"
 
-#define SHADOW_MAP_COUNT 1
+#define SHADOW_MAP_COUNT 6
+#define MAX_SPOTLIGHTS 6
 #define SHADOW_MAP_SIZE 1024
 
 #define FRAMEBUFFER_INITIALIZED (1 << 0)
@@ -37,9 +38,13 @@ struct DrawShader
 {
     ProgramBase base;
     u32 proj;
+    u32 spotlight_count;
     u32 spotlight_pos;
     u32 spotlight_dir;
+    u32 spotlight_fov;
     u32 light_space;
+
+    u32 shadow_map;
 };
 
 struct ShadowShader
@@ -81,7 +86,8 @@ struct OpenGLContext
     u32 quad_vao;
     u32 post_vao;
 
-    Framebuffer shadow_maps[1];
+    Framebuffer shadow_maps[SHADOW_MAP_COUNT];
+    u64 shadow_map_handles[SHADOW_MAP_COUNT];
 
     i32 max_samples;
 };

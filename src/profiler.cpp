@@ -1,5 +1,8 @@
 #include "include/profiler.h"
 
+
+// NOTE: wall_time() returns current wall time in seconds
+
 #ifdef WINDOWS
 #include <Windows.h>
 
@@ -29,13 +32,36 @@ double wall_time()
 
 #endif
 
-void start_timestamp(Profiler* profiler)
+double frame_start;
+LogEntry entries[LogTarget_Count];
+
+void start_frame()
 {
-    profiler->start = wall_time();
+    memset(entries, 0, sizeof(LogEntry) * LogTarget_Count);
+    frame_start = wall_time();
 }
 
-double end_timestamp(Profiler* profiler)
+void end_frame()
 {
-    double end = wall_time();
-    return end - profiler->start;
+    double duration = wall_time() - frame_start;
+    printf("------------------------\n");
+    printf("Frame took %f ms\n", duration * 1000);
+    printf("Backend took %f ms\n", entries[LogTarget_Backend].total_duration * 1000);
+    printf("Raycast took %f ms, was called: %u\n", entries[LogTarget_GameRaycast].total_duration * 1000, 
+           entries[LogTarget_GameRaycast].count);
+}
+
+LogEntryInfo start_log(LogTarget target)
+{
+    LogEntryInfo info = {};
+    info.target = target;
+    info.start = wall_time();
+    return info;
+}
+
+void end_log(LogEntryInfo info)
+{
+    double duration = wall_time() - info.start;
+    entries[info.target].count++;
+    entries[info.target].total_duration += duration;
 }
