@@ -123,7 +123,7 @@ i32 main()
     game_load_assets();
     game = {};
 
-    u32 current_level = 2;
+    u32 current_level = 10;
     game_init(&game, &game_arena, levels[current_level], white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {

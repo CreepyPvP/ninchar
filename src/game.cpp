@@ -13,7 +13,7 @@ TextureHandle wall_texture;
 TextureHandle glass_wall_texture;
 TextureHandle crate_texture;
 
-ModelHandle teapot;
+ModelHandle camera_model;
 
 
 // TODO: move asset loading to asset queue. Then game has no opengl dependency
@@ -38,8 +38,8 @@ void game_load_assets()
     opengl_load_texture(&load_glass_wall);
     free_texture_load_op(&load_glass_wall);
 
-    ModelLoadOp load_teapot = model_load_op(&teapot, "assets/teapot.obj", &asset_arena);
-    opengl_load_model(&load_teapot);
+    ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &asset_arena);
+    opengl_load_model(&load_camera);
 
     dispose(&asset_arena);
 };
@@ -290,7 +290,10 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
         Entity* entity = game->entities + i;
 
         if (entity->type == EntityType_Enemy) {
-            push_model(dbg, teapot, entity->pos, entity->collider.float_radius);
+            V3 scale = v3(0.2);
+            V3 pos = entity->pos;
+            pos.z = 2;
+            push_model(dbg, camera_model, pos, scale);
             continue;
         }
 
@@ -403,7 +406,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
 
 #ifdef DEBUG
     if (res.hit_found) {
-        push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
+        // push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
     }
 #endif
 

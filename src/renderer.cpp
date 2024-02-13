@@ -296,8 +296,11 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
 
             index_count += 3;
             assert(index_count <= MAX_MODEL_INDEX);
-        } else {
+        } else if (**ptr == '\0') {
             break;
+        }
+        else {
+            next_line(ptr);
         }
     }
 
