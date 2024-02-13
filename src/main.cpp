@@ -32,7 +32,7 @@ double last_mouse_pos_y;
 
 Game game;
 
-u32 level_count = 11;
+u32 level_count = 12;
 
 std::string levels[] = {
     "align_crates",
@@ -45,7 +45,8 @@ std::string levels[] = {
     "many_objectives",
     "reflection_test",
     "reflections",
-    "renderer_test"
+    "renderer_test",
+    "down_then_up_glass",
 };
 
 void resize_callback(GLFWwindow* window, i32 width, i32 height) 
