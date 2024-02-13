@@ -32,9 +32,18 @@ double last_mouse_pos_y;
 
 Game game;
 
-u32 level_count = 12;
+u32 level_count = 13;
 
 std::string levels[] = {
+    "1_1",
+    "2_1",
+    "2_2",
+    "2_3",
+    "2_4",
+    "3_1",
+    "4_1",
+    "4_2",
+    "5_1",
     "align_crates",
     "align_crates_2",
     "corner",
@@ -47,6 +56,7 @@ std::string levels[] = {
     "reflections",
     "renderer_test",
     "down_then_up_glass",
+    "4_1"
 };
 
 void resize_callback(GLFWwindow* window, i32 width, i32 height) 
@@ -124,7 +134,7 @@ i32 main()
     game_load_assets();
     game = {};
 
-    u32 current_level = 2;
+    u32 current_level = 0;
     game_init(&game, &game_arena, levels[current_level], white);
 
     while (!glfwWindowShouldClose(global_window.handle)) {
