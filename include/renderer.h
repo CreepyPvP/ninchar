@@ -8,39 +8,6 @@
 struct RenderGroup;
 
 
-struct TextureHandle
-{
-    u64 id;
-};
-
-struct ModelHandle
-{
-    u32 id;
-    u32 index_count;
-};
-
-struct TextureLoadOp
-{
-    i32 width;
-    i32 height;
-    i32 num_channels;
-    u8* data;
-    TextureHandle* handle;
-};
-
-struct ModelLoadOp
-{
-    u8* vert_buffer;
-    u32 vert_count;
-
-    u32* index_buffer;
-    u32 index_count;
-
-    u32 vert_stride;
-
-    ModelHandle* handle;
-};
-
 struct Vertex
 {
     V3 pos;
@@ -49,6 +16,49 @@ struct Vertex
     V3 color;
 
     u64 texture;
+};
+
+struct MeshVertex
+{
+    V3 pos;
+    V2 uv;
+    V3 norm;
+};
+
+struct TextureHandle
+{
+    u64 id;
+};
+
+struct ModelHandle
+{
+    u32 id;
+};
+
+struct TextureLoadOp
+{
+    TextureHandle* handle;
+    i32 width;
+    i32 height;
+    i32 num_channels;
+    u8* data;
+};
+
+struct MeshInfo
+{
+    u32 vertex_count;
+    MeshVertex* vertex_buffer;
+    u32 index_count;
+    u32* index_buffer;
+};
+
+struct ModelLoadOp
+{
+    ModelHandle* handle;
+
+    u32 mesh_cap;
+    u32 mesh_count;
+    MeshInfo* meshes;
 };
 
 struct RenderSetup

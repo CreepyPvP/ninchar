@@ -14,6 +14,7 @@ set(GLAD_ROOT_DIR external/glad)
 set(GLM_ROOT_DIR external/glm)
 set(IMGUI_ROOT_DIR external/imgui)
 set(FREETYPE_ROOT_DIR external/freetype)
+set(ASSIMP_ROOT_DIR external/assimp)
 
 # Add all Header Files
 file(GLOB_RECURSE HEADER_FILES 
@@ -25,7 +26,7 @@ file(GLOB_RECURSE HEADER_FILES
 IF (WIN32)
     # Windows libraries:
     find_package(OpenGL REQUIRED)
-    set(LIBS glfw opengl32 glad glm freetype)
+    set(LIBS glfw opengl32 glad glm freetype assimp)
 
     file(GLOB_RECURSE SOURCE_FILES 
         ${CMAKE_SOURCE_DIR}/src/*.cpp
@@ -42,7 +43,7 @@ IF (WIN32)
     )
 ELSE()
     # Linux libraries:
-    set(LIBS glfw X11 glad glm freetype)
+    set(LIBS glfw X11 glad glm freetype assimp)
 
     file(GLOB_RECURSE SOURCE_FILES 
         ${CMAKE_SOURCE_DIR}/src/*.cpp
@@ -68,12 +69,14 @@ add_subdirectory(${GLFW_ROOT_DIR})
 add_subdirectory(${GLAD_ROOT_DIR})
 add_subdirectory(${GLM_ROOT_DIR})
 add_subdirectory(${FREETYPE_ROOT_DIR})
+add_subdirectory(${ASSIMP_ROOT_DIR})
 
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC ${GLFW_ROOT_DIR}/include
     PUBLIC ${GLAD_ROOT_DIR}/include/glad
     PUBLIC ${GLM_ROOT_DIR}/include
     PUBLIC ${FREETYPE_ROOT_DIR}/include
+    PUBLIC ${ASSIMP_ROOT_DIR}/include
     PUBLIC ${IMGUI_ROOT_DIR}
     PUBLIC ${IMGUI_ROOT_DIR}/backends
     PUBLIC .

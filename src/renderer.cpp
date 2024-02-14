@@ -9,6 +9,9 @@
 #include "include/util.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #define MAX_MODEL_VERT 10000
 #define MAX_MODEL_INDEX 20000
@@ -256,62 +259,63 @@ TextureLoadOp texture_load_op(TextureHandle* handle, const char* path)
     return load_op;
 }
 
-ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
+void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op, Arena* arena)
 {
-    u32 vert_stride = sizeof(u32) * 3;
+    for (u32 i = 0; i < node->mNumMeshes; ++i) {
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]]; 
+        MeshInfo info = {};
 
-    const char* file_content = read_file(path, NULL, arena);
-    const char** ptr = &file_content;
+        info.vertex_count = mesh->mNumVertices;
+        info.vertex_buffer = (MeshVertex*) push_size(arena, sizeof(MeshVertex) * info.vertex_count);
+        info.index_count = mesh->mNumFaces * 3;
+        info.index_buffer = (u32*) push_size(arena, sizeof(u32) * info.index_count);
 
-    u32 vert_count = 0;
-    u32 index_count = 0;
-    u8* vert_buffer = (u8*) push_size(arena, vert_stride * MAX_MODEL_VERT);
-    u32* index_buffer = (u32*) push_size(arena, sizeof(u32) * MAX_MODEL_INDEX);
+        for (u32 i = 0; i < info.vertex_count; ++i) {
+            MeshVertex vert;
+            vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+            vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+            vert.uv = v2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 
-    while (true) {
-        if (prefix("v", ptr)) {
-            skip_whitespaces(ptr);
-            float* current = (float*) (vert_buffer + vert_stride * vert_count);
-
-            // NOTE: Flipped to match game coordiante system
-            current[0] = read_float(ptr);
-            skip_whitespaces(ptr);
-            current[2] = read_float(ptr);
-            skip_whitespaces(ptr);
-            current[1] = read_float(ptr);
-            next_line(ptr);
-
-            ++vert_count;
-            assert(vert_count <= MAX_MODEL_VERT);
-        } else if (prefix("f", ptr)) {
-            skip_whitespaces(ptr);
-            u32* current = index_buffer + index_count;
-
-            current[0] = read_int(ptr) - 1;
-            skip_whitespaces(ptr);
-            current[1] = read_int(ptr) - 1;
-            skip_whitespaces(ptr);
-            current[2] = read_int(ptr) - 1;
-            next_line(ptr);
-
-            index_count += 3;
-            assert(index_count <= MAX_MODEL_INDEX);
-        } else if (**ptr == '\0') {
-            break;
+            info.vertex_buffer[i] = vert;
         }
-        else {
-            next_line(ptr);
-        }
+
+        for (u32 i = 0; i < mesh->mNumFaces; ++i) {
+            aiFace face = mesh->mFaces[i];
+            info.index_buffer[3 * i + 0] = face.mIndices[0];
+            info.index_buffer[3 * i + 1] = face.mIndices[1];
+            info.index_buffer[3 * i + 2] = face.mIndices[2];
+        }  
+
+        // TODO: load material mesh->mMaterialIndex, scene->mMaterials
+
+        load_op->meshes[load_op->mesh_count] = info;
+        ++load_op->mesh_count;
     }
 
-    ModelLoadOp load;
-    load.vert_buffer = vert_buffer;
-    load.vert_count = vert_count;
-    load.index_buffer = index_buffer;
-    load.index_count = index_count;
-    load.vert_stride = vert_stride;
-    load.handle = handle;
-    return load;
+    for (u32 i = 0; i < node->mNumChildren; ++i) {
+        process_scene_node(node->mChildren[i], scene, load_op, arena);
+    }
+}  
+
+ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
+{
+    Assimp::Importer importer;
+
+    u32 flags = aiProcess_FlipUVs;
+#if 0
+    flags |= aiProcess_Triangulate;
+#endif
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs); 
+    assert(scene && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && scene->mRootNode);
+
+    ModelLoadOp load_op = {};
+    load_op.handle = handle;
+    load_op.mesh_cap = scene->mNumMeshes;
+    load_op.meshes = (MeshInfo*) push_size(arena, sizeof(MeshInfo) * load_op.mesh_cap);
+
+    process_scene_node(scene->mRootNode, scene, &load_op, arena);
+
+    return load_op;
 }
 
 void free_texture_load_op(TextureLoadOp* load_op)

@@ -5,6 +5,9 @@
 #include "include/arena.h"
 #include "include/renderer.h"
 
+#define MESH_CAP 16
+#define MODEL_CAP 8
+
 #define SHADOW_MAP_COUNT 6
 #define MAX_SPOTLIGHTS 6
 #define SHADOW_MAP_SIZE 1024
@@ -16,6 +19,18 @@
 #define FRAMEBUFFER_COLOR (1 << 4)
 #define FRAMEBUFFER_DEPTH_TEX (1 << 5)
 
+
+struct Mesh
+{
+    u32 vao;
+    u32 index_count;
+};
+
+struct Model
+{
+    u32 mesh_offset;
+    u32 mesh_count;
+};
 
 struct SpotLight
 {
@@ -88,6 +103,11 @@ struct OpenGLContext
 
     Framebuffer shadow_maps[SHADOW_MAP_COUNT];
     u64 shadow_map_handles[SHADOW_MAP_COUNT];
+
+    u32 mesh_count;
+    Mesh meshes[MESH_CAP];
+    u32 model_count;
+    Model models[MODEL_CAP];
 
     i32 max_samples;
 };

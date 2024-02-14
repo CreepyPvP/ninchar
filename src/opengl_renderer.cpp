@@ -223,9 +223,11 @@ void set_uniform_mat4(u32 id, Mat4* mat, u32 count)
 
 void opengl_init()
 {
+
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         assert(0 && "Failed to load required extensions\n");
     }
+    opengl = {};
     init_arena(&opengl.render_arena, &pool);
 
     glGetIntegerv(GL_MAX_SAMPLES, &opengl.max_samples);
@@ -463,12 +465,18 @@ void opengl_render_commands(CommandBuffer* buffer)
                 CommandEntryDrawModel* draw = (CommandEntryDrawModel*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryDrawModel);
 
-                glBindVertexArray(draw->model.id);
+                Model* model = opengl.models + draw->model.id;
 
                 prepare_render_setup(&draw->setup, &opengl.model_shader.draw, lights, light_count);
                 set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
 
-                glDrawElements(GL_TRIANGLES, draw->model.index_count, GL_UNSIGNED_INT, (void*) 0);
+                for (u32 i = 0; i < model->mesh_count; ++i) {
+                    Mesh* mesh = opengl.meshes + model->mesh_offset + i;
+
+                    glBindVertexArray(mesh->vao);
+                    glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, (void*) 0);
+                }
+
             } break;
 
             case EntryType_PushLight: {
@@ -549,27 +557,47 @@ void opengl_load_texture(TextureLoadOp* load_op)
 
 void opengl_load_model(ModelLoadOp* load_op)
 {
-    u32 vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    assert(opengl.model_count < MODEL_CAP);
+    Model model;
+    model.mesh_offset = opengl.mesh_count;
+    model.mesh_count = load_op->mesh_count;
 
-    u32 buffers[2];
-    glGenBuffers(2, buffers);
+    for (u32 i = 0; i < load_op->mesh_count; ++i) {
+        MeshInfo* info = load_op->meshes + i;
 
-    u32 vert_buffer = buffers[0];
-    u32 index_buffer = buffers[1];
+        u32 vao;
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
-    glBufferData(GL_ARRAY_BUFFER, load_op->vert_stride * load_op->vert_count, load_op->vert_buffer, 
-                 GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * load_op->index_count, load_op->index_buffer, 
-                 GL_STATIC_DRAW);
+        u32 buffers[2];
+        glGenBuffers(2, buffers);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, load_op->vert_stride, 0);
+        u32 vert_buffer = buffers[0];
+        u32 index_buffer = buffers[1];
 
-    load_op->handle->id = vao;
-    load_op->handle->index_count = load_op->index_count;
+        glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(MeshVertex) * info->vertex_count, info->vertex_buffer, 
+                     GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * info->index_count, info->index_buffer, 
+                     GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), 0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*) offsetof(MeshVertex, uv));
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*) offsetof(MeshVertex, norm));
+
+        Mesh mesh = {};
+        mesh.vao = vao;
+        mesh.index_count = info->index_count;
+
+        assert(opengl.mesh_count < MESH_CAP);
+        opengl.meshes[opengl.mesh_count] = mesh;
+        opengl.mesh_count++;
+    }
+
+    opengl.models[opengl.model_count] = model;
+    load_op->handle->id = opengl.model_count;
+    opengl.model_count++;
 }
 
