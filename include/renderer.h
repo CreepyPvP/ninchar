@@ -158,7 +158,7 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 
 void push_model(RenderGroup* group, ModelHandle handle, V3 pos, V3 scale);
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color);
 
-void push_spotlight(CommandBuffer* buffer, V3 pos, V3 dir, float fov);
+void push_spotlight(CommandBuffer* buffer, V3 pos, V3 dir, float fov, float far_plane);
 
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path);
 void free_texture_load_op(TextureLoadOp* load_op);

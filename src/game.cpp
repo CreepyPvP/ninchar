@@ -44,12 +44,18 @@ void game_load_assets()
     dispose(&asset_arena);
 };
 
-void game_init(Game* game, Arena* arena, std::string stage, TextureHandle white)
+float enemy_spotlight_length = 20;
+
+
+void game_init(Game* game, Arena* arena, const char* stage, TextureHandle white)
 {
     char path[1024];
-    sprintf(path, "assets/stages/%s.png", stage.c_str());
+    sprintf(path, "assets/stages/%s.png", stage);
     u8* tmp = stbi_load(path, (i32*) &game->width, (i32*) &game->height, NULL, STBI_rgb);
-    assert(tmp);
+    if (!tmp) {
+        printf("Failed to load %s\n", path);
+        assert(tmp);
+    }
 
     game->entities = (Entity*) push_size(arena, sizeof(Entity) * ENTITY_CAP);
 
@@ -85,6 +91,7 @@ void game_init(Game* game, Arena* arena, std::string stage, TextureHandle white)
             if (curr[0] == 88 && curr[1] == 57 && curr[2] == 39) {
                 entity.type = EntityType_Crate;
                 entity.collider.type = ColliderType_Moveable;
+                entity.collider.transparency_type = TransparencyType_Mirror;
                 entity.texture = crate_texture;
                 push_entity(entity, game);
             }
@@ -108,13 +115,18 @@ void game_init(Game* game, Arena* arena, std::string stage, TextureHandle white)
                 push_entity(entity, game);
             }
 
-            if (curr[0] == 0 && curr[1] >= 254 && curr[2] <= 3) {
+            if (curr[0] <= 1 && curr[1] >= 254 && curr[2] <= 3) {
                 entity.type = EntityType_Enemy;
                 entity.collider.type = ColliderType_Static;
                 entity.collider.transparency_type = TransparencyType_Opaque;
                 entity.rotation = curr[2] * (PI/2);
                 entity.rotation_speed = curr[1] == 254 ? -1 : 1;
                 push_entity(entity, game);
+                if (curr[0]==1) {
+                    enemy_spotlight_length = 40;
+                } else {
+                    enemy_spotlight_length = 20;
+                }
             }
 
             if (curr[0] == 195 && curr[1] == 195 && curr[2] == 195) {
@@ -208,6 +220,9 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         Entity* player = get_entity(game->player, game);
         move_and_collide(player, v3float_to_v2int({movement.x, 0,0}), game);
         move_and_collide(player, v3float_to_v2int({0,movement.y, 0}), game);
+
+        
+        init_camera(&game->camera, v3(player->pos.x, player->pos.y, 15), v3(0, 0.01, -1));
     }
 
     for (u32 i = 0; i < game->enemies.entity_count; ++i) {
@@ -219,7 +234,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         V3 left = v3(fov * side.x + (1 - fov) * facing.x, fov * side.y + (1 - fov) * facing.y, facing.z);
         V3 right = v3(-fov * side.x + (1 - fov) * facing.x, -fov * side.y + (1 - fov) * facing.y, facing.z);
 
-        push_spotlight(group->commands, enemy->pos, facing, fov);
+        push_spotlight(group->commands, enemy->pos, facing, fov, enemy_spotlight_length);
 
         bool enemy_use_many_rays = true;
 

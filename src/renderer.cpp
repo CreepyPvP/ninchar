@@ -228,7 +228,7 @@ void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
               v3(0, 0, 1), group->commands->white, color);
 }
 
-void push_spotlight(CommandBuffer* commands, V3 pos, V3 dir, float fov)
+void push_spotlight(CommandBuffer* commands, V3 pos, V3 dir, float fov, float far_plane)
 {
     CommandEntryPushLight* light =  (CommandEntryPushLight*) push_entry(commands, sizeof(CommandEntryPushLight));
     light->header.type = EntryType_PushLight;
@@ -237,7 +237,7 @@ void push_spotlight(CommandBuffer* commands, V3 pos, V3 dir, float fov)
     light->fov = fov;
 
     float near_plane = 0.4;
-    float far_plane = 20;
+    //float far_plane = 20;
     Mat4 proj = glm::perspective(45.0f, 1.0f, near_plane, far_plane);
     Mat4 view = glm::lookAt(glm::vec3(pos.x, pos.y, pos.z), 
                             glm::vec3(pos.x + dir.x, pos.y + dir.y, pos.z + dir.z), 
