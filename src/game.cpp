@@ -190,10 +190,7 @@ Entity* get_entity(EntityRef ref, Game* game)
 void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderGroup* dbg)
 {
     // Update Player
-    if (game->camera_state == CameraState_Free) {
-        update_camera(&game->camera, inputs, delta);
-    } else {
-
+    if (game->camera_state == CameraState_Locked) {
         V2 movement = v2(0);
 
         // w
@@ -221,7 +218,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         move_and_collide(player, v3float_to_v2int({movement.x, 0,0}), game);
         move_and_collide(player, v3float_to_v2int({0,movement.y, 0}), game);
 
-        
+        // TODO: Fix this, this causes problems
         init_camera(&game->camera, v3(player->pos.x, player->pos.y, 15), v3(0, 0.01, -1));
     }
 
@@ -421,7 +418,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
 
 #ifdef DEBUG
     if (res.hit_found) {
-        push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
+        // push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
     }
 #endif
 

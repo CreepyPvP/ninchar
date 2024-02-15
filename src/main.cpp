@@ -205,6 +205,12 @@ i32 main()
                              vert_cap, vert_buffer, 
                              global_window.width, global_window.height, white, game.camera.pos);
 
+
+        float delta = 1.0f / 60.f;
+        if (game.camera_state == CameraState_Free) {
+            update_camera(&game.camera, pressed, delta);
+        }
+
         Mat4 view = glm::lookAt(
             glm::vec3(game.camera.pos.x, game.camera.pos.y, game.camera.pos.z),
             glm::vec3(game.camera.pos.x + game.camera.front.x, 
@@ -220,7 +226,7 @@ i32 main()
         RenderGroup transparent_group = render_group(&cmd, proj, true, true, false);
         RenderGroup debug_group = render_group(&cmd, proj, false, false, false);
 
-        game_update(&game, pressed, 1.0f / 60.0f, &main_group, &debug_group);
+        game_update(&game, pressed, delta, &main_group, &debug_group);
         game_render(&game, &main_group, &transparent_group, &debug_group);
 
         opengl_render_commands(&cmd);

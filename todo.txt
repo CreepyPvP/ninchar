@@ -1,9 +1,23 @@
+anime toon shader
+    outlines
+    posterization?
+
+lighting
+    blinn phong
+    rim lighting
+
+materials
+    
+animations
+
 obj importing
     asset queue
-    attrib managment
     vao creation cleanup
 
-generational entity allocator
+
+entity system
+    generational entity allocator
+    slot based model
 
 
 Fix peter panning?
@@ -20,14 +34,11 @@ order independant transparency
 
 ui rendering
 
-animations
-
 bloom
 color correction
 
 multithreading?
 
-anime toon shader
 cut scene slystem
 
 

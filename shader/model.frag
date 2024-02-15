@@ -15,8 +15,12 @@ void main() {
     vec3 v = normalize(camera_pos - world_pos);
 
     vec3 ambient = vec3(0.3);
-    vec3 diffuse = vec3(clamp(dot(n, l), 0, 1));
-    vec3 specular = vec3(clamp(dot(-reflect(l, n), v), 0, 1));
+    float diffuse_int = clamp(dot(n, l), 0, 1);
+    diffuse_int = step(0.1, diffuse_int);
+    vec3 diffuse = vec3(1) * diffuse_int;
+    float specular_int = clamp(dot(-reflect(l, n), v), 0, 1);
+    specular_int = step(0.98, specular_int);
+    vec3 specular = vec3(1) * specular_int;
     vec3 light = ambient + diffuse + specular;
 
     out_Color = vec4(0.2, 0.1, 0.1, 1);
