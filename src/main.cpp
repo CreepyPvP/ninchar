@@ -203,7 +203,7 @@ i32 main()
 
         cmd = command_buffer(entry_size, entry_buffer, 
                              vert_cap, vert_buffer, 
-                             global_window.width, global_window.height, white);
+                             global_window.width, global_window.height, white, game.camera.pos);
 
         Mat4 view = glm::lookAt(
             glm::vec3(game.camera.pos.x, game.camera.pos.y, game.camera.pos.z),

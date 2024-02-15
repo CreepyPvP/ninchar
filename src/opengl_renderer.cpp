@@ -114,6 +114,7 @@ DrawShader load_draw_program(const char* vertex_file, const char* frag_file)
     DrawShader shader;
     shader.base = load_program(vertex_file, frag_file);
     shader.proj = glGetUniformLocation(shader.base.id, "proj");
+    shader.camera_pos = glGetUniformLocation(shader.base.id, "camera_pos");
     shader.light_space = glGetUniformLocation(shader.base.id, "sl_light_space");
     shader.spotlight_count = glGetUniformLocation(shader.base.id, "sl_count");
     shader.spotlight_pos = glGetUniformLocation(shader.base.id, "sl_pos");
@@ -319,7 +320,8 @@ void apply_settings(RenderSettings* settings)
     opengl.prev_settings = *settings;
 }
 
-void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lights, u32 light_count)
+void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lights, u32 light_count,
+                          V3 camera_pos)
 {
     // TODO: Apply draw->setup.lit here
     if (setup->culling) {
@@ -329,6 +331,7 @@ void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lig
     }
     glUseProgram(shader->base.id);
     set_uniform_mat4(shader->proj, &setup->proj, 1);
+    glUniform3fv(shader->camera_pos, 1, (float*) &camera_pos);
 
     if (setup->lit) {
         V3 pos_acc[MAX_SPOTLIGHTS];
@@ -456,7 +459,8 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 glBindVertexArray(opengl.quad_vao);
 
-                prepare_render_setup(&draw->setup, &opengl.quad_shader, lights, light_count);
+                prepare_render_setup(&draw->setup, &opengl.quad_shader, lights, light_count, 
+                                     buffer->camera_pos);
 
                 draw_quads(draw);
             } break;
@@ -467,7 +471,8 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 Model* model = opengl.models + draw->model.id;
 
-                prepare_render_setup(&draw->setup, &opengl.model_shader.draw, lights, light_count);
+                prepare_render_setup(&draw->setup, &opengl.model_shader.draw, lights, light_count,
+                                     buffer->camera_pos);
                 set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
 
                 for (u32 i = 0; i < model->mesh_count; ++i) {

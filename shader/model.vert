@@ -7,11 +7,15 @@ layout(location = 2) in vec3 aNorm;
 uniform mat4 proj;
 uniform mat4 trans;
 
+out vec3 world_pos;
 out vec2 uv;
 out vec3 norm;
 
 void main() {
     uv = aUv;
     norm = normalize(aNorm);
-    gl_Position = proj * trans * vec4(aPos, 1);
+    vec4 pos = trans * vec4(aPos, 1);
+    world_pos = pos.xyz / pos.w;
+
+    gl_Position = proj * pos;
 }

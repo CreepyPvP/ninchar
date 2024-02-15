@@ -12,6 +12,8 @@ flat in uvec2 base_color;
 
 in vec4 sl_light_space_pos[MAX_SPOTLIGHTS];
 
+uniform vec3 camera_pos;
+
 uniform uint sl_count;
 uniform uvec2 sl_shadowmap[MAX_SPOTLIGHTS];
 uniform vec3 sl_pos[MAX_SPOTLIGHTS];

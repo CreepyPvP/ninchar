@@ -19,7 +19,7 @@
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
                              u32 vert_cap, Vertex* vert_buffer, 
-                             u32 width, u32 height, TextureHandle white)
+                             u32 width, u32 height, TextureHandle white, V3 camera_pos)
 {
     CommandBuffer commands;
     commands.entry_buffer = entry_buffer;
@@ -35,6 +35,7 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     commands.white = white;
 
     commands.active_group = NULL;
+    commands.camera_pos = camera_pos;
 
     return commands;
 }

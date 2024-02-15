@@ -421,7 +421,7 @@ RaycastResult game_raycast(Game* game, Entity* origin_entity, V3 origin, V3 dir,
 
 #ifdef DEBUG
     if (res.hit_found) {
-        // push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
+        push_line(dbg, origin, res.hit_pos, v3(1, 0, 0));
     }
 #endif
 

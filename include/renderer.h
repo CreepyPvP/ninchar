@@ -102,6 +102,8 @@ struct CommandBuffer
 
     TextureHandle white;
 
+    V3 camera_pos;
+
     RenderGroup* active_group;
 };
 
@@ -148,7 +150,8 @@ struct RenderGroup
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
                              u32 vert_cap, Vertex* vert_buffer, 
-                             u32 width, u32 height, TextureHandle white);
+                             u32 width, u32 height, TextureHandle white,
+                             V3 camera_pos);
 
 RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool culling, 
                          bool shadow_caster);

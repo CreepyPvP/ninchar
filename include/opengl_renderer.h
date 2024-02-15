@@ -53,6 +53,9 @@ struct DrawShader
 {
     ProgramBase base;
     u32 proj;
+
+    u32 camera_pos;
+
     u32 spotlight_count;
     u32 spotlight_pos;
     u32 spotlight_dir;
