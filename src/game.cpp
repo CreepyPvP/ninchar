@@ -308,7 +308,7 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
             V3 scale = v3(0.2);
             V3 pos = entity->pos;
             pos.z = 2;
-            push_model(dbg, camera_model, pos, scale);
+            push_model(default_group, camera_model, pos, scale);
             continue;
         }
 
