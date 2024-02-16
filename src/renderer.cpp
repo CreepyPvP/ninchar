@@ -96,7 +96,7 @@ CommandEntryDrawQuads* get_current_draw(RenderGroup* group, u32 quad_count)
     return group->current_draw;
 }
 
-void push_quad(RenderGroup* group, 
+void push_rect(RenderGroup* group, 
                V3 p1, V2 uv1,
                V3 p2, V2 uv2,
                V3 p3, V2 uv3,
@@ -150,42 +150,42 @@ void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 
     V3 p7 = v3(pos.x + radius.x, pos.y + radius.y, pos.z - radius.z);
     V3 p8 = v3(pos.x + radius.x, pos.y - radius.y, pos.z - radius.z);
 
-    push_quad(group, 
+    push_rect(group, 
               p1, v2(0, 0),
               p2, v2(0, 1),
               p4, v2(1, 0),
               p3, v2(1, 1),
               v3(0, 0, 1), texture, color);
 
-    push_quad(group, 
+    push_rect(group, 
               p8, v2(0, 0),
               p7, v2(0, 1),
               p5, v2(1, 0),
               p6, v2(1, 1),
               v3(0, 0, -1), texture, color);
 
-    push_quad(group, 
+    push_rect(group, 
               p8, v2(0, 0),
               p4, v2(0, 1),
               p7, v2(1, 0),
               p3, v2(1, 1),
               v3(1, 0, 0), texture, color);
 
-    push_quad(group, 
+    push_rect(group, 
               p6, v2(0, 0),
               p2, v2(0, 1),
               p5, v2(1, 0),
               p1, v2(1, 1),
               v3(-1, 0, 0), texture, color);
 
-    push_quad(group, 
+    push_rect(group, 
               p7, v2(0, 0),
               p3, v2(0, 1),
               p6, v2(1, 0),
               p2, v2(1, 1),
               v3(0, 1, 0), texture, color);
 
-    push_quad(group, 
+    push_rect(group, 
               p5, v2(0, 0),
               p1, v2(0, 1),
               p8, v2(1, 0),
@@ -221,7 +221,7 @@ void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
     V3 p2 = v3(end.x - width * side.x, end.y - width * side.y, end.z - width * side.z);
     V3 p3 = v3(end.x + width * side.x, end.y + width * side.y, end.z + width * side.z);
 
-    push_quad(group, 
+    push_rect(group, 
               p0, v2(0, 0),
               p1, v2(0, 1),
               p2, v2(1, 0),

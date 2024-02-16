@@ -12,6 +12,7 @@ TextureHandle ground_texture;
 TextureHandle wall_texture;
 TextureHandle glass_wall_texture;
 TextureHandle crate_texture;
+TextureHandle exterior_texture;
 
 ModelHandle camera_model;
 
@@ -33,6 +34,10 @@ void game_load_assets()
     TextureLoadOp load_wall = texture_load_op(&wall_texture, "assets/wall.png");
     opengl_load_texture(&load_wall);
     free_texture_load_op(&load_wall);
+
+    TextureLoadOp load_exterior = texture_load_op(&exterior_texture, "assets/exterior.png");
+    opengl_load_texture(&load_exterior);
+    free_texture_load_op(&load_exterior);
 
     TextureLoadOp load_glass_wall = texture_load_op(&glass_wall_texture, "assets/glasswall.png");
     opengl_load_texture(&load_glass_wall);
@@ -217,9 +222,6 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         Entity* player = get_entity(game->player, game);
         move_and_collide(player, v3float_to_v2int({movement.x, 0,0}), game);
         move_and_collide(player, v3float_to_v2int({0,movement.y, 0}), game);
-
-        // TODO: Fix this, this causes problems
-        init_camera(&game->camera, v3(player->pos.x, player->pos.y, 15), v3(0, 0.01, -1));
     }
 
     for (u32 i = 0; i < game->enemies.entity_count; ++i) {
@@ -295,6 +297,18 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
             push_cube(default_group, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
+        }
+    }
+
+    // Render exterior
+    for (u32 y = 0; y < game->height; ++y) {
+        for (u32 z = 1; z < 4; ++z) {
+            push_cube(default_group, v3(0, y, z), v3(0.5), exterior_texture, v3(1));
+        }
+    }
+    for (u32 x = 0; x < game->width; ++x) {
+        for (u32 z = 1; z < 4; ++z) {
+            push_cube(default_group, v3(x, game->height, z), v3(0.5), exterior_texture, v3(1));
         }
     }
 

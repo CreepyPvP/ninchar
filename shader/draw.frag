@@ -41,7 +41,7 @@ void main() {
     out_Color = texture(sampler2D(base_color), uv);
     out_Color.rgb *= color;
 
-    vec3 ambient = vec3(0.3);
+    vec3 ambient = vec3(0.2);
     float diffuse_int = clamp(dot(n, l), 0, 1);
     diffuse_int = step(0.1, diffuse_int);
     vec3 diffuse = vec3(1) * diffuse_int;
@@ -49,7 +49,7 @@ void main() {
     // float specular_int = clamp(dot(-reflect(l, n), v), 0, 1);
     // specular_int = step(0.98, specular_int);
     vec3 specular = vec3(1) * specular_int;
-    vec3 light = ambient + diffuse + 0.5 * specular;
+    vec3 light = ambient + 0.6 * diffuse + 0.5 * specular;
 
     for (uint i = 0; i < sl_count; ++i) {
         sampler2D shadowmap = sampler2D(sl_shadowmap[i]);
