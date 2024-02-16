@@ -301,13 +301,13 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
     }
 
     // Render exterior
-    for (u32 y = 0; y < game->height; ++y) {
-        for (u32 z = 1; z < 4; ++z) {
-            push_cube(default_group, v3(0, y, z), v3(0.5), exterior_texture, v3(1));
+    for (u32 y = 0; y < game->height + 1; ++y) {
+        for (u32 z = 0; z < 4; ++z) {
+            push_cube(default_group, v3(-1, y, z), v3(0.5), exterior_texture, v3(1));
         }
     }
     for (u32 x = 0; x < game->width; ++x) {
-        for (u32 z = 1; z < 4; ++z) {
+        for (u32 z = 0; z < 4; ++z) {
             push_cube(default_group, v3(x, game->height, z), v3(0.5), exterior_texture, v3(1));
         }
     }

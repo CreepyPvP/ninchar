@@ -41,7 +41,7 @@ void main() {
     out_Color = texture(sampler2D(base_color), uv);
     out_Color.rgb *= color;
 
-    vec3 ambient = vec3(0.2);
+    vec3 ambient = vec3(0.1);
     float diffuse_int = clamp(dot(n, l), 0, 1);
     diffuse_int = step(0.1, diffuse_int);
     vec3 diffuse = vec3(1) * diffuse_int;

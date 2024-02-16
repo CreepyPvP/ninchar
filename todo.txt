@@ -41,7 +41,7 @@ multithreading?
 
 cut scene slystem
 
-
+Remove assimp. Get it out! Burn it! Kill it with fire!
 
 
 Mit peter bereden:

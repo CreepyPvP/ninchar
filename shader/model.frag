@@ -14,7 +14,7 @@ void main() {
     vec3 n = normalize(norm);
     vec3 v = normalize(camera_pos - world_pos);
 
-    vec3 ambient = vec3(0.2);
+    vec3 ambient = vec3(0.1);
     float diffuse_int = clamp(dot(n, l), 0, 1);
     diffuse_int = step(0.1, diffuse_int);
     vec3 diffuse = vec3(1) * diffuse_int;
