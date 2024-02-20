@@ -14,6 +14,7 @@ TextureHandle glass_wall_texture;
 TextureHandle crate_texture;
 TextureHandle exterior_texture;
 
+ModelHandle test_model;
 ModelHandle camera_model;
 
 
@@ -45,6 +46,9 @@ void game_load_assets()
 
     ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &asset_arena);
     opengl_load_model(&load_camera);
+
+    ModelLoadOp load_test = model_load_op(&test_model, "assets/test/RiggedSimple.gltf", &asset_arena);
+    opengl_load_model(&load_test);
 
     dispose(&asset_arena);
 };
@@ -334,6 +338,8 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
 
         push_cube(group, entity->pos, entity->collider.float_radius, entity->texture, entity->color);
     }
+
+    push_model(default_group, test_model, v3(0, 0, 5), v3(1));
 }
 
 void game_reset_camera(Game* game)

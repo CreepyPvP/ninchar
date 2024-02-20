@@ -4,6 +4,7 @@
 #include "include/types.h"
 #include "include/arena.h"
 
+#define MODEL_FLAGS_UV (1 << 0)
 
 struct RenderGroup;
 
@@ -50,6 +51,8 @@ struct MeshInfo
     MeshVertex* vertex_buffer;
     u32 index_count;
     u32* index_buffer;
+
+    u32 flags;
 };
 
 struct ModelLoadOp

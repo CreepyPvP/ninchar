@@ -271,11 +271,20 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
         info.index_count = mesh->mNumFaces * 3;
         info.index_buffer = (u32*) push_size(arena, sizeof(u32) * info.index_count);
 
+        info.flags = 0;
+
+        if (mesh->HasTextureCoords(0)) {
+            info.flags |= MODEL_FLAGS_UV;
+        }
+
         for (u32 i = 0; i < info.vertex_count; ++i) {
             MeshVertex vert;
             vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y);
             vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y);
-            vert.uv = v2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+
+            if (info.flags & MODEL_FLAGS_UV) {
+                vert.uv = v2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+            }
 
             info.vertex_buffer[i] = vert;
         }
