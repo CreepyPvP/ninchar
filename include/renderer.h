@@ -24,6 +24,7 @@ struct MeshVertex
     V3 pos;
     V2 uv;
     V3 norm;
+    V3 color;
 };
 
 struct TextureHandle

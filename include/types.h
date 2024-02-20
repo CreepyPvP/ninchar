@@ -50,6 +50,27 @@ union V3
     float v[3];
 };
 
+union V4
+{
+    struct
+    {
+        float x;
+        float y;
+        float z;
+        float w;
+    };
+
+    struct
+    {
+        V3 xyz;
+    };
+
+    struct
+    {
+        V3 rgb;
+    };
+};
+
 inline V2 v2(float x, float y)
 {
     return { x, y };
@@ -68,6 +89,11 @@ inline V3 v3(float x, float y, float z)
 inline V3 v3(float x)
 {
     return { x, x, x };
+}
+
+inline V4 v4(float x) 
+{
+    return { x, x, x, x };
 }
 
 Mat4 mat4(V3 pos, V3 scale);

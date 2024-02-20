@@ -272,15 +272,20 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
         info.index_buffer = (u32*) push_size(arena, sizeof(u32) * info.index_count);
 
         info.flags = 0;
-
         if (mesh->HasTextureCoords(0)) {
             info.flags |= MODEL_FLAGS_UV;
         }
+
+        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+
+        V4 color = v4(0.6);
+        aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, (aiColor4D*) &color);
 
         for (u32 i = 0; i < info.vertex_count; ++i) {
             MeshVertex vert;
             vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y);
             vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y);
+            vert.color = color.rgb;
 
             if (info.flags & MODEL_FLAGS_UV) {
                 vert.uv = v2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
@@ -295,8 +300,6 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
             info.index_buffer[3 * i + 1] = face.mIndices[1];
             info.index_buffer[3 * i + 2] = face.mIndices[2];
         }  
-
-        // TODO: load material mesh->mMaterialIndex, scene->mMaterials
 
         load_op->meshes[load_op->mesh_count] = info;
         ++load_op->mesh_count;

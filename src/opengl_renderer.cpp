@@ -598,6 +598,9 @@ void opengl_load_model(ModelLoadOp* load_op)
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*) offsetof(MeshVertex, norm));
 
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*) offsetof(MeshVertex, color));
+
         Mesh mesh = {};
         mesh.vao = vao;
         mesh.index_count = info->index_count;

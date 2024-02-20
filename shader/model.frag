@@ -3,6 +3,7 @@
 in vec3 world_pos;
 in vec2 uv;
 in vec3 norm;
+in vec3 base_color;
 
 uniform vec3 camera_pos;
 
@@ -23,6 +24,5 @@ void main() {
     vec3 specular = vec3(1) * specular_int;
     vec3 light = ambient + diffuse + specular;
 
-    out_Color = vec4(0.2, 0.1, 0.1, 1);
-    out_Color.rgb *= light;
+    out_Color = vec4(base_color * light, 1);
 }
