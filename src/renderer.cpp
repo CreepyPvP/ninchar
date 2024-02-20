@@ -312,9 +312,9 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
     Assimp::Importer importer;
 
     u32 flags = aiProcess_FlipUVs;
-#if 0
+// #if 0
     flags |= aiProcess_Triangulate;
-#endif
+// #endif
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs); 
     assert(scene && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && scene->mRootNode);
 
