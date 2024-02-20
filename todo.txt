@@ -1,3 +1,8 @@
+animations
+proper material handling
+
+ui rendering
+
 anime toon shader
     outlines
     posterization?
@@ -5,15 +10,6 @@ anime toon shader
 lighting
     blinn phong
     rim lighting
-
-materials
-    
-animations
-
-obj importing
-    asset queue
-    vao creation cleanup
-
 
 entity system
     generational entity allocator
@@ -32,16 +28,12 @@ player acceleration
 
 order independant transparency
 
-ui rendering
-
 bloom
 color correction
 
-multithreading?
+multithreading
 
-cut scene slystem
-
-Remove assimp. Get it out! Burn it! Kill it with fire!
+cut scene system?
 
 
 Mit peter bereden:
