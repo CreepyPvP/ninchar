@@ -1,6 +1,8 @@
 animations
 proper material handling
 
+hot reload
+
 ui rendering
 
 anime toon shader

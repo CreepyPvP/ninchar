@@ -275,6 +275,9 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
         if (mesh->HasTextureCoords(0)) {
             info.flags |= MODEL_FLAGS_UV;
         }
+        if (mesh->HasBones()) {
+            info.flags |= MODEL_FLAGS_RIGGED;
+        }
 
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
@@ -286,6 +289,11 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
             vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y);
             vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y);
             vert.color = color.rgb;
+
+            for (u32 i = 0; i < MAX_BONE_INFLUENCE; ++i) {
+                vert.bone_ids[i] = -1;
+                vert.bone_weights[i] = 0;
+            }
 
             if (info.flags & MODEL_FLAGS_UV) {
                 vert.uv = v2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
@@ -300,6 +308,32 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
             info.index_buffer[3 * i + 1] = face.mIndices[1];
             info.index_buffer[3 * i + 2] = face.mIndices[2];
         }  
+
+        if (info.flags & MODEL_FLAGS_RIGGED) {
+            for (u32 i = 0; i < mesh->mNumBones; ++i) {
+                // TODO: track if bones already exists
+                const char* name = mesh->mBones[i]->mName.C_Str();
+                u32 bone_id = i;
+                // TODO: Read bone transform. Dont forget its row major, isntead of colum major
+                // See: mesh->mBones[bone_id]->mOffsetMatrix
+
+                aiBoneWeights* weights = mesh->mBones[i]->mWeights;
+                i32 weight_count = mesh->mBones[i]->mNumWeights;
+
+                for (u32 j = 0; j < weight_count; ++j) {
+                    u32 vert_id = weights[j].mVertexId;
+                    float weight = weights[j].mWeight;
+
+                    for (u32 k = 0; k < MAX_BONE_INFLUENCE; ++k) {
+                        if (info.vertex_buffer[vert_id].bone_ids[k] < 0) {
+                            info.vertex_buffer[vert_id].bone_ids[k] = bone_id;
+                            info.vertex_buffer[vert_id].bone_weights[k] = weight;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
         load_op->meshes[load_op->mesh_count] = info;
         ++load_op->mesh_count;

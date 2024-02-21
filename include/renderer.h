@@ -4,10 +4,12 @@
 #include "include/types.h"
 #include "include/arena.h"
 
+#define MAX_BONE_INFLUENCE 3
+
 #define MODEL_FLAGS_UV (1 << 0)
+#define MODEL_FLAGS_RIGGED (1 << 1)
 
 struct RenderGroup;
-
 
 struct Vertex
 {
@@ -25,6 +27,9 @@ struct MeshVertex
     V2 uv;
     V3 norm;
     V3 color;
+
+    i32 bone_ids[MAX_BONE_INFLUENCE];
+    float bone_weights[MAX_BONE_INFLUENCE];   
 };
 
 struct TextureHandle

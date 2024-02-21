@@ -47,7 +47,8 @@ void game_load_assets()
     ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &asset_arena);
     opengl_load_model(&load_camera);
 
-    ModelLoadOp load_player = model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &asset_arena);
+    // ModelLoadOp load_player = model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &asset_arena);
+    ModelLoadOp load_player = model_load_op(&player_model, "assets/test/alien_smooth.gltf", &asset_arena);
     opengl_load_model(&load_player);
 
     dispose(&asset_arena);

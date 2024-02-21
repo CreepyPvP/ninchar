@@ -1,0 +1,14 @@
+armature and objects are selected differently
+press "tab" to toggle edit mode
+transform
+    "g" to grab
+    "s to scale
+    "r" to rotate
+    can be modified with "z" to modify only "z" axis
+    can be modified with "shift - z" to modify "xy" plane
+shade smooth
+normal mode + shift a => add object
+a => select all
+
+toggle shading style / viewport (top right circle)
+

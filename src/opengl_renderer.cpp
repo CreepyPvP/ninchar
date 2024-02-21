@@ -601,6 +601,16 @@ void opengl_load_model(ModelLoadOp* load_op)
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*) offsetof(MeshVertex, color));
 
+        if (info->flags & MODEL_FLAGS_RIGGED) {
+            glEnableVertexAttribArray(4);
+            glVertexAttribIPointer(4, MAX_BONE_INFLUENCE, GL_INT, sizeof(MeshVertex), 
+                                   (void*) offsetof(MeshVertex, bone_ids));
+
+            glEnableVertexAttribArray(5);
+            glVertexAttribPointer(5, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), 
+                                  (void*) offsetof(MeshVertex, bone_weights));
+        }
+
         Mesh mesh = {};
         mesh.vao = vao;
         mesh.index_count = info->index_count;
