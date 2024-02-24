@@ -12,7 +12,7 @@ layout(location = 4) in uvec2 aBaseColor;
 uniform mat4 proj;
 
 uniform uint sl_count;
-uniform mat4 sl_light_space[MAX_SPOTLIGHTS];
+uniform mat4 light_space[MAX_SPOTLIGHTS];
 
 out vec3 world_pos;
 out vec2 uv;
@@ -20,7 +20,7 @@ out vec3 norm;
 out vec3 color;
 flat out uvec2 base_color;
 
-out vec4 sl_light_space_pos[MAX_SPOTLIGHTS];
+out vec4 light_space_pos[MAX_SPOTLIGHTS];
 
 void main() {
     color = aColor;
@@ -29,7 +29,7 @@ void main() {
     world_pos = aPos;
 
     for (uint i = 0; i < sl_count; ++i) {
-        sl_light_space_pos[i] = sl_light_space[i] * vec4(aPos, 1);
+        light_space_pos[i] = light_space[i] * vec4(aPos, 1);
     }
 
     base_color = aBaseColor;

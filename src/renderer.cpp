@@ -205,6 +205,19 @@ void push_model(RenderGroup* group, ModelHandle handle, V3 pos, V3 scale)
     draw->trans = mat4(pos, scale);
 }
 
+void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, V3 pos, V3 scale)
+{
+    CommandBuffer* commands = group->commands;
+    CommandEntryDrawRiggedModel* draw = (CommandEntryDrawRiggedModel*) 
+        push_entry(commands, sizeof(CommandEntryDrawRiggedModel));
+
+    draw->header.type = EntryType_DrawRiggedModel;
+    draw->model = handle->model;
+    draw->setup = group->setup;
+    draw->trans = mat4(pos, scale);
+    draw->bone_count = handle->skeleton.bone_count;
+}
+
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
 {
     CommandEntryDrawQuads* entry = get_current_draw(group, 1);
@@ -260,22 +273,23 @@ TextureLoadOp texture_load_op(TextureHandle* handle, const char* path)
     return load_op;
 }
 
-void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op, Arena* arena)
+void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op, Skeleton* sk,
+                        Arena* tmp)
 {
     for (u32 i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]]; 
         MeshInfo info = {};
 
         info.vertex_count = mesh->mNumVertices;
-        info.vertex_buffer = (MeshVertex*) push_size(arena, sizeof(MeshVertex) * info.vertex_count);
+        info.vertex_buffer = (MeshVertex*) push_size(tmp, sizeof(MeshVertex) * info.vertex_count);
         info.index_count = mesh->mNumFaces * 3;
-        info.index_buffer = (u32*) push_size(arena, sizeof(u32) * info.index_count);
+        info.index_buffer = (u32*) push_size(tmp, sizeof(u32) * info.index_count);
 
         info.flags = 0;
         if (mesh->HasTextureCoords(0)) {
             info.flags |= MODEL_FLAGS_UV;
         }
-        if (mesh->HasBones()) {
+        if (mesh->HasBones() && sk) {
             info.flags |= MODEL_FLAGS_RIGGED;
         }
 
@@ -311,13 +325,29 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
 
         if (info.flags & MODEL_FLAGS_RIGGED) {
             for (u32 i = 0; i < mesh->mNumBones; ++i) {
-                // TODO: track if bones already exists
-                const char* name = mesh->mBones[i]->mName.C_Str();
-                u32 bone_id = i;
-                // TODO: Read bone transform. Dont forget its row major, isntead of colum major
-                // See: mesh->mBones[bone_id]->mOffsetMatrix
+                Str name = from_c_str(mesh->mBones[i]->mName.C_Str(), tmp);
+                u32 bone_id;
+                bool exists = false;
+                for (u32 j = 0; j < sk->bone_count; ++j) {
+                    if (str_equals(name, sk->bone[j].name)) {
+                        exists = true;
+                        bone_id = j;
+                        break;
+                    }
+                }
 
-                aiBoneWeights* weights = mesh->mBones[i]->mWeights;
+                if (!exists) {
+                    assert(sk->bone_count < sk->bone_cap);
+                    bone_id = sk->bone_count;
+                    sk->bone[bone_id].name = name;
+                    // NOTE: Row major (assimp) needs to be converted to colum major (opengl)
+                    Mat4* offset_t = (Mat4*) &mesh->mBones[i]->mOffsetMatrix;
+                    sk->bone[bone_id].offset = glm::transpose(*offset_t);
+                    sk->bone_count++;
+                }
+
+
+                aiVertexWeight* weights = mesh->mBones[i]->mWeights;
                 i32 weight_count = mesh->mBones[i]->mNumWeights;
 
                 for (u32 j = 0; j < weight_count; ++j) {
@@ -340,11 +370,11 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
     }
 
     for (u32 i = 0; i < node->mNumChildren; ++i) {
-        process_scene_node(node->mChildren[i], scene, load_op, arena);
+        process_scene_node(node->mChildren[i], scene, load_op, sk, tmp);
     }
 }  
 
-ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
+ModelLoadOp load_model(ModelHandle* handle, Skeleton* skeleton, const char* path, Arena* tmp)
 {
     Assimp::Importer importer;
 
@@ -358,11 +388,25 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* arena)
     ModelLoadOp load_op = {};
     load_op.handle = handle;
     load_op.mesh_cap = scene->mNumMeshes;
-    load_op.meshes = (MeshInfo*) push_size(arena, sizeof(MeshInfo) * load_op.mesh_cap);
+    load_op.meshes = (MeshInfo*) push_size(tmp, sizeof(MeshInfo) * load_op.mesh_cap);
 
-    process_scene_node(scene->mRootNode, scene, &load_op, arena);
+    process_scene_node(scene->mRootNode, scene, &load_op, skeleton, tmp);
 
     return load_op;
+}
+
+ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp)
+{
+    return load_model(handle, NULL, path, tmp);
+}
+
+ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, 
+                             Arena* tmp, Arena* assets)
+{
+    *handle = {};
+    handle->skeleton.bone_cap = 64;
+    handle->skeleton.bone = (BoneInfo*) push_size(assets, sizeof(BoneInfo) * handle->skeleton.bone_cap);
+    return load_model(&handle->model, &handle->skeleton, path, tmp);
 }
 
 void free_texture_load_op(TextureLoadOp* load_op)

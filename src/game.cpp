@@ -14,15 +14,17 @@ TextureHandle glass_wall_texture;
 TextureHandle crate_texture;
 TextureHandle exterior_texture;
 
-ModelHandle player_model;
+RiggedModelHandle player_model;
 ModelHandle camera_model;
 
 
 // TODO: move asset loading to asset queue. Then game has no opengl dependency
 void game_load_assets()
 {
-    Arena asset_arena;
-    init_arena(&asset_arena, &pool);
+    Arena assets;
+    init_arena(&assets, &pool);
+    Arena tmp;
+    init_arena(&tmp, &pool);
 
     TextureLoadOp load_ground = texture_load_op(&ground_texture, "assets/ground.png");
     opengl_load_texture(&load_ground);
@@ -44,14 +46,14 @@ void game_load_assets()
     opengl_load_texture(&load_glass_wall);
     free_texture_load_op(&load_glass_wall);
 
-    ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &asset_arena);
+    ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &tmp);
     opengl_load_model(&load_camera);
 
-    // ModelLoadOp load_player = model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &asset_arena);
-    ModelLoadOp load_player = model_load_op(&player_model, "assets/test/alien_smooth.gltf", &asset_arena);
+    // ModelLoadOp load_player = model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &tmp);
+    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien_smooth.gltf", &tmp, &assets);
     opengl_load_model(&load_player);
 
-    dispose(&asset_arena);
+    dispose(&tmp);
 };
 
 float enemy_spotlight_length = 20;
@@ -340,7 +342,7 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
         push_cube(group, entity->pos, entity->collider.float_radius, entity->texture, entity->color);
     }
 
-    push_model(default_group, player_model, v3(0, 0, 5), v3(1));
+    push_rigged_model(default_group, &player_model, v3(0, 0, 5), v3(1));
 }
 
 void game_reset_camera(Game* game)

@@ -26,6 +26,9 @@ typedef int64_t i64;
 typedef glm::mat4 Mat4;
 
 
+struct Arena;
+
+
 struct V2int{
     int x;
     int y;
@@ -97,5 +100,16 @@ inline V4 v4(float x)
 }
 
 Mat4 mat4(V3 pos, V3 scale);
+
+struct Str
+{
+    char* ptr;
+    u32 len;
+};
+
+Str from_c_str(const char* c_str, Arena* arena);
+bool str_equals(Str a, Str b);
+
+#include "include/arena.h"
 
 #endif

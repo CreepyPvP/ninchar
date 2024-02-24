@@ -44,37 +44,21 @@ struct SpotLight
 };
 
 
-struct ProgramBase
+struct Program
 {
     u32 id;
-};
 
-struct DrawShader
-{
-    ProgramBase base;
     u32 proj;
-
+    u32 trans;
     u32 camera_pos;
+
+    u32 light_space;
+    u32 shadow_map;
 
     u32 spotlight_count;
     u32 spotlight_pos;
     u32 spotlight_dir;
     u32 spotlight_fov;
-    u32 light_space;
-
-    u32 shadow_map;
-};
-
-struct ShadowShader
-{
-    ProgramBase base;
-    u32 light_space;
-};
-
-struct ModelShader
-{
-    DrawShader draw;
-    u32 trans;
 };
 
 struct Framebuffer
@@ -93,10 +77,11 @@ struct OpenGLContext
     u32 vertex_buffer;
 
     Arena render_arena;
-    ModelShader model_shader;
-    DrawShader quad_shader;
-    ProgramBase post_shader;
-    ShadowShader shadow_shader;
+    Program model_shader;
+    Program rigged_model_shader;
+    Program quad_shader;
+    Program post_shader;
+    Program shadow_shader;
 
     Framebuffer main_framebuffer;
     Framebuffer post_framebuffer;

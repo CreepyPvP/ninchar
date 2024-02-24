@@ -59,7 +59,7 @@ void APIENTRY debug_output(GLenum source,
     printf("\n");
 }
 
-ProgramBase load_program(const char* vertex_file, const char* frag_file)
+Program load_program(const char* vertex_file, const char* frag_file)
 {
     begin_tmp(&opengl.render_arena);
 
@@ -90,7 +90,7 @@ ProgramBase load_program(const char* vertex_file, const char* frag_file)
         assert(0);
     }
 
-    ProgramBase shader;
+    Program shader;
     shader.id = glCreateProgram();
     glAttachShader(shader.id, vertex_prog);
     glAttachShader(shader.id, frag_prog);
@@ -105,24 +105,19 @@ ProgramBase load_program(const char* vertex_file, const char* frag_file)
     glDeleteShader(vertex_prog);
     glDeleteShader(frag_prog);
     end_tmp(&opengl.render_arena);
-    
-    return shader;
-}
 
-DrawShader load_draw_program(const char* vertex_file, const char* frag_file)
-{
-    DrawShader shader;
-    shader.base = load_program(vertex_file, frag_file);
-    shader.proj = glGetUniformLocation(shader.base.id, "proj");
-    shader.camera_pos = glGetUniformLocation(shader.base.id, "camera_pos");
-    shader.light_space = glGetUniformLocation(shader.base.id, "sl_light_space");
-    shader.spotlight_count = glGetUniformLocation(shader.base.id, "sl_count");
-    shader.spotlight_pos = glGetUniformLocation(shader.base.id, "sl_pos");
-    shader.spotlight_dir = glGetUniformLocation(shader.base.id, "sl_dir");
-    shader.spotlight_fov = glGetUniformLocation(shader.base.id, "sl_fov");
-    
-    shader.shadow_map = glGetUniformLocation(shader.base.id, "sl_shadowmap");
+    shader.proj = glGetUniformLocation(shader.id, "proj");
+    shader.trans = glGetUniformLocation(shader.id, "trans");
+    shader.camera_pos = glGetUniformLocation(shader.id, "camera_pos");
 
+    shader.light_space = glGetUniformLocation(shader.id, "light_space");
+    shader.shadow_map = glGetUniformLocation(shader.id, "shadowmap");
+
+    shader.spotlight_count = glGetUniformLocation(shader.id, "sl_count");
+    shader.spotlight_pos = glGetUniformLocation(shader.id, "sl_pos");
+    shader.spotlight_dir = glGetUniformLocation(shader.id, "sl_dir");
+    shader.spotlight_fov = glGetUniformLocation(shader.id, "sl_fov");
+    
     return shader;
 }
 
@@ -292,12 +287,10 @@ void opengl_init()
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
     opengl.post_shader = load_program("shader/post.vert", "shader/post.frag");
-    opengl.quad_shader = load_draw_program("shader/draw.vert", "shader/draw.frag");
-    opengl.model_shader.draw = load_draw_program("shader/model.vert", "shader/model.frag");
-    opengl.model_shader.trans = glGetUniformLocation(opengl.model_shader.draw.base.id, "trans");
-
-    opengl.shadow_shader.base = load_program("shader/shadow.vert", "shader/shadow.frag");
-    opengl.shadow_shader.light_space = glGetUniformLocation(opengl.shadow_shader.base.id, "light_space");
+    opengl.quad_shader = load_program("shader/draw.vert", "shader/draw.frag");
+    opengl.model_shader = load_program("shader/model.vert", "shader/model.frag");
+    opengl.rigged_model_shader = load_program("shader/model.vert", "shader/model.frag");
+    opengl.shadow_shader = load_program("shader/shadow.vert", "shader/shadow.frag");
 
     for (u32 i = 0; i < SHADOW_MAP_COUNT; ++i) {
         opengl.shadow_maps[i] = create_framebuffer(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 
@@ -320,7 +313,7 @@ void apply_settings(RenderSettings* settings)
     opengl.prev_settings = *settings;
 }
 
-void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lights, u32 light_count,
+void prepare_render_setup(RenderSetup* setup, Program* shader, SpotLight* lights, u32 light_count,
                           V3 camera_pos)
 {
     // TODO: Apply draw->setup.lit here
@@ -329,7 +322,7 @@ void prepare_render_setup(RenderSetup* setup, DrawShader* shader, SpotLight* lig
     } else {
         glDisable(GL_CULL_FACE);
     }
-    glUseProgram(shader->base.id);
+    glUseProgram(shader->id);
     set_uniform_mat4(shader->proj, &setup->proj, 1);
     glUniform3fv(shader->camera_pos, 1, (float*) &camera_pos);
 
@@ -379,7 +372,7 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
     glDisable(GL_CULL_FACE);
     glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.shadow_maps[light->shadow_map].id);
-    glUseProgram(opengl.shadow_shader.base.id);
+    glUseProgram(opengl.shadow_shader.id);
     set_uniform_mat4(opengl.shadow_shader.light_space, &light->light_space, 1);
 
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -411,6 +404,10 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
 
             case EntryType_DrawModel: {
                 offset += sizeof(CommandEntryDrawModel);
+            } break;
+
+            case EntryType_DrawRiggedModel: {
+                offset += sizeof(CommandEntryDrawRiggedModel);
             } break;
         }
     }
@@ -471,7 +468,27 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 Model* model = opengl.models + draw->model.id;
 
-                prepare_render_setup(&draw->setup, &opengl.model_shader.draw, lights, light_count,
+                prepare_render_setup(&draw->setup, &opengl.model_shader, lights, light_count,
+                                     buffer->camera_pos);
+                set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
+
+                for (u32 i = 0; i < model->mesh_count; ++i) {
+                    Mesh* mesh = opengl.meshes + model->mesh_offset + i;
+
+                    glBindVertexArray(mesh->vao);
+                    glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, (void*) 0);
+                }
+
+            } break;
+
+            case EntryType_DrawRiggedModel: {
+                CommandEntryDrawRiggedModel* draw = (CommandEntryDrawRiggedModel*) 
+                    (buffer->entry_buffer + offset);
+                offset += sizeof(CommandEntryDrawRiggedModel);
+
+                Model* model = opengl.models + draw->model.id;
+
+                prepare_render_setup(&draw->setup, &opengl.rigged_model_shader, lights, light_count,
                                      buffer->camera_pos);
                 set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
 

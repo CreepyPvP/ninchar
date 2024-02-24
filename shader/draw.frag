@@ -10,12 +10,12 @@ in vec3 norm;
 in vec3 color;
 flat in uvec2 base_color;
 
-in vec4 sl_light_space_pos[MAX_SPOTLIGHTS];
+in vec4 light_space_pos[MAX_SPOTLIGHTS];
 
 uniform vec3 camera_pos;
 
 uniform uint sl_count;
-uniform uvec2 sl_shadowmap[MAX_SPOTLIGHTS];
+uniform uvec2 shadowmap[MAX_SPOTLIGHTS];
 uniform vec3 sl_pos[MAX_SPOTLIGHTS];
 uniform vec3 sl_dir[MAX_SPOTLIGHTS];
 uniform float sl_fov[MAX_SPOTLIGHTS];
@@ -52,7 +52,7 @@ void main() {
     vec3 light = ambient + 0.6 * diffuse + 0.5 * specular;
 
     for (uint i = 0; i < sl_count; ++i) {
-        sampler2D shadowmap = sampler2D(sl_shadowmap[i]);
+        sampler2D shadowmap = sampler2D(shadowmap[i]);
         vec3 pos = sl_pos[i];
         vec3 dir = sl_dir[i];
         float fov = sl_fov[i];
@@ -62,7 +62,7 @@ void main() {
 
         if (dot(dir, normalize(world_pos - pos)) > dot(dir, left)) {
             vec3 light_color = vec3(10.0, 1.4, 1.4) * clamp(dot(normalize(pos - world_pos), n), 0, 1);
-            light.rgb += light_color * shadow_calc(sl_light_space_pos[i], shadowmap);
+            light.rgb += light_color * shadow_calc(light_space_pos[i], shadowmap);
         }
     }
 

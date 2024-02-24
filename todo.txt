@@ -1,4 +1,11 @@
 animations
+    use rigged shader instead
+    => should see the model t posing
+    animation parsing
+    bone transform interplation
+
+    cleanup (CommandEntryDrawRiggedModel)
+
 proper material handling
 
 hot reload
