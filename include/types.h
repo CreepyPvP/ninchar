@@ -104,11 +104,15 @@ Mat4 mat4(V3 pos, V3 scale);
 struct Str
 {
     char* ptr;
-    u32 len;
+    u16 len;
+    u16 cap;
 };
 
+Str str_with_cap(u16 cap, Arena* arena);
 Str from_c_str(const char* c_str, Arena* arena);
 bool str_equals(Str a, Str b);
+void append_line(Str* str, const char* line);
+void append_null(Str* str);
 
 #include "include/arena.h"
 

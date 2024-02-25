@@ -9,6 +9,8 @@
 #include "include/util.h"
 #include "include/profiler.h"
 
+#define SHADER_SKELETON (1 << 0)
+
 OpenGLContext opengl;
 
 void APIENTRY debug_output(GLenum source, 
@@ -59,17 +61,26 @@ void APIENTRY debug_output(GLenum source,
     printf("\n");
 }
 
-Program load_program(const char* vertex_file, const char* frag_file)
+Program load_program(const char* vertex_file, const char* frag_file, u32 flags)
 {
     begin_tmp(&opengl.render_arena);
+
+    Str header = str_with_cap(1024, &opengl.render_arena);
+    const char* code[2] = {header.ptr};
+
+    append_line(&header, "#version 440");
+    if (flags & SHADER_SKELETON) {
+        append_line(&header, "#define SKELETON");
+    }
+    append_null(&header);
 
     char info_log[512];
     i32 status;
 
-    char* vertex_code = read_file(vertex_file, NULL, &opengl.render_arena);
-    assert(vertex_code);
+    code[1] = read_file(vertex_file, NULL, &opengl.render_arena);
+    assert(code[1]);
     u32 vertex_prog = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_prog, 1, &vertex_code, NULL);
+    glShaderSource(vertex_prog, 2, code, NULL);
     glCompileShader(vertex_prog);
     glGetShaderiv(vertex_prog, GL_COMPILE_STATUS, &status);
     if (!status) {
@@ -78,10 +89,10 @@ Program load_program(const char* vertex_file, const char* frag_file)
         assert(0);
     }
 
-    char* frag_code = read_file(frag_file, NULL, &opengl.render_arena);
-    assert(frag_code);
+    code[1] = read_file(frag_file, NULL, &opengl.render_arena);
+    assert(code[1]);
     u32 frag_prog = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(frag_prog, 1, &frag_code, NULL);
+    glShaderSource(frag_prog, 2, code, NULL);
     glCompileShader(frag_prog);
     glGetShaderiv(frag_prog, GL_COMPILE_STATUS, &status);
     if(!status) {
@@ -286,11 +297,11 @@ void opengl_init()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
-    opengl.post_shader = load_program("shader/post.vert", "shader/post.frag");
-    opengl.quad_shader = load_program("shader/draw.vert", "shader/draw.frag");
-    opengl.model_shader = load_program("shader/model.vert", "shader/model.frag");
-    opengl.rigged_model_shader = load_program("shader/model.vert", "shader/model.frag");
-    opengl.shadow_shader = load_program("shader/shadow.vert", "shader/shadow.frag");
+    opengl.post_shader = load_program("shader/post.vert", "shader/post.frag", 0);
+    opengl.quad_shader = load_program("shader/draw.vert", "shader/draw.frag", 0);
+    opengl.model_shader = load_program("shader/model.vert", "shader/model.frag", 0);
+    opengl.rigged_model_shader = load_program("shader/model.vert", "shader/model.frag", SHADER_SKELETON);
+    opengl.shadow_shader = load_program("shader/shadow.vert", "shader/shadow.frag", 0);
 
     for (u32 i = 0; i < SHADOW_MAP_COUNT; ++i) {
         opengl.shadow_maps[i] = create_framebuffer(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 
@@ -467,14 +478,11 @@ void opengl_render_commands(CommandBuffer* buffer)
                 offset += sizeof(CommandEntryDrawModel);
 
                 Model* model = opengl.models + draw->model.id;
-
                 prepare_render_setup(&draw->setup, &opengl.model_shader, lights, light_count,
                                      buffer->camera_pos);
                 set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
-
                 for (u32 i = 0; i < model->mesh_count; ++i) {
                     Mesh* mesh = opengl.meshes + model->mesh_offset + i;
-
                     glBindVertexArray(mesh->vao);
                     glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, (void*) 0);
                 }
@@ -487,14 +495,11 @@ void opengl_render_commands(CommandBuffer* buffer)
                 offset += sizeof(CommandEntryDrawRiggedModel);
 
                 Model* model = opengl.models + draw->model.id;
-
                 prepare_render_setup(&draw->setup, &opengl.rigged_model_shader, lights, light_count,
                                      buffer->camera_pos);
                 set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
-
                 for (u32 i = 0; i < model->mesh_count; ++i) {
                     Mesh* mesh = opengl.meshes + model->mesh_offset + i;
-
                     glBindVertexArray(mesh->vao);
                     glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, (void*) 0);
                 }

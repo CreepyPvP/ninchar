@@ -1,5 +1,3 @@
-#version 440
-
 in vec3 world_pos;
 in vec2 uv;
 in vec3 norm;

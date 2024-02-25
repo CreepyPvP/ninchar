@@ -1,4 +1,3 @@
-#version 440
 #extension GL_ARB_bindless_texture: require
 
 #define SHADOW_BIAS 0.002

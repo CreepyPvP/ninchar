@@ -1,12 +1,11 @@
 #include "include/types.h"
 
 
-Str str_with_cap(u16 cap, Arena* arena)
+Str str_with_cap(u16 cap)
 {
     Str res = {};
     res.cap = cap;
     res.ptr = (char*) push_size(arena, sizeof(char) * res.cap);
-    return res;
 }
 
 Str from_c_str(const char* c_str, Arena* arena)
@@ -46,20 +45,9 @@ bool str_equals(Str a, Str b)
 void append_line(Str* str, const char* line)
 {
     while (*line) {
-        assert(str->len < str->cap);
-        str->ptr[str->len] = *line;
-        ++str->len;
+        assert(str.len < str.cap);
+        str.ptr[str.len] = *line;
+        ++str.len;
         ++line;
     }
-
-    assert(str->len < str->cap);
-    str->ptr[str->len] = '\n';
-    ++str->len;
-}
-
-void append_null(Str* str)
-{
-    assert(str->len < str->cap);
-    str->ptr[str->len] = 0;
-    ++str->len;
 }

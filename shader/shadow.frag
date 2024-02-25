@@ -1,5 +1,3 @@
-#version 440
-
 out vec4 out_Color;
 
 void main() {

@@ -1,5 +1,3 @@
-#version 440
-
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec2 aUv;
 layout(location = 2) in vec3 aNorm;
@@ -23,15 +21,14 @@ out vec3 base_color;
 
 void main() {
 #ifdef SKELETON
-    vec4 pos = vec4(0);
+    vec4 pos = vec4(0, 0, 0, 1);
     norm = vec3(0);
-    for (u32 i = 0; i < MAX_BONE_INFLUENCE; ++i) {
+    for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
         if(aBoneIds[i] == -1) {
             continue;
         }
 
         if(aBoneIds[i] >= MAX_BONES) {
-            totalPosition = vec4(pos,1.0f);
             break;
         }
         vec4 local_pos = bone_transforms[aBoneIds[i]] * vec4(aPos, 1.0f);
