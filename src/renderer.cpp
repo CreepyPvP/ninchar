@@ -205,7 +205,7 @@ void push_model(RenderGroup* group, ModelHandle handle, V3 pos, V3 scale)
     draw->trans = mat4(pos, scale);
 }
 
-void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, V3 pos, V3 scale)
+void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, Mat4* pose, V3 pos, V3 scale)
 {
     CommandBuffer* commands = group->commands;
     CommandEntryDrawRiggedModel* draw = (CommandEntryDrawRiggedModel*) 
@@ -215,7 +215,9 @@ void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, V3 pos, V3
     draw->model = handle->model;
     draw->setup = group->setup;
     draw->trans = mat4(pos, scale);
+
     draw->bone_count = handle->skeleton.bone_count;
+    draw->bone_trans = pose;
 }
 
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
@@ -412,4 +414,15 @@ ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path,
 void free_texture_load_op(TextureLoadOp* load_op)
 {
     stbi_image_free(load_op->data);
+}
+
+Mat4* default_pose(RiggedModelHandle* handle, Arena* arena)
+{
+    Mat4* res = (Mat4*) push_size(arena, sizeof(Mat4) * handle->skeleton.bone_count);
+
+    for (u32 i = 0; i < handle->skeleton.bone_count; ++i) {
+        res[i] = handle->skeleton.bone[i].offset;
+    }
+
+    return res;
 }

@@ -6,9 +6,9 @@ layout(location = 3) in vec3 aColor;
 layout(location = 4) in ivec4 aBoneIds; 
 layout(location = 5) in vec4 aWeights;
 
-const int MAX_BONES = 25;
+const int MAX_BONES = 50;
 const int MAX_BONE_INFLUENCE = 3;
-uniform mat4 bone_transforms[MAX_BONES];
+uniform mat4 bone_trans[MAX_BONES];
 #endif
 
 uniform mat4 proj;
@@ -31,9 +31,9 @@ void main() {
         if(aBoneIds[i] >= MAX_BONES) {
             break;
         }
-        vec4 local_pos = bone_transforms[aBoneIds[i]] * vec4(aPos, 1.0f);
+        vec4 local_pos = bone_trans[aBoneIds[i]] * vec4(aPos, 1.0f);
         pos += local_pos * aWeights[i];
-        vec3 local_norm = mat3(bone_transforms[aBoneIds[i]]) * norm;
+        vec3 local_norm = mat3(bone_trans[aBoneIds[i]]) * norm;
     }
 #else
     vec4 pos = vec4(aPos, 1);

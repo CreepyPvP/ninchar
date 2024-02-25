@@ -59,6 +59,8 @@ struct Program
     u32 spotlight_pos;
     u32 spotlight_dir;
     u32 spotlight_fov;
+
+    u32 bone_trans;
 };
 
 struct Framebuffer

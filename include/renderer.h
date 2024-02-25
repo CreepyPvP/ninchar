@@ -166,6 +166,7 @@ struct CommandEntryDrawRiggedModel
     RenderSetup setup;
 
     u32 bone_count;
+    Mat4* bone_trans;
 };
 
 struct CommandEntryPushLight
@@ -199,7 +200,7 @@ void push_clear(CommandBuffer* buffer, V3 color);
 
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color);
 void push_model(RenderGroup* group, ModelHandle handle, V3 pos, V3 scale);
-void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, V3 pos, V3 scale);
+void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, Mat4* pose, V3 pos, V3 scale);
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color);
 
 void push_spotlight(CommandBuffer* buffer, V3 pos, V3 dir, float fov, float far_plane);
@@ -210,6 +211,7 @@ ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp);
 ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, 
                                  Arena* tmp, Arena* assets);
 
+Mat4* default_pose(RiggedModelHandle* handle, Arena* arena);
 
 inline bool equal_settings(RenderSettings* a, RenderSettings* b) 
 {

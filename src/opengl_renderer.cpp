@@ -128,6 +128,8 @@ Program load_program(const char* vertex_file, const char* frag_file, u32 flags)
     shader.spotlight_pos = glGetUniformLocation(shader.id, "sl_pos");
     shader.spotlight_dir = glGetUniformLocation(shader.id, "sl_dir");
     shader.spotlight_fov = glGetUniformLocation(shader.id, "sl_fov");
+
+    shader.bone_trans = glGetUniformLocation(shader.id, "bone_trans");
     
     return shader;
 }
@@ -300,7 +302,8 @@ void opengl_init()
     opengl.post_shader = load_program("shader/post.vert", "shader/post.frag", 0);
     opengl.quad_shader = load_program("shader/draw.vert", "shader/draw.frag", 0);
     opengl.model_shader = load_program("shader/model.vert", "shader/model.frag", 0);
-    opengl.rigged_model_shader = load_program("shader/model.vert", "shader/model.frag", SHADER_SKELETON);
+    opengl.rigged_model_shader = load_program("shader/model.vert", "shader/model.frag", 
+                                              SHADER_SKELETON);
     opengl.shadow_shader = load_program("shader/shadow.vert", "shader/shadow.frag", 0);
 
     for (u32 i = 0; i < SHADOW_MAP_COUNT; ++i) {
@@ -497,7 +500,11 @@ void opengl_render_commands(CommandBuffer* buffer)
                 Model* model = opengl.models + draw->model.id;
                 prepare_render_setup(&draw->setup, &opengl.rigged_model_shader, lights, light_count,
                                      buffer->camera_pos);
-                set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
+
+                set_uniform_mat4(opengl.rigged_model_shader.trans, &draw->trans, 1);
+                set_uniform_mat4(opengl.rigged_model_shader.bone_trans, draw->bone_trans, 
+                                 draw->bone_count);
+
                 for (u32 i = 0; i < model->mesh_count; ++i) {
                     Mesh* mesh = opengl.meshes + model->mesh_offset + i;
                     glBindVertexArray(mesh->vao);
