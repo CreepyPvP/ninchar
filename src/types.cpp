@@ -28,6 +28,16 @@ Str from_c_str(const char* c_str, Arena* arena)
     return res;
 }
 
+Str str_cpy(Str* str, Arena* arena)
+{
+    Str res = *str;
+    res.ptr = (char*) push_size(arena, sizeof(char) * res.cap);
+    for (u32 i = 0; i < str->len; ++i) {
+        res.ptr[i] = str->ptr[i];
+    }
+    return res;
+}
+
 bool str_equals(Str a, Str b)
 {
     if (a.len != b.len) {

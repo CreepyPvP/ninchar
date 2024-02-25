@@ -110,6 +110,7 @@ struct Str
 
 Str str_with_cap(u16 cap, Arena* arena);
 Str from_c_str(const char* c_str, Arena* arena);
+Str str_cpy(Str* str, Arena* arena);
 bool str_equals(Str a, Str b);
 void append_line(Str* str, const char* line);
 void append_null(Str* str);

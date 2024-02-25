@@ -21,7 +21,7 @@ out vec3 base_color;
 
 void main() {
 #ifdef SKELETON
-    vec4 pos = vec4(0, 0, 0, 1);
+    vec4 pos = vec4(0);
     norm = vec3(0);
     for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
         if(aBoneIds[i] == -1) {
@@ -31,9 +31,10 @@ void main() {
         if(aBoneIds[i] >= MAX_BONES) {
             break;
         }
-        vec4 local_pos = bone_trans[aBoneIds[i]] * vec4(aPos, 1.0f);
+        vec4 local_pos = bone_trans[aBoneIds[i]] * vec4(aPos, 1);
         pos += local_pos * aWeights[i];
-        vec3 local_norm = mat3(bone_trans[aBoneIds[i]]) * norm;
+        vec3 local_norm = mat3(bone_trans[aBoneIds[i]]) * aNorm;
+        norm += local_norm * aWeights[i];
     }
 #else
     vec4 pos = vec4(aPos, 1);
