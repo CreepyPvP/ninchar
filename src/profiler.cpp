@@ -50,6 +50,7 @@ void end_frame()
     printf("Backend took %f ms\n", entries[LogTarget_Backend].total_duration * 1000);
     printf("Raycast took %f ms, was called: %u\n", entries[LogTarget_GameRaycast].total_duration * 1000, 
            entries[LogTarget_GameRaycast].count);
+    printf("Interpolate pose took %f ms\n", entries[LogTarget_InterpolatePose].total_duration * 1000);
 }
 
 LogEntryInfo start_log(LogTarget target)

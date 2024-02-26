@@ -115,6 +115,8 @@ bool str_equals(Str a, Str b);
 void append_line(Str* str, const char* line);
 void append_null(Str* str);
 
+void print_str(Str* str);
+
 #include "include/arena.h"
 
 #endif

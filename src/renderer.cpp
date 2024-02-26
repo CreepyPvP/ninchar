@@ -7,6 +7,7 @@
 
 #include "include/game_math.h"
 #include "include/util.h"
+#include "include/profiler.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <assimp/Importer.hpp>
@@ -275,6 +276,11 @@ TextureLoadOp texture_load_op(TextureHandle* handle, const char* path)
     return load_op;
 }
 
+void free_texture_load_op(TextureLoadOp* load_op)
+{
+    stbi_image_free(load_op->data);
+}
+
 void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op, Skeleton* sk,
                         Arena* tmp, Arena* assets)
 {
@@ -385,7 +391,7 @@ ModelLoadOp load_model(ModelHandle* handle, Skeleton* skeleton, const char* path
 // #if 0
     flags |= aiProcess_Triangulate;
 // #endif
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs); 
+    const aiScene* scene = importer.ReadFile(path, flags); 
     assert(scene && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && scene->mRootNode);
 
     ModelLoadOp load_op = {};
@@ -408,23 +414,116 @@ ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path,
 {
     *handle = {};
     handle->skeleton.bone_cap = 64;
-    handle->skeleton.bone = (BoneInfo*) push_size(assets, sizeof(BoneInfo) * handle->skeleton.bone_cap);
+    handle->skeleton.bone = (BoneInfo*) 
+        push_size(assets, sizeof(BoneInfo) * handle->skeleton.bone_cap);
     return load_model(&handle->model, &handle->skeleton, path, tmp, assets);
 }
 
-void free_texture_load_op(TextureLoadOp* load_op)
+u32 count_nodes(aiNode* node)
 {
-    stbi_image_free(load_op->data);
+    u32 count = 1 + node->mNumChildren;
+    for (u32 i = 0; i < node->mNumChildren; ++i) {
+        count += count_nodes(node->mChildren[i]);
+    }
+    return count;
 }
 
-Mat4* default_pose(RiggedModelHandle* handle, Arena* arena)
+void process_skeleton_node(aiNode* node, Animation* anim, Arena* assets, u32 index, u32* node_count)
 {
-    Mat4* res = (Mat4*) push_size(arena, sizeof(Mat4) * handle->skeleton.bone_count);
+    AnimationNode entry;
+    entry.name = from_c_str(node->mName.C_Str(), assets);
+    entry.first_child = *node_count;
+    entry.child_count = node->mNumChildren;
+    entry.bone = -1;
 
-    for (u32 i = 0; i < handle->skeleton.bone_count; ++i) {
-        // res[i] = handle->skeleton.bone[i].offset;
+    for (u32 i = 0; i < anim->bone_count; ++i) {
+        if (str_equals(entry.name, anim->bone[i].name)) {
+            entry.bone = i;
+            break;
+        }
+    }
+
+    Mat4* trans_t = (Mat4*) &node->mTransformation;
+    entry.trans = glm::transpose(*trans_t);
+
+    anim->node[index] = entry;
+    (*node_count) += node->mNumChildren;
+
+    for (u32 i = 0; i < node->mNumChildren; ++i) {
+        process_skeleton_node(node->mChildren[i], anim, assets, entry.first_child + i, node_count);
+    }
+}
+
+Animation load_animation(const char* path, Arena* assets)
+{
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(path, 0); 
+    assert(scene && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && scene->mRootNode);
+
+    aiAnimation* animation = scene->mAnimations[0];
+    float duration = animation->mDuration;
+    float tps = animation->mTicksPerSecond;
+
+    Animation anim;
+    anim.bone_count = animation->mNumChannels;
+    anim.bone = (Bone*) push_size(assets, sizeof(Bone) * anim.bone_count);
+
+    for (u32 i = 0; i < anim.bone_count; ++i) {
+        aiNodeAnim* channel = animation->mChannels[i];
+        anim.bone[i].name = from_c_str(channel->mNodeName.C_Str(), assets); 
+    }
+
+    anim.node_count = count_nodes(scene->mRootNode);
+    anim.node = (AnimationNode*) push_size(assets, sizeof(AnimationNode) * anim.node_count);
+    u32 count = 1;
+    process_skeleton_node(scene->mRootNode, &anim, assets, 0, &count);
+
+    return anim;
+}
+
+Mat4* default_pose(Skeleton* skeleton, Arena* arena)
+{
+    Mat4* res = (Mat4*) push_size(arena, sizeof(Mat4) * skeleton->bone_count);
+
+    for (u32 i = 0; i < skeleton->bone_count; ++i) {
         res[i] = glm::mat4(1);
     }
+
+    return res;
+}
+
+void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* final)
+{
+    AnimationNode* node = anim->node + id;
+    Mat4 trans = node->trans;
+    if (node->bone >= 0) {
+        // TODO: update bone here
+        // TODO: Set trans here to bone trans
+    }
+
+    Mat4 global_trans = parent * trans;
+
+    for (u32 i = 0; i < sk->bone_count; ++i) {
+        BoneInfo* info = sk->bone + i;
+        if (str_equals(node->name, info->name)) {
+            final[i] = global_trans * info->offset;
+            break;
+        }
+    }
+
+    for (u32 i = 0; i < node->child_count; ++i) {
+        do_node_trans(anim, sk, node->first_child + i, global_trans, final);
+    }
+}
+
+Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena)
+{
+    LogEntryInfo info = start_log(LogTarget_InterpolatePose);
+
+    Mat4* res = (Mat4*) push_size(arena, sizeof(Mat4) * skeleton->bone_count);
+    do_node_trans(animation, skeleton, 0, glm::mat4(1), res);
+
+    end_log(info);
 
     return res;
 }

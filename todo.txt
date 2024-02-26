@@ -1,6 +1,4 @@
 animations
-    use rigged shader instead
-    => should see the model t posing
     animation parsing
     bone transform interplation
 

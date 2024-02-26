@@ -210,12 +210,39 @@ void free_texture_load_op(TextureLoadOp* load_op);
 ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp);
 ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, 
                                  Arena* tmp, Arena* assets);
-
-Mat4* default_pose(RiggedModelHandle* handle, Arena* arena);
-
 inline bool equal_settings(RenderSettings* a, RenderSettings* b) 
 {
     return (a->width == b->width) && (a->height == b->height);
 }
+
+
+struct AnimationNode
+{
+    Str name;
+    Mat4 trans;
+    u32 first_child;
+    u32 child_count;
+    // NOTE: -1 means there is no bone belonging to this node
+    i32 bone;
+};
+
+struct Bone
+{
+    Str name;
+};
+
+struct Animation
+{
+    u32 node_count;
+    AnimationNode* node;
+
+    u32 bone_count;
+    Bone* bone;
+};
+
+Animation load_animation(const char* path, Arena* assets);
+
+Mat4* default_pose(Skeleton* skeleton, Arena* arena);
+Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena);
 
 #endif

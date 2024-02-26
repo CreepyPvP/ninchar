@@ -15,15 +15,16 @@ TextureHandle crate_texture;
 TextureHandle exterior_texture;
 
 RiggedModelHandle player_model;
-Mat4* player_pose;
-
 ModelHandle camera_model;
+
+Animation capoeira;
+
+Arena assets;
 
 
 // TODO: move asset loading to asset queue. Then game has no opengl dependency
 void game_load_assets()
 {
-    Arena assets;
     init_arena(&assets, &pool);
     Arena tmp;
     init_arena(&tmp, &pool);
@@ -52,9 +53,11 @@ void game_load_assets()
     opengl_load_model(&load_camera);
 
     // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &tmp, &assets);
-    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien_smooth.gltf", &tmp, &assets);
-    player_pose = default_pose(&player_model, &assets);
+    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp, &assets);
     opengl_load_model(&load_player);
+
+    // load_animation("assets/animations/capoeira.dae");
+    capoeira = load_animation("assets/animations/alien.fbx", &assets);
 
     dispose(&tmp);
 };
@@ -345,7 +348,10 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
         push_cube(group, entity->pos, entity->collider.float_radius, entity->texture, entity->color);
     }
 
-    push_rigged_model(default_group, &player_model, player_pose, v3(0, 0, 5), v3(1));
+    begin_tmp(&assets);
+    Mat4* player_pose = interpolate_pose(&capoeira, &player_model.skeleton, &assets);
+    push_rigged_model(default_group, &player_model, player_pose, v3(0, 0, 5), v3(0.01));
+    end_tmp(&assets);
 }
 
 void game_reset_camera(Game* game)

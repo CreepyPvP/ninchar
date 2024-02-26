@@ -7,6 +7,7 @@ enum LogTarget
 {
     LogTarget_GameRaycast,
     LogTarget_Backend,
+    LogTarget_InterpolatePose,
 
     LogTarget_Count
 };
