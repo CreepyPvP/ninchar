@@ -464,13 +464,63 @@ Animation load_animation(const char* path, Arena* assets)
     float duration = animation->mDuration;
     float tps = animation->mTicksPerSecond;
 
-    Animation anim;
+    Animation anim = {};
     anim.bone_count = animation->mNumChannels;
     anim.bone = (Bone*) push_size(assets, sizeof(Bone) * anim.bone_count);
 
     for (u32 i = 0; i < anim.bone_count; ++i) {
         aiNodeAnim* channel = animation->mChannels[i];
-        anim.bone[i].name = from_c_str(channel->mNodeName.C_Str(), assets); 
+        anim.key_count += channel->mNumPositionKeys;
+        anim.key_count += channel->mNumRotationKeys;
+        anim.key_count += channel->mNumScalingKeys;
+    }
+    anim.key = (AnimationKey*) push_size(assets, sizeof(AnimationKey) * anim.key_count);
+
+    u32 current_key = 0;
+    for (u32 i = 0; i < anim.bone_count; ++i) {
+        aiNodeAnim* channel = animation->mChannels[i];
+
+        Bone bone = {};
+        bone.name = from_c_str(channel->mNodeName.C_Str(), assets); 
+        bone.key_offset = current_key;
+        bone.key_count = channel->mNumPositionKeys + channel->mNumRotationKeys + 
+            channel->mNumScalingKeys;
+
+        for (u32 i = 0; i < channel->mNumPositionKeys; ++i) {
+            AnimationKey key = {};
+            key.type = KeyType_Pos;
+            key.timestamp = channel->mPositionKeys[i].mTime;
+            aiVector3D pos = channel->mPositionKeys[i].mValue;
+            key.v3 = v3(pos.x, pos.z, pos.y);
+
+            anim.key[current_key] = key;
+            current_key++;
+        }
+
+        for (u32 i = 0; i < channel->mNumRotationKeys; ++i) {
+            AnimationKey key = {};
+            key.type = KeyType_Rot;
+            key.timestamp = channel->mRotationKeys[i].mTime;
+            // TODO: Does this work?
+            key.rot = *((Quat*) &channel->mRotationKeys[i].mValue);
+
+            anim.key[current_key] = key;
+            current_key++;
+        }
+
+        for (u32 i = 0; i < channel->mNumScalingKeys; ++i) {
+            AnimationKey key = {};
+            key.type = KeyType_Scale;
+            key.timestamp = channel->mScalingKeys[i].mTime;
+
+            aiVector3D scale = channel->mScalingKeys[i].mValue;
+            key.v3 = v3(scale.x, scale.z, scale.y);
+
+            anim.key[current_key] = key;
+            current_key++;
+        }
+
+        anim.bone[i] = bone;
     }
 
     anim.node_count = count_nodes(scene->mRootNode);

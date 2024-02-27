@@ -216,6 +216,25 @@ inline bool equal_settings(RenderSettings* a, RenderSettings* b)
 }
 
 
+enum KeyType
+{
+    KeyType_Pos,
+    KeyType_Rot,
+    KeyType_Scale,
+};
+
+struct AnimationKey
+{
+    float timestamp;
+    KeyType type;
+
+    union
+    {
+        V3 v3;
+        Quat rot;
+    };
+};
+
 struct AnimationNode
 {
     Str name;
@@ -229,6 +248,8 @@ struct AnimationNode
 struct Bone
 {
     Str name;
+    u32 key_offset;
+    u32 key_count;
 };
 
 struct Animation
@@ -238,6 +259,9 @@ struct Animation
 
     u32 bone_count;
     Bone* bone;
+
+    u32 key_count;
+    AnimationKey* key;
 };
 
 Animation load_animation(const char* path, Arena* assets);

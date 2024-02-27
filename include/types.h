@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #define DEBUG
 #define WINDOWS
@@ -24,6 +25,7 @@ typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
 typedef glm::mat4 Mat4;
+typedef glm::quat Quat;
 
 
 struct Arena;
