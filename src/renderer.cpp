@@ -501,8 +501,12 @@ Animation load_animation(const char* path, Arena* assets)
             AnimationKey key = {};
             key.type = KeyType_Rot;
             key.timestamp = channel->mRotationKeys[i].mTime;
-            // TODO: Does this work?
-            key.rot = *((Quat*) &channel->mRotationKeys[i].mValue);
+            // NOTE: Assimp and glm store quaternions in different orders
+            float w = channel->mRotationKeys[i].mValue.w;
+            float x = channel->mRotationKeys[i].mValue.x;
+            float y = channel->mRotationKeys[i].mValue.y;
+            float z = channel->mRotationKeys[i].mValue.z;
+            key.rot = glm::quat(w, x, y, z);
 
             anim.key[current_key] = key;
             current_key++;
@@ -542,13 +546,74 @@ Mat4* default_pose(Skeleton* skeleton, Arena* arena)
     return res;
 }
 
-void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* final)
+void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* final, float time)
 {
     AnimationNode* node = anim->node + id;
     Mat4 trans = node->trans;
     if (node->bone >= 0) {
-        // TODO: update bone here
-        // TODO: Set trans here to bone trans
+        Bone* bone = anim->bone + node->bone;
+        
+        AnimationKey* pos_from = {};
+        AnimationKey* pos_to = {};
+        AnimationKey* rot_from = {};
+        AnimationKey* rot_to = {};
+
+        for (u32 i = 0; i < bone->key_count; ++i) {
+            u32 key_id = bone->key_offset + i;
+            AnimationKey* key = anim->key + key_id;
+            // TODO: Clean this up
+            if (key->type == KeyType_Pos) {
+                if (key->timestamp <= time && (!pos_from || pos_from->timestamp < key->timestamp)) {
+                    pos_from = key;
+                    continue;
+                }
+
+                if (key->timestamp >= time && (!pos_to || pos_to->timestamp < key->timestamp)) {
+                    pos_to = key;
+                    continue;
+                }
+            }
+
+            if (key->type == KeyType_Rot) {
+                if (key->timestamp <= time && (!rot_from || rot_from->timestamp < key->timestamp)) {
+                    rot_from = key;
+                    continue;
+                }
+
+                if (key->timestamp >= time && (!rot_to || rot_to->timestamp < key->timestamp)) {
+                    rot_to = key;
+                    continue;
+                }
+            }
+        }
+
+        // TODO: Clean this part up
+        Mat4 trans_pos;
+        {
+            // NOTE: Between 0 and 1
+            float t = (time - pos_from->timestamp) / (pos_to->timestamp - pos_from->timestamp);
+            V3 pos = lerp(pos_from->v3, pos_to->v3, t);
+            trans_pos = glm::translate(glm::mat4(1), glm::vec3(pos.x, pos.y, pos.z));
+        }
+
+        Mat4 trans_rot;
+        {
+            // if (!rot_from) {
+            if (1) {
+                trans_rot = glm::toMat4(glm::normalize(rot_to->rot));
+            } else if (!rot_to) {
+                trans_rot = glm::toMat4(glm::normalize(rot_from->rot));
+            } else {
+                float t = (time - rot_from->timestamp) / (rot_to->timestamp - rot_from->timestamp);
+                Quat rot = glm::slerp(rot_from->rot, rot_to->rot, t);
+                rot = glm::normalize(rot);
+                trans_rot = glm::toMat4(rot);
+            }
+        }
+
+        // TODO: Calculate proper scale value
+        Mat4 trans_scale = glm::mat4(1);
+        trans = trans_pos * trans_rot * trans_scale;
     }
 
     Mat4 global_trans = parent * trans;
@@ -562,7 +627,7 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
     }
 
     for (u32 i = 0; i < node->child_count; ++i) {
-        do_node_trans(anim, sk, node->first_child + i, global_trans, final);
+        do_node_trans(anim, sk, node->first_child + i, global_trans, final, time);
     }
 }
 
@@ -571,7 +636,7 @@ Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena)
     LogEntryInfo info = start_log(LogTarget_InterpolatePose);
 
     Mat4* res = (Mat4*) push_size(arena, sizeof(Mat4) * skeleton->bone_count);
-    do_node_trans(animation, skeleton, 0, glm::mat4(1), res);
+    do_node_trans(animation, skeleton, 0, glm::mat4(1), res, 1);
 
     end_log(info);
 

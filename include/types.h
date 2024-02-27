@@ -5,7 +5,7 @@
 #include <assert.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #define DEBUG
 #define WINDOWS
@@ -89,6 +89,11 @@ inline V2 v2(float x)
 inline V3 v3(float x, float y, float z)
 {
     return { x, y, z };
+}
+
+inline V3 lerp(V3 a, V3 b, float t)
+{
+    return v3((1 - t) * a.x + t * b.x, (1 - t) * a.y + t * b.y, (1 - t) * a.z + t * b.z);
 }
 
 inline V3 v3(float x)
