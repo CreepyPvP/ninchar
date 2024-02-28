@@ -127,7 +127,7 @@ i32 main()
     opengl_load_texture(&load_white);
     free_texture_load_op(&load_white);
 
-    Mat4 projection = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
+    Mat4 proj = glm::perspective(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
     Arena game_arena;
     init_arena(&game_arena, &pool);
@@ -218,13 +218,12 @@ i32 main()
                       game.camera.pos.z + game.camera.front.z),
             glm::vec3(0, 0, 1)
         );
-        Mat4 proj = projection * view;
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
 
-        RenderGroup main_group = render_group(&cmd, proj, true, true, true, true);
-        RenderGroup transparent_group = render_group(&cmd, proj, true, true, true, false);
-        RenderGroup debug_group = render_group(&cmd, proj, false, false, false, false);
+        RenderGroup main_group = render_group(&cmd, proj, view, RENDER_DEPTH_TEST | RENDER_LIT | RENDER_CULLING | RENDER_SHADOW_CASTER);
+        RenderGroup transparent_group = render_group(&cmd, proj, view, RENDER_DEPTH_TEST | RENDER_LIT | RENDER_CULLING);
+        RenderGroup debug_group = render_group(&cmd, proj, view, 0);
 
         game_update(&game, pressed, delta, &main_group, &debug_group);
         game_render(&game, &main_group, &transparent_group, &debug_group);

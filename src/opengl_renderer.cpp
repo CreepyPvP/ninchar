@@ -330,23 +330,24 @@ void apply_settings(RenderSettings* settings)
 void prepare_render_setup(RenderSetup* setup, Program* shader, SpotLight* lights, u32 light_count,
                           V3 camera_pos)
 {
-    if (setup->depth_test) {
+    if (setup->flags & RENDER_DEPTH_TEST) {
         glEnable(GL_DEPTH_TEST);
     } else {
         glDisable(GL_DEPTH_TEST);
     }
 
     // TODO: Apply draw->setup.lit here
-    if (setup->culling) {
+    if (setup->flags & RENDER_CULLING) {
         glEnable(GL_CULL_FACE);
     } else {
         glDisable(GL_CULL_FACE);
     }
     glUseProgram(shader->id);
-    set_uniform_mat4(shader->proj, &setup->proj, 1);
+    Mat4 proj = setup->proj * setup->view;
+    set_uniform_mat4(shader->proj, &proj, 1);
     glUniform3fv(shader->camera_pos, 1, (float*) &camera_pos);
 
-    if (setup->lit) {
+    if (setup->flags & RENDER_LIT) {
         V3 pos_acc[MAX_SPOTLIGHTS];
         V3 dir_acc[MAX_SPOTLIGHTS];
         float fov_acc[MAX_SPOTLIGHTS];
@@ -417,7 +418,7 @@ void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
                 CommandEntryDrawQuads* draw = (CommandEntryDrawQuads*) (buffer->entry_buffer + offset);
                 offset += sizeof(CommandEntryDrawQuads);
 
-                if (draw->setup.shadow_caster) {
+                if (draw->setup.flags & RENDER_SHADOW_CASTER) {
                     draw_quads(draw);
                 }
             } break;

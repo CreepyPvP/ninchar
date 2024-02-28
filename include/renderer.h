@@ -92,10 +92,9 @@ struct ModelLoadOp
 struct RenderSetup
 {
     Mat4 proj;
-    bool depth_test;
-    bool lit;
-    bool culling;
-    bool shadow_caster;
+    Mat4 view;
+    
+    u32 flags;
 };
 
 enum CommandEntryType
@@ -188,14 +187,17 @@ struct RenderGroup
     RenderSetup setup;
 };
 
+#define RENDER_DEPTH_TEST (1 << 0)
+#define RENDER_LIT (1 << 1)
+#define RENDER_CULLING (1 << 2)
+#define RENDER_SHADOW_CASTER (1 << 3)
 
 CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
                              u32 vert_cap, Vertex* vert_buffer, 
                              u32 width, u32 height, TextureHandle white,
                              V3 camera_pos);
 
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool depth_test, bool lit, 
-                         bool culling, bool shadow_caster);
+RenderGroup render_group(CommandBuffer* commands, Mat4 proj, Mat4 view, u32 flags);
 
 void push_clear(CommandBuffer* buffer, V3 color);
 

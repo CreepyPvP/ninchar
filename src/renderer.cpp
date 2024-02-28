@@ -42,17 +42,14 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
 }
 
 // TODO: Replace params with flags
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool depth_test, bool lit, 
-                         bool culling, bool shadow_caster)
+RenderGroup render_group(CommandBuffer* commands, Mat4 proj, Mat4 view, u32 flags)
 {
     RenderGroup group = {};
     group.commands = commands;
     group.current_draw = NULL;
     group.setup.proj = proj;
-    group.setup.depth_test = depth_test;
-    group.setup.lit = lit;
-    group.setup.culling = culling;
-    group.setup.shadow_caster = shadow_caster;
+    group.setup.view = view;
+    group.setup.flags = flags;
     return group;
 }
 
