@@ -36,6 +36,7 @@ void main() {
         vec3 local_norm = mat3(bone_trans[aBoneIds[i]]) * aNorm;
         norm += local_norm * aWeights[i];
     }
+    norm = normalize(norm);
 #else
     vec4 pos = vec4(aPos, 1);
     norm = normalize(trans * vec4(aNorm, 0)).xyz;

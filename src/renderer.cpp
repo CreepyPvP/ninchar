@@ -41,13 +41,15 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     return commands;
 }
 
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool culling, 
-                         bool shadow_caster)
+// TODO: Replace params with flags
+RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool depth_test, bool lit, 
+                         bool culling, bool shadow_caster)
 {
     RenderGroup group = {};
     group.commands = commands;
     group.current_draw = NULL;
     group.setup.proj = proj;
+    group.setup.depth_test = depth_test;
     group.setup.lit = lit;
     group.setup.culling = culling;
     group.setup.shadow_caster = shadow_caster;
@@ -221,6 +223,38 @@ void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, Mat4* pose
     draw->bone_trans = pose;
 }
 
+void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 scale)
+{
+    CommandEntryDrawQuads* entry = get_current_draw(group, sk->bone_count);
+    if (!entry) {
+        return;
+    }
+
+    float size = 0.025;
+
+    Mat4 trans = mat4(pos, scale);
+    for (u32 i = 0; i < sk->bone_count; ++i) {
+        Mat4 bone_trans = trans * pose[i];
+
+        glm::vec4 tmp = bone_trans * glm::vec4(0, 0, 0, 1); 
+
+        // TODO: Need to divide by tmp.w? - No? 
+        V3 pos = v3(tmp.x, tmp.y, tmp.z);
+
+        V3 p0 = v3(pos.x - size, pos.y, pos.z - size);
+        V3 p1 = v3(pos.x - size, pos.y, pos.z + size);
+        V3 p2 = v3(pos.x + size, pos.y, pos.z - size);
+        V3 p3 = v3(pos.x + size, pos.y, pos.z + size);
+
+        push_rect(group, 
+                  p0, v2(0, 0),
+                  p1, v2(0, 1),
+                  p2, v2(1, 0),
+                  p3, v2(1, 1),
+                  v3(0, 0, 1), group->commands->white, v3(0, 0, 1));
+    }
+}
+
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
 {
     CommandEntryDrawQuads* entry = get_current_draw(group, 1);
@@ -308,8 +342,8 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
 
         for (u32 i = 0; i < info.vertex_count; ++i) {
             MeshVertex vert;
-            vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y);
-            vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y);
+            vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+            vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
             vert.color = color.rgb;
 
             for (u32 i = 0; i < MAX_BONE_INFLUENCE; ++i) {
@@ -387,7 +421,7 @@ ModelLoadOp load_model(ModelHandle* handle, Skeleton* skeleton, const char* path
 {
     Assimp::Importer importer;
 
-    u32 flags = aiProcess_FlipUVs;
+    u32 flags = aiProcess_FlipUVs | aiProcess_FlipWindingOrder;
 // #if 0
     flags |= aiProcess_Triangulate;
 // #endif
@@ -501,7 +535,6 @@ Animation load_animation(const char* path, Arena* assets)
             AnimationKey key = {};
             key.type = KeyType_Rot;
             key.timestamp = channel->mRotationKeys[i].mTime;
-            // NOTE: Assimp and glm store quaternions in different orders
             float w = channel->mRotationKeys[i].mValue.w;
             float x = channel->mRotationKeys[i].mValue.x;
             float y = channel->mRotationKeys[i].mValue.y;
@@ -600,7 +633,8 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
         {
             // if (!rot_from) {
             if (1) {
-                trans_rot = glm::toMat4(glm::normalize(rot_to->rot));
+                // trans_rot = glm::toMat4(glm::normalize(rot_to->rot));
+                trans_rot = glm::mat4(1);
             } else if (!rot_to) {
                 trans_rot = glm::toMat4(glm::normalize(rot_from->rot));
             } else {

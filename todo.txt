@@ -1,8 +1,13 @@
+lines / ui facing camera
+correct editor transform
+fix bone displays
+fix bone rotation
+
 animations
     animation parsing
     bone transform interplation
 
-    cleanup (CommandEntryDrawRiggedModel)
+    cleanup (CommandEntryDrawRiggedModel, Interpolation code)
 
 proper material handling
 

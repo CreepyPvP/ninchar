@@ -330,6 +330,12 @@ void apply_settings(RenderSettings* settings)
 void prepare_render_setup(RenderSetup* setup, Program* shader, SpotLight* lights, u32 light_count,
                           V3 camera_pos)
 {
+    if (setup->depth_test) {
+        glEnable(GL_DEPTH_TEST);
+    } else {
+        glDisable(GL_DEPTH_TEST);
+    }
+
     // TODO: Apply draw->setup.lit here
     if (setup->culling) {
         glEnable(GL_CULL_FACE);

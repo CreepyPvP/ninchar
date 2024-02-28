@@ -92,6 +92,7 @@ struct ModelLoadOp
 struct RenderSetup
 {
     Mat4 proj;
+    bool depth_test;
     bool lit;
     bool culling;
     bool shadow_caster;
@@ -193,14 +194,15 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
                              u32 width, u32 height, TextureHandle white,
                              V3 camera_pos);
 
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool lit, bool culling, 
-                         bool shadow_caster);
+RenderGroup render_group(CommandBuffer* commands, Mat4 proj, bool depth_test, bool lit, 
+                         bool culling, bool shadow_caster);
 
 void push_clear(CommandBuffer* buffer, V3 color);
 
 void push_cube(RenderGroup* group, V3 pos, V3 radius, TextureHandle texture, V3 color);
 void push_model(RenderGroup* group, ModelHandle handle, V3 pos, V3 scale);
 void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, Mat4* pose, V3 pos, V3 scale);
+void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 scale);
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color);
 
 void push_spotlight(CommandBuffer* buffer, V3 pos, V3 dir, float fov, float far_plane);

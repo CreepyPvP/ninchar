@@ -222,9 +222,9 @@ i32 main()
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
 
-        RenderGroup main_group = render_group(&cmd, proj, true, true, true);
-        RenderGroup transparent_group = render_group(&cmd, proj, true, true, false);
-        RenderGroup debug_group = render_group(&cmd, proj, false, false, false);
+        RenderGroup main_group = render_group(&cmd, proj, true, true, true, true);
+        RenderGroup transparent_group = render_group(&cmd, proj, true, true, true, false);
+        RenderGroup debug_group = render_group(&cmd, proj, false, false, false, false);
 
         game_update(&game, pressed, delta, &main_group, &debug_group);
         game_render(&game, &main_group, &transparent_group, &debug_group);

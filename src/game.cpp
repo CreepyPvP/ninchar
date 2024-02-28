@@ -305,23 +305,23 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
     }
 }
 
-void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparent, RenderGroup* dbg){
+void game_render(Game* game, RenderGroup* default, RenderGroup* transparent, RenderGroup* dbg){
     // Render Ground
     for (u32 y = 0; y < game->height; ++y) {
         for (u32 x = 0; x < game->width; ++x) {
-            push_cube(default_group, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
+            push_cube(default, v3(x, y, 0), v3(0.5), ground_texture, v3(1));
         }
     }
 
     // Render exterior
     for (u32 y = 0; y < game->height + 1; ++y) {
         for (u32 z = 0; z < 4; ++z) {
-            push_cube(default_group, v3(-1, y, z), v3(0.5), exterior_texture, v3(1));
+            push_cube(default, v3(-1, y, z), v3(0.5), exterior_texture, v3(1));
         }
     }
     for (u32 x = 0; x < game->width; ++x) {
         for (u32 z = 0; z < 4; ++z) {
-            push_cube(default_group, v3(x, game->height, z), v3(0.5), exterior_texture, v3(1));
+            push_cube(default, v3(x, game->height, z), v3(0.5), exterior_texture, v3(1));
         }
     }
 
@@ -332,7 +332,7 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
             V3 scale = v3(0.2);
             V3 pos = entity->pos;
             pos.z = 2;
-            push_model(default_group, camera_model, pos, scale);
+            push_model(default, camera_model, pos, scale);
             continue;
         }
 
@@ -340,7 +340,7 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
             continue;
         }
 
-        RenderGroup* group = default_group;
+        RenderGroup* group = default;
         if (entity->transparent) {
             group = transparent;
         }
@@ -349,8 +349,12 @@ void game_render(Game* game, RenderGroup* default_group, RenderGroup* transparen
     }
 
     begin_tmp(&assets);
+
     Mat4* player_pose = interpolate_pose(&capoeira, &player_model.skeleton, &assets);
-    push_rigged_model(default_group, &player_model, player_pose, v3(0, 0, 5), v3(0.01));
+    // Mat4* player_pose = default_pose(&player_model.skeleton, &assets);
+    push_rigged_model(default, &player_model, player_pose, v3(0, 0, 5), v3(0.01));
+    push_debug_pose(dbg, &player_model.skeleton, player_pose, v3(0, 0, 5), v3(0.01));
+
     end_tmp(&assets);
 }
 
