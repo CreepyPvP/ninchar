@@ -594,10 +594,12 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
     if (node->bone >= 0) {
         Bone* bone = anim->bone + node->bone;
         
-        AnimationKey* pos_from = {};
-        AnimationKey* pos_to = {};
-        AnimationKey* rot_from = {};
-        AnimationKey* rot_to = {};
+        AnimationKey* pos_from = NULL;
+        AnimationKey* pos_to = NULL;
+        AnimationKey* rot_from = NULL;
+        AnimationKey* rot_to = NULL;
+        AnimationKey* scale_from = NULL;
+        AnimationKey* scale_to = NULL;
 
         for (u32 i = 0; i < bone->key_count; ++i) {
             u32 key_id = bone->key_offset + i;
@@ -626,6 +628,18 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
                     continue;
                 }
             }
+            
+            if (key->type == KeyType_Scale) {
+                if (key->timestamp <= time && (!scale_from || scale_from->timestamp < key->timestamp)) {
+                    scale_from = key;
+                    continue;
+                }
+
+                if (key->timestamp >= time && (!scale_to || scale_to->timestamp < key->timestamp)) {
+                    scale_to = key;
+                    continue;
+                }
+            }
         }
 
         // TODO: Clean this part up
@@ -639,10 +653,8 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
 
         Mat4 trans_rot;
         {
-            // if (!rot_from) {
-            if (1) {
-                // trans_rot = glm::toMat4(glm::normalize(rot_to->rot));
-                trans_rot = glm::mat4(1);
+            if (!rot_from) {
+                trans_rot = glm::toMat4(glm::normalize(rot_to->rot));
             } else if (!rot_to) {
                 trans_rot = glm::toMat4(glm::normalize(rot_from->rot));
             } else {
@@ -651,10 +663,16 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
                 rot = glm::normalize(rot);
                 trans_rot = glm::toMat4(rot);
             }
+            // trans_rot = glm::mat4(1.0f);
         }
 
-        // TODO: Calculate proper scale value
-        Mat4 trans_scale = glm::mat4(1);
+        Mat4 trans_scale;
+        {
+            float t = (time - scale_from->timestamp) / (scale_to->timestamp - scale_from->timestamp);
+            V3 scale = lerp(scale_from->v3, scale_to->v3, t);
+            trans_scale = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
+        }
+
         trans = trans_pos * trans_rot * trans_scale;
     }
 

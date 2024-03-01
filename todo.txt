@@ -1,25 +1,27 @@
-correct editor transform
-fix bone displays
 fix bone rotation
+fix bone displays
 
-remove render groups
-animation cleanup (CommandEntryDrawRiggedModel, Interpolation code)
-
-operator overloading for vector
-
-
-
-proper material handling
-
-hot reload
+why are lines depth tested?
 
 ui rendering
+hot reload
+
+cleanup
+    remove render groups
+    animation cleanup (CommandEntryDrawRiggedModel, Interpolation code)
+    operator overloading for vector
+    think about if bindless textures were worth it
+
+rendering fixes
+    proper material handling
+    correct editor transform
+    fix peter panning?
+    fix camera jump
+    order independant transparency
 
 anime toon shader
     outlines
     posterization?
-
-lighting
     blinn phong
     rim lighting
 
@@ -27,25 +29,16 @@ entity system
     generational entity allocator
     slot based model
 
-
-Fix peter panning?
-
-fix camera jump
-
 player acceleration
     0.5 (0 => max speed)
     0.4 (max speed => 0)
     0.2 (left to right)
 
 
-order independant transparency
-
 bloom
 color correction
 
 multithreading
-
-cut scene system?
 
 
 Mit peter bereden:

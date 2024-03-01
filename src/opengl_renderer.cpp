@@ -390,6 +390,9 @@ void draw_quads(CommandEntryDrawQuads* draw)
 void do_shadowpass(CommandBuffer* buffer, SpotLight* light)
 {
     glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
     glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
     glBindFramebuffer(GL_FRAMEBUFFER, opengl.shadow_maps[light->shadow_map].id);
     glUseProgram(opengl.shadow_shader.id);

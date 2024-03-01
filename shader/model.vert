@@ -6,7 +6,7 @@ layout(location = 3) in vec3 aColor;
 layout(location = 4) in ivec4 aBoneIds; 
 layout(location = 5) in vec4 aWeights;
 
-const int MAX_BONES = 50;
+const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 3;
 uniform mat4 bone_trans[MAX_BONES];
 #endif
