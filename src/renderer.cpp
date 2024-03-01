@@ -367,9 +367,10 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
 
         for (u32 i = 0; i < mesh->mNumFaces; ++i) {
             aiFace face = mesh->mFaces[i];
+            // TODO: Remove this dirty workaround
             info.index_buffer[3 * i + 0] = face.mIndices[0];
-            info.index_buffer[3 * i + 1] = face.mIndices[1];
-            info.index_buffer[3 * i + 2] = face.mIndices[2];
+            info.index_buffer[3 * i + 1] = face.mIndices[2];
+            info.index_buffer[3 * i + 2] = face.mIndices[1];
         }  
 
         if (info.flags & MODEL_FLAGS_RIGGED) {
