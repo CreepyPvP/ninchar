@@ -9,6 +9,11 @@
 #define MODEL_FLAGS_UV (1 << 0)
 #define MODEL_FLAGS_RIGGED (1 << 1)
 
+#define RENDER_DEPTH_TEST (1 << 0)
+#define RENDER_LIT (1 << 1)
+#define RENDER_CULLING (1 << 2)
+#define RENDER_SHADOW_CASTER (1 << 3)
+
 struct RenderGroup;
 
 struct Vertex
@@ -91,9 +96,6 @@ struct ModelLoadOp
 
 struct RenderSetup
 {
-    Mat4 proj;
-    Mat4 view;
-    
     u32 flags;
 };
 
@@ -120,7 +122,7 @@ struct RenderSettings
 struct CommandBuffer
 {
     RenderSettings settings;
-
+    
     Vertex* vert_buffer;
     u32 vert_count;
     u32 vert_cap;
@@ -132,6 +134,9 @@ struct CommandBuffer
     TextureHandle white;
 
     V3 camera_pos;
+    V3 camera_up;
+    V3 camera_right;
+    Mat4 proj;
 
     RenderGroup* active_group;
 };
@@ -187,17 +192,11 @@ struct RenderGroup
     RenderSetup setup;
 };
 
-#define RENDER_DEPTH_TEST (1 << 0)
-#define RENDER_LIT (1 << 1)
-#define RENDER_CULLING (1 << 2)
-#define RENDER_SHADOW_CASTER (1 << 3)
-
-CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
-                             u32 vert_cap, Vertex* vert_buffer, 
+CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, u32 vert_cap, Vertex* vert_buffer, 
                              u32 width, u32 height, TextureHandle white,
-                             V3 camera_pos);
+                             Mat4 proj, V3 camera_pos, V3 camera_right, V3 camera_up);
 
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj, Mat4 view, u32 flags);
+RenderGroup render_group(CommandBuffer* commands, u32 flags);
 
 void push_clear(CommandBuffer* buffer, V3 color);
 

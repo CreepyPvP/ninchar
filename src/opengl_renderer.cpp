@@ -328,12 +328,12 @@ void apply_settings(RenderSettings* settings)
 }
 
 void prepare_render_setup(RenderSetup* setup, Program* shader, SpotLight* lights, u32 light_count,
-                          V3 camera_pos)
+                          Mat4 proj, V3 camera_pos)
 {
     if (setup->flags & RENDER_DEPTH_TEST) {
-        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
     } else {
-        glDisable(GL_DEPTH_TEST);
+        glDepthFunc(GL_ALWAYS);
     }
 
     // TODO: Apply draw->setup.lit here
@@ -343,7 +343,6 @@ void prepare_render_setup(RenderSetup* setup, Program* shader, SpotLight* lights
         glDisable(GL_CULL_FACE);
     }
     glUseProgram(shader->id);
-    Mat4 proj = setup->proj * setup->view;
     set_uniform_mat4(shader->proj, &proj, 1);
     glUniform3fv(shader->camera_pos, 1, (float*) &camera_pos);
 
@@ -478,7 +477,7 @@ void opengl_render_commands(CommandBuffer* buffer)
                 glBindVertexArray(opengl.quad_vao);
 
                 prepare_render_setup(&draw->setup, &opengl.quad_shader, lights, light_count, 
-                                     buffer->camera_pos);
+                                     buffer->proj, buffer->camera_pos);
 
                 draw_quads(draw);
             } break;
@@ -489,7 +488,7 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 Model* model = opengl.models + draw->model.id;
                 prepare_render_setup(&draw->setup, &opengl.model_shader, lights, light_count,
-                                     buffer->camera_pos);
+                                     buffer->proj, buffer->camera_pos);
                 set_uniform_mat4(opengl.model_shader.trans, &draw->trans, 1);
                 for (u32 i = 0; i < model->mesh_count; ++i) {
                     Mesh* mesh = opengl.meshes + model->mesh_offset + i;
@@ -506,7 +505,7 @@ void opengl_render_commands(CommandBuffer* buffer)
 
                 Model* model = opengl.models + draw->model.id;
                 prepare_render_setup(&draw->setup, &opengl.rigged_model_shader, lights, light_count,
-                                     buffer->camera_pos);
+                                     buffer->proj, buffer->camera_pos);
 
                 set_uniform_mat4(opengl.rigged_model_shader.trans, &draw->trans, 1);
                 set_uniform_mat4(opengl.rigged_model_shader.bone_trans, draw->bone_trans, 

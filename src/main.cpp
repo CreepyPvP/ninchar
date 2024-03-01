@@ -201,29 +201,29 @@ i32 main()
             glfwSetWindowShouldClose(global_window.handle, true);
         }
 
-        cmd = command_buffer(entry_size, entry_buffer, 
-                             vert_cap, vert_buffer, 
-                             global_window.width, global_window.height, white, game.camera.pos);
-
-
         float delta = 1.0f / 60.f;
+
         if (game.camera_state == CameraState_Free) {
             update_camera(&game.camera, pressed, delta);
         }
 
-        Mat4 view = glm::lookAt(
-            glm::vec3(game.camera.pos.x, game.camera.pos.y, game.camera.pos.z),
-            glm::vec3(game.camera.pos.x + game.camera.front.x, 
-                      game.camera.pos.y + game.camera.front.y, 
-                      game.camera.pos.z + game.camera.front.z),
-            glm::vec3(0, 0, 1)
-        );
+        Mat4 view = glm::lookAt(glm::vec3(game.camera.pos.x, game.camera.pos.y, game.camera.pos.z),
+                                glm::vec3(game.camera.pos.x + game.camera.front.x, 
+                                          game.camera.pos.y + game.camera.front.y, 
+                                          game.camera.pos.z + game.camera.front.z),
+                                glm::vec3(0, 0, 1));
+
+        V3 right = v3(view[0][0], view[1][0], view[2][0]);
+        V3 up = v3(view[0][1], view[1][1], view[2][1]);
+        cmd = command_buffer(entry_size, entry_buffer, vert_cap, vert_buffer, 
+                             global_window.width, global_window.height, white, 
+                             proj * view, game.camera.pos, up, right);
 
         push_clear(&cmd, v3(0.1, 0.1, 0.2));
 
-        RenderGroup main_group = render_group(&cmd, proj, view, RENDER_DEPTH_TEST | RENDER_LIT | RENDER_CULLING | RENDER_SHADOW_CASTER);
-        RenderGroup transparent_group = render_group(&cmd, proj, view, RENDER_DEPTH_TEST | RENDER_LIT | RENDER_CULLING);
-        RenderGroup debug_group = render_group(&cmd, proj, view, 0);
+        RenderGroup main_group = render_group(&cmd,RENDER_DEPTH_TEST | RENDER_LIT | RENDER_CULLING | RENDER_SHADOW_CASTER);
+        RenderGroup transparent_group = render_group(&cmd, RENDER_DEPTH_TEST | RENDER_LIT | RENDER_CULLING);
+        RenderGroup debug_group = render_group(&cmd, 0);
 
         game_update(&game, pressed, delta, &main_group, &debug_group);
         game_render(&game, &main_group, &transparent_group, &debug_group);

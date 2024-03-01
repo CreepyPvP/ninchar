@@ -18,9 +18,9 @@
 #define MAX_MODEL_INDEX 20000
 
 
-CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, 
-                             u32 vert_cap, Vertex* vert_buffer, 
-                             u32 width, u32 height, TextureHandle white, V3 camera_pos)
+CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer, u32 vert_cap, Vertex* vert_buffer, 
+                             u32 width, u32 height, TextureHandle white,
+                             Mat4 proj, V3 camera_pos, V3 camera_up, V3 camera_right)
 {
     CommandBuffer commands;
     commands.entry_buffer = entry_buffer;
@@ -34,21 +34,22 @@ CommandBuffer command_buffer(u32 entry_cap, u8* entry_buffer,
     commands.settings.width = width;
     commands.settings.height = height;
     commands.white = white;
-
     commands.active_group = NULL;
+
+    commands.proj = proj;
     commands.camera_pos = camera_pos;
+    commands.camera_up = camera_up;
+    commands.camera_right = camera_right;
 
     return commands;
 }
 
 // TODO: Replace params with flags
-RenderGroup render_group(CommandBuffer* commands, Mat4 proj, Mat4 view, u32 flags)
+RenderGroup render_group(CommandBuffer* commands, u32 flags)
 {
     RenderGroup group = {};
     group.commands = commands;
     group.current_draw = NULL;
-    group.setup.proj = proj;
-    group.setup.view = view;
     group.setup.flags = flags;
     return group;
 }
@@ -222,6 +223,7 @@ void push_rigged_model(RenderGroup* group, RiggedModelHandle* handle, Mat4* pose
 
 void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 scale)
 {
+#ifdef DEBUG
     CommandEntryDrawQuads* entry = get_current_draw(group, sk->bone_count);
     if (!entry) {
         return;
@@ -230,6 +232,9 @@ void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 sc
     float size = 0.025;
 
     Mat4 trans = mat4(pos, scale);
+    V3 right = group->commands->camera_right;
+    V3 up = group->commands->camera_up;
+
     for (u32 i = 0; i < sk->bone_count; ++i) {
         Mat4 bone_trans = trans * pose[i];
 
@@ -238,10 +243,15 @@ void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 sc
         // TODO: Need to divide by tmp.w? - No? 
         V3 pos = v3(tmp.x, tmp.y, tmp.z);
 
-        V3 p0 = v3(pos.x - size, pos.y, pos.z - size);
-        V3 p1 = v3(pos.x - size, pos.y, pos.z + size);
-        V3 p2 = v3(pos.x + size, pos.y, pos.z - size);
-        V3 p3 = v3(pos.x + size, pos.y, pos.z + size);
+        // V3 p0 = v3(pos.x - size, pos.y, pos.z - size);
+        // V3 p1 = v3(pos.x - size, pos.y, pos.z + size);
+        // V3 p2 = v3(pos.x + size, pos.y, pos.z - size);
+        // V3 p3 = v3(pos.x + size, pos.y, pos.z + size);
+
+        V3 p0 = v3(pos.x - size * right.x, pos.y - size * right.y, pos.z - size * right.z);
+        V3 p1 = v3(pos.x + size * up.x, pos.y + size * up.y, pos.z + size * up.z);
+        V3 p2 = v3(pos.x - size * up.x, pos.y - size * up.y, pos.z - size * up.z);
+        V3 p3 = v3(pos.x + size * right.x, pos.y + size * right.y, pos.z + size * right.z);
 
         push_rect(group, 
                   p0, v2(0, 0),
@@ -250,14 +260,14 @@ void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 sc
                   p3, v2(1, 1),
                   v3(0, 0, 1), group->commands->white, v3(0, 0, 1));
     }
+#endif
 }
 
 void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
 {
     CommandEntryDrawQuads* entry = get_current_draw(group, 1);
 
-    // TODO: Orient line so it always faces the camera
-    V3 up = v3(0, 0, 1);
+    V3 up = cross(group->commands->camera_up, group->commands->camera_right);
     float width = 0.025;
 
     V3 dir = norm(v3(end.x - start.x, end.y - start.y, end.z - start.z));
@@ -339,8 +349,8 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
 
         for (u32 i = 0; i < info.vertex_count; ++i) {
             MeshVertex vert;
-            vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-            vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+            vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y);
+            vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y);
             vert.color = color.rgb;
 
             for (u32 i = 0; i < MAX_BONE_INFLUENCE; ++i) {
