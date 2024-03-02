@@ -236,17 +236,12 @@ void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 sc
     V3 up = group->commands->camera_up;
 
     for (u32 i = 0; i < sk->bone_count; ++i) {
-        Mat4 bone_trans = trans * pose[i];
+        Mat4 bone_trans = trans * pose[i] * sk->bone[i].offset;
 
         glm::vec4 tmp = bone_trans * glm::vec4(0, 0, 0, 1); 
 
         // TODO: Need to divide by tmp.w? - No? 
         V3 pos = v3(tmp.x, tmp.y, tmp.z);
-
-        // V3 p0 = v3(pos.x - size, pos.y, pos.z - size);
-        // V3 p1 = v3(pos.x - size, pos.y, pos.z + size);
-        // V3 p2 = v3(pos.x + size, pos.y, pos.z - size);
-        // V3 p3 = v3(pos.x + size, pos.y, pos.z + size);
 
         V3 p0 = v3(pos.x - size * right.x, pos.y - size * right.y, pos.z - size * right.z);
         V3 p1 = v3(pos.x + size * up.x, pos.y + size * up.y, pos.z + size * up.z);
@@ -322,6 +317,16 @@ void free_texture_load_op(TextureLoadOp* load_op)
     stbi_image_free(load_op->data);
 }
 
+Mat4 read_assimp_mat(aiMatrix4x4 mat)
+{
+    Mat4 to;
+    to[0][0] = mat.a1; to[1][0] = mat.a2; to[2][0] = mat.a3; to[3][0] = mat.a4;
+    to[0][1] = mat.b1; to[1][1] = mat.b2; to[2][1] = mat.b3; to[3][1] = mat.b4;
+    to[0][2] = mat.c1; to[1][2] = mat.c2; to[2][2] = mat.c3; to[3][2] = mat.c4;
+    to[0][3] = mat.d1; to[1][3] = mat.d2; to[2][3] = mat.d3; to[3][3] = mat.d4;
+    return to;
+}
+
 void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op, Skeleton* sk,
                         Arena* tmp, Arena* assets)
 {
@@ -390,9 +395,7 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
                     assert(sk->bone_count < sk->bone_cap);
                     bone_id = sk->bone_count;
                     sk->bone[bone_id].name = str_cpy(&name, assets);
-                    // NOTE: Row major (assimp) needs to be converted to colum major (opengl)
-                    Mat4* offset_t = (Mat4*) &mesh->mBones[i]->mOffsetMatrix;
-                    sk->bone[bone_id].offset = glm::transpose(*offset_t);
+                    sk->bone[bone_id].offset = read_assimp_mat(mesh->mBones[i]->mOffsetMatrix);
                     sk->bone_count++;
                 }
 
@@ -476,6 +479,7 @@ void process_skeleton_node(aiNode* node, Animation* anim, Arena* assets, u32 ind
     entry.name = from_c_str(node->mName.C_Str(), assets);
     entry.first_child = *node_count;
     entry.child_count = node->mNumChildren;
+    entry.trans = read_assimp_mat(node->mTransformation);
     entry.bone = -1;
 
     for (u32 i = 0; i < anim->bone_count; ++i) {
@@ -484,9 +488,6 @@ void process_skeleton_node(aiNode* node, Animation* anim, Arena* assets, u32 ind
             break;
         }
     }
-
-    Mat4* trans_t = (Mat4*) &node->mTransformation;
-    entry.trans = glm::transpose(*trans_t);
 
     anim->node[index] = entry;
     (*node_count) += node->mNumChildren;
@@ -587,7 +588,7 @@ Mat4* default_pose(Skeleton* skeleton, Arena* arena)
     return res;
 }
 
-void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* final, float time)
+void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* final, float time, bool dbg)
 {
     AnimationNode* node = anim->node + id;
     Mat4 trans = node->trans;
@@ -653,17 +654,26 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
 
         Mat4 trans_rot;
         {
-            if (!rot_from) {
-                trans_rot = glm::toMat4(glm::normalize(rot_to->rot));
-            } else if (!rot_to) {
-                trans_rot = glm::toMat4(glm::normalize(rot_from->rot));
+            // if (!rot_from) {
+            //     trans_rot = glm::toMat4(glm::normalize(rot_to->rot));
+            // } else if (!rot_to) {
+            //     trans_rot = glm::toMat4(glm::normalize(rot_from->rot));
+            // } else {
+            //     float t = (time - rot_from->timestamp) / (rot_to->timestamp - rot_from->timestamp);
+            //     Quat rot = glm::slerp(rot_from->rot, rot_to->rot, t);
+            //     rot = glm::normalize(rot);
+            //     trans_rot = glm::toMat4(rot);
+            // }
+
+            if (id <= 2) {
+                Quat rot = rot_from->rot;
+                trans_rot = glm::toMat4(glm::normalize(rot));
+            } else if (id == 14) {
+                trans_rot = glm::rotate(glm::mat4(1), 30.0f, glm::vec3(0, 0, 1));
+                // trans_rot = glm::mat4(1);
             } else {
-                float t = (time - rot_from->timestamp) / (rot_to->timestamp - rot_from->timestamp);
-                Quat rot = glm::slerp(rot_from->rot, rot_to->rot, t);
-                rot = glm::normalize(rot);
-                trans_rot = glm::toMat4(rot);
+                trans_rot = glm::mat4(1.0f);
             }
-            // trans_rot = glm::mat4(1.0f);
         }
 
         Mat4 trans_scale;
@@ -687,7 +697,7 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
     }
 
     for (u32 i = 0; i < node->child_count; ++i) {
-        do_node_trans(anim, sk, node->first_child + i, global_trans, final, time);
+        do_node_trans(anim, sk, node->first_child + i, global_trans, final, time, dbg);
     }
 }
 
@@ -696,7 +706,7 @@ Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena)
     LogEntryInfo info = start_log(LogTarget_InterpolatePose);
 
     Mat4* res = (Mat4*) push_size(arena, sizeof(Mat4) * skeleton->bone_count);
-    do_node_trans(animation, skeleton, 0, glm::mat4(1), res, 1);
+    do_node_trans(animation, skeleton, 0, glm::mat4(1), res, 1, false);
 
     end_log(info);
 

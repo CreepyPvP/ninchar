@@ -1,5 +1,6 @@
 fix bone rotation
 fix bone displays
+fix recursive profiling
 
 why are lines depth tested?
 

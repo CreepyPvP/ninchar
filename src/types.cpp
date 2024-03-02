@@ -73,15 +73,3 @@ void append_null(Str* str)
     str->ptr[str->len] = 0;
     ++str->len;
 }
-
-void print_str(Str* str)
-{
-    char arr[1024];
-    assert(str->len < 1024);
-    for (u32 i = 0; i < str->len; ++i) {
-        arr[i] = str->ptr[i];
-    }
-    arr[str->len] = 0;
-
-    printf("%s\n", arr);
-}

@@ -20,6 +20,8 @@ out vec3 norm;
 out vec3 base_color;
 
 void main() {
+    uv = aUv;
+    base_color = aColor;
 #ifdef SKELETON
     vec4 pos = vec4(0);
     norm = vec3(0);
@@ -37,13 +39,15 @@ void main() {
         norm += local_norm * aWeights[i];
     }
     norm = normalize(norm);
+
+    if (aBoneIds[0] == 1 || aBoneIds[1] == 1 || aBoneIds[2] == 1) {
+        base_color = vec3(0, 1, 0);
+    }
 #else
     vec4 pos = vec4(aPos, 1);
     norm = normalize(trans * vec4(aNorm, 0)).xyz;
 #endif
 
-    uv = aUv;
-    base_color = aColor;
     pos = trans * pos;
     world_pos = pos.xyz / pos.w;
 
