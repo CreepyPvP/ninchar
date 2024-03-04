@@ -63,8 +63,8 @@ namespace Assimp {
 */
 class NFFImporter : public BaseImporter {
 public:
-    NFFImporter() = default;
-    ~NFFImporter() override = default;
+    NFFImporter();
+    ~NFFImporter() override;
 
     // -------------------------------------------------------------------
     /** Returns whether the class can handle the format of the given file.

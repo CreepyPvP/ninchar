@@ -57,8 +57,8 @@ namespace Assimp {
 */
 class OFFImporter : public BaseImporter {
 public:
-    OFFImporter() = default;
-    ~OFFImporter() override = default;
+    OFFImporter();
+    ~OFFImporter() override;
 
     // -------------------------------------------------------------------
     /** Returns whether the class can handle the format of the given file.

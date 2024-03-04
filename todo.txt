@@ -1,4 +1,5 @@
 fix bone rotation
+remove unnecessary assets
 fix bone displays
 fix recursive profiling
 
@@ -34,6 +35,9 @@ player acceleration
     0.5 (0 => max speed)
     0.4 (max speed => 0)
     0.2 (left to right)
+
+get rid of assimp
+get rid of glm
 
 
 bloom

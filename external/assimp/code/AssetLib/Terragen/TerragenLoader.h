@@ -73,7 +73,7 @@ namespace Assimp {
 class TerragenImporter : public BaseImporter {
 public:
     TerragenImporter();
-    ~TerragenImporter() override = default;
+    ~TerragenImporter() override;
 
     // -------------------------------------------------------------------
     bool CanRead(const std::string &pFile, IOSystem *pIOHandler,

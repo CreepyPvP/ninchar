@@ -123,8 +123,9 @@ aiColor4D MDLImporter::ReplaceTextureWithColor(const aiTexture *pcTexture) {
 // Read a texture from a MDL3 file
 void MDLImporter::CreateTextureARGB8_3DGS_MDL3(const unsigned char *szData) {
     const MDL::Header *pcHeader = (const MDL::Header *)mBuffer; //the endianness is already corrected in the InternReadFile_3DGS_MDL345 function
-    const size_t len = pcHeader->skinwidth * pcHeader->skinheight;
-    VALIDATE_FILE_SIZE(szData + len);
+
+    VALIDATE_FILE_SIZE(szData + pcHeader->skinwidth *
+                                        pcHeader->skinheight);
 
     // allocate a new texture object
     aiTexture *pcNew = new aiTexture();

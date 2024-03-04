@@ -39,8 +39,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ----------------------------------------------------------------------
 */
 
-/// @file MDLLoader.h
-/// @brief Declaration of the loader for MDL files
+
+/**  @file MDLLoader.h
+ *   @brief Declaration of the loader for MDL files
+ */
 #pragma once
 #ifndef AI_MDLLOADER_H_INCLUDED
 #define AI_MDLLOADER_H_INCLUDED
@@ -81,10 +83,11 @@ using namespace MDL;
  *  them all with a single 1000-line function-beast. However, it has been
  *  split into several code paths to make the code easier to read and maintain.
 */
-class MDLImporter : public BaseImporter {
+class MDLImporter : public BaseImporter
+{
 public:
     MDLImporter();
-    ~MDLImporter() override = default;
+    ~MDLImporter() override;
 
     // -------------------------------------------------------------------
     /** Returns whether the class can handle the format of the given file.

@@ -59,6 +59,7 @@ struct aiNode;
 
 namespace Assimp    {
 
+
 using namespace D3DS;
 
 // ---------------------------------------------------------------------------------
@@ -67,7 +68,7 @@ using namespace D3DS;
 class Discreet3DSImporter : public BaseImporter {
 public:
     Discreet3DSImporter();
-    ~Discreet3DSImporter() override = default;
+    ~Discreet3DSImporter() override;
 
     // -------------------------------------------------------------------
     /** Returns whether the class can handle the format of the given file.

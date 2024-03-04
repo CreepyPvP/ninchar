@@ -68,7 +68,7 @@ namespace XFile {
  */
 class XFileImporter : public BaseImporter {
 public:
-    XFileImporter() = default;
+    XFileImporter();
     ~XFileImporter() override = default;
 
     // -------------------------------------------------------------------

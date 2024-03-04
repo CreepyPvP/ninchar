@@ -85,7 +85,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       are listed in aiScene->mRootNode->children, but all without meshes
 */
 
-static constexpr aiImporterDesc desc = {
+static const aiImporterDesc desc = {
     "Model 3D Importer",
     "",
     "",

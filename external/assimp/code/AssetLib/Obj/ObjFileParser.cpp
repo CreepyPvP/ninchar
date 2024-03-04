@@ -64,7 +64,6 @@ ObjFileParser::ObjFileParser() :
         m_pModel(nullptr),
         m_uiLine(0),
         m_buffer(),
-        mEnd(&m_buffer[Buffersize]),
         m_pIO(nullptr),
         m_progress(nullptr),
         m_originalObjFileName() {
@@ -98,6 +97,8 @@ ObjFileParser::ObjFileParser(IOStreamBuffer<char> &streamBuffer, const std::stri
     parseFile(streamBuffer);
 }
 
+ObjFileParser::~ObjFileParser() = default;
+
 void ObjFileParser::setBuffer(std::vector<char> &buffer) {
     m_DataIt = buffer.begin();
     m_DataItEnd = buffer.end();
@@ -120,7 +121,6 @@ void ObjFileParser::parseFile(IOStreamBuffer<char> &streamBuffer) {
     while (streamBuffer.getNextDataLine(buffer, '\\')) {
         m_DataIt = buffer.begin();
         m_DataItEnd = buffer.end();
-        mEnd = &buffer[buffer.size() - 1] + 1;
 
         // Handle progress reporting
         const size_t filePos(streamBuffer.getFilePos());
@@ -130,7 +130,7 @@ void ObjFileParser::parseFile(IOStreamBuffer<char> &streamBuffer) {
             m_progress->UpdateFileRead(processed, progressTotal);
         }
 
-        // handle c-stype section end (http://paulbourke.net/dataformats/obj/)
+        // handle cstype section end (http://paulbourke.net/dataformats/obj/)
         if (insideCstype) {
             switch (*m_DataIt) {
             case 'e': {
@@ -301,19 +301,18 @@ size_t ObjFileParser::getNumComponentsInDataDefinition() {
         } else if (IsLineEnd(*tmp)) {
             end_of_definition = true;
         }
-        if (!SkipSpaces(&tmp, mEnd)) {
+        if (!SkipSpaces(&tmp)) {
             break;
         }
         const bool isNum(IsNumeric(*tmp) || isNanOrInf(tmp));
-        SkipToken(tmp, mEnd);
+        SkipToken(tmp);
         if (isNum) {
             ++numComponents;
         }
-        if (!SkipSpaces(&tmp, mEnd)) {
+        if (!SkipSpaces(&tmp)) {
             break;
         }
     }
-    
     return numComponents;
 }
 
@@ -488,9 +487,8 @@ void ObjFileParser::getFace(aiPrimitiveType type) {
                 ++iStep;
             }
 
-            if (iPos == 1 && !vt && vn) {
+            if (iPos == 1 && !vt && vn)
                 iPos = 2; // skip texture coords for normals if there are no tex coords
-            }
 
             if (iVal > 0) {
                 // Store parsed index
@@ -579,9 +577,8 @@ void ObjFileParser::getMaterialDesc() {
     // Get name
     std::string strName(pStart, &(*m_DataIt));
     strName = trim_whitespaces(strName);
-    if (strName.empty()) {
+    if (strName.empty())
         skip = true;
-    }
 
     // If the current mesh has the same material, we simply ignore that 'usemtl' command
     // There is no need to create another object or even mesh here
@@ -608,8 +605,7 @@ void ObjFileParser::getMaterialDesc() {
         }
 
         if (needsNewMesh(strName)) {
-            auto newMeshName = m_pModel->mActiveGroup.empty() ? strName : m_pModel->mActiveGroup;
-            createMesh(newMeshName);
+            createMesh(strName);
         }
 
         m_pModel->mCurrentMesh->m_uiMaterialIndex = getMaterialIndex(strName);

@@ -48,6 +48,7 @@ struct Skeleton
     u32 bone_count;
     u32 bone_cap;
     BoneInfo* bone;
+    Mat4 inverse_trans;
 };
 
 struct TextureHandle

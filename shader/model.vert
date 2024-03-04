@@ -29,10 +29,6 @@ void main() {
     bone +=     bone_trans[aBoneIds[1]] * aWeights[1];
     bone +=     bone_trans[aBoneIds[2]] * aWeights[2];
 
-    if (aBoneIds[0] == 1 || aBoneIds[1] == 1 || aBoneIds[2] == 1) {
-        base_color = vec3(0, 1, 0);
-    }
-
     pos = bone * pos;
     n = bone * n;
 #endif

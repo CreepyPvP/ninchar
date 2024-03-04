@@ -65,7 +65,7 @@ using namespace PLY;
 class PLYImporter : public BaseImporter {
 public:
     PLYImporter();
-    ~PLYImporter() override = default;
+    ~PLYImporter() override;
 
     // -------------------------------------------------------------------
     /** Returns whether the class can handle the format of the given file.

@@ -53,16 +53,18 @@ void game_load_assets()
     opengl_load_model(&load_camera);
 
     // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &tmp, &assets);
-    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp, &assets);
+    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/RiggedSimple.gltf", &tmp, &assets);
+    // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp, &assets);
     opengl_load_model(&load_player);
 
-    // load_animation("assets/animations/capoeira.dae");
-    capoeira = load_animation("assets/animations/alien.fbx", &assets);
+    // capoeira = load_animation("assets/animations/alien.fbx", &assets);
+    // capoeira = load_animation("assets/maincharacter/ninja.gltf", &assets);
+    capoeira = load_animation("assets/test/RiggedSimple.gltf", &assets);
 
     dispose(&tmp);
 };
 
-float enemy_spotlight_length = 20;
+float enemy_spotlight_length = 25;
 
 
 void game_init(Game* game, Arena* arena, const char* stage, TextureHandle white)
@@ -352,8 +354,8 @@ void game_render(Game* game, RenderGroup* default, RenderGroup* transparent, Ren
 
     Mat4* player_pose = interpolate_pose(&capoeira, &player_model.skeleton, &assets);
     // Mat4* player_pose = default_pose(&player_model.skeleton, &assets);
-    push_rigged_model(default, &player_model, player_pose, v3(0, 0, 5), v3(0.01));
-    push_debug_pose(dbg, &player_model.skeleton, player_pose, v3(0, 0, 5), v3(0.01));
+    push_rigged_model(default, &player_model, player_pose, v3(0, 0, 5), v3(1));
+    push_debug_pose(dbg, &player_model.skeleton, player_pose, v3(0, 0, 5), v3(1));
 
     end_tmp(&assets);
 }

@@ -74,6 +74,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // https://code.blender.org/2013/08/fbx-binary-file-format-specification/
 // https://wiki.blender.org/index.php/User:Mont29/Foundation/FBX_File_Structure
 
+const ai_real DEG = ai_real( 57.29577951308232087679815481 ); // degrees per radian
+
 using namespace Assimp;
 using namespace Assimp::FBX;
 
@@ -1061,14 +1063,14 @@ aiMatrix4x4 get_world_transform(const aiNode* node, const aiScene* scene)
     return transform;
 }
 
-inline int64_t to_ktime(double ticks, const aiAnimation* anim) {
+int64_t to_ktime(double ticks, const aiAnimation* anim) {
     if (anim->mTicksPerSecond <= 0) {
         return static_cast<int64_t>(ticks) * FBX::SECOND;
     }
-    return (static_cast<int64_t>(ticks / anim->mTicksPerSecond)) * FBX::SECOND;
+    return (static_cast<int64_t>(ticks) / static_cast<int64_t>(anim->mTicksPerSecond)) * FBX::SECOND;
 }
 
-inline int64_t to_ktime(double time) {
+int64_t to_ktime(double time) {
     return (static_cast<int64_t>(time * FBX::SECOND));
 }
 
@@ -1389,7 +1391,7 @@ void FBXExporter::WriteObjects ()
         aiMaterial* m = mScene->mMaterials[i];
 
         // these are used to receive material data
-        ai_real f; aiColor3D c;
+        float f; aiColor3D c;
 
         // start the node record
         FBX::Node n("Material");
@@ -1748,7 +1750,7 @@ void FBXExporter::WriteObjects ()
         int64_t blendshape_uid = generate_uid();
         mesh_uids.push_back(blendshape_uid);
         bsnode.AddProperty(blendshape_uid);
-        bsnode.AddProperty(blendshape_name + FBX::SEPARATOR + "Geometry");
+        bsnode.AddProperty(blendshape_name + FBX::SEPARATOR + "Blendshape");
         bsnode.AddProperty("Shape");
         bsnode.AddChild("Version", int32_t(100));
         bsnode.Begin(outstream, binary, indent);
@@ -1807,7 +1809,7 @@ void FBXExporter::WriteObjects ()
         p.AddP70numberA("DeformPercent", 0.0);
         sdnode.AddChild(p);
         // TODO: Normally just one weight per channel, adding stub for later development
-        std::vector<double>fFullWeights;
+        std::vector<float>fFullWeights;
         fFullWeights.push_back(100.);
         sdnode.AddChild("FullWeights", fFullWeights);
         sdnode.Dump(outstream, binary, indent);
@@ -2413,7 +2415,7 @@ void FBXExporter::WriteObjects ()
             // position/translation
             for (size_t ki = 0; ki < na->mNumPositionKeys; ++ki) {
                 const aiVectorKey& k = na->mPositionKeys[ki];
-                times.push_back(to_ktime(k.mTime, anim));
+                times.push_back(to_ktime(k.mTime));
                 xval.push_back(k.mValue.x);
                 yval.push_back(k.mValue.y);
                 zval.push_back(k.mValue.z);
@@ -2427,12 +2429,12 @@ void FBXExporter::WriteObjects ()
             times.clear(); xval.clear(); yval.clear(); zval.clear();
             for (size_t ki = 0; ki < na->mNumRotationKeys; ++ki) {
                 const aiQuatKey& k = na->mRotationKeys[ki];
-                times.push_back(to_ktime(k.mTime, anim));
+                times.push_back(to_ktime(k.mTime));
                 // TODO: aiQuaternion method to convert to Euler...
                 aiMatrix4x4 m(k.mValue.GetMatrix());
                 aiVector3D qs, qr, qt;
                 m.Decompose(qs, qr, qt);
-                qr = AI_RAD_TO_DEG(qr);
+                qr *= DEG;
                 xval.push_back(qr.x);
                 yval.push_back(qr.y);
                 zval.push_back(qr.z);
@@ -2445,7 +2447,7 @@ void FBXExporter::WriteObjects ()
             times.clear(); xval.clear(); yval.clear(); zval.clear();
             for (size_t ki = 0; ki < na->mNumScalingKeys; ++ki) {
                 const aiVectorKey& k = na->mScalingKeys[ki];
-                times.push_back(to_ktime(k.mTime, anim));
+                times.push_back(to_ktime(k.mTime));
                 xval.push_back(k.mValue.x);
                 yval.push_back(k.mValue.y);
                 zval.push_back(k.mValue.z);
@@ -2513,10 +2515,9 @@ void FBXExporter::WriteModelNode(
             );
         }
         if (r != zero) {
-            r = AI_RAD_TO_DEG(r);
             p.AddP70(
                 "Lcl Rotation", "Lcl Rotation", "", "A",
-                double(r.x), double(r.y), double(r.z)
+                double(DEG*r.x), double(DEG*r.y), double(DEG*r.z)
             );
         }
         if (s != one) {
@@ -2600,7 +2601,8 @@ void FBXExporter::WriteModelNodes(
             transform_chain.emplace_back(elem->first, t);
             break;
         case 'r': // rotation
-            transform_chain.emplace_back(elem->first, AI_RAD_TO_DEG(r));
+            r *= float(DEG);
+            transform_chain.emplace_back(elem->first, r);
             break;
         case 's': // scale
             transform_chain.emplace_back(elem->first, s);

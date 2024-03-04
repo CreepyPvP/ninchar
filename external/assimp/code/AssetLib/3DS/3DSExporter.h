@@ -4,6 +4,7 @@ Open Asset Import Library (assimp)
 
 Copyright (c) 2006-2022, assimp team
 
+
 All rights reserved.
 
 Redistribution and use of this software in source and binary forms,
@@ -56,7 +57,8 @@ struct aiNode;
 struct aiMaterial;
 struct aiMesh;
 
-namespace Assimp {
+namespace Assimp
+{
 
 // ------------------------------------------------------------------------------------------------
 /**
@@ -86,7 +88,7 @@ private:
 
     std::map<const aiNode*, aiMatrix4x4> trafos;
 
-    using MeshesByNodeMap = std::multimap<const aiNode*, unsigned int>;
+    typedef std::multimap<const aiNode*, unsigned int> MeshesByNodeMap;
     MeshesByNodeMap meshes;
 
 };

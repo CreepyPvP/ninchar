@@ -49,8 +49,8 @@ option(ASSIMP_HUNTER_ENABLED "Enable Hunter package manager support" OFF)
 IF(ASSIMP_HUNTER_ENABLED)
   include("cmake-modules/HunterGate.cmake")
   HunterGate(
-    URL "https://github.com/cpp-pm/hunter/archive/v0.25.3.tar.gz"
-    SHA1 "3319fe6a3b08090df7df98dee75134d68e2ef5a3"
+    URL "https://github.com/cpp-pm/hunter/archive/v0.24.18.tar.gz"
+    SHA1 "1292e4d661e1770d6d6ca08c12c07cf34a0bf718"
   )
   add_definitions(-DASSIMP_USE_HUNTER)
 ENDIF()
@@ -93,7 +93,7 @@ OPTION ( ASSIMP_BUILD_SAMPLES
 )
 OPTION ( ASSIMP_BUILD_TESTS
   "If the test suite for Assimp is built in addition to the library."
-  OFF
+  ON
 )
 OPTION ( ASSIMP_COVERALLS
   "Enable this to measure test coverage."
@@ -137,7 +137,7 @@ IF (WIN32)
 ELSE()
   OPTION( ASSIMP_BUILD_ZLIB
     "Build your own zlib"
-    OFF
+    ON
   )
 ENDIF()
 
@@ -258,11 +258,11 @@ IF( UNIX )
 ENDIF()
 
 # Grouped compiler settings ########################################
-IF ((CMAKE_C_COMPILER_ID MATCHES "GNU") AND NOT MINGW AND NOT HAIKU)
+IF ((CMAKE_C_COMPILER_ID MATCHES "GNU") AND NOT MINGW)
   IF(NOT ASSIMP_HUNTER_ENABLED)
     SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
   ENDIF()
-
+  
   IF(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 13)
     MESSAGE(STATUS "GCC13 detected disabling \"-Wdangling-reference\" in Cpp files as it appears to be a false positive")
     ADD_COMPILE_OPTIONS("$<$<COMPILE_LANGUAGE:CXX>:-Wno-dangling-reference>")
@@ -284,13 +284,13 @@ ELSEIF(MSVC)
   ELSE() # msvc
     ADD_COMPILE_OPTIONS(/MP /bigobj)
   ENDIF()
-
+  
   # disable "elements of array '' will be default initialized" warning on MSVC2013
   IF(MSVC12)
-    ADD_COMPILE_OPTIONS(/wd4351)
+    ADD_COMPILE_OPTIONS(/wd4351)	
   ENDIF()
   # supress warning for double to float conversion if Double precission is activated
-  ADD_COMPILE_OPTIONS(/wd4244)
+  ADD_COMPILE_OPTIONS(/wd4244) 
   SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D_DEBUG /Zi /Od")
   SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
   SET(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG:FULL /PDBALTPATH:%_PDB% /OPT:REF /OPT:ICF")
@@ -311,9 +311,9 @@ ELSEIF( MINGW )
     SET(CMAKE_C_FLAGS "-fPIC ${CMAKE_C_FLAGS}")
   ENDIF()
     IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
-      SET(CMAKE_CXX_FLAGS "-fvisibility=hidden -fno-strict-aliasing -Wno-dangling-reference -Wall -Wno-long-long -Wa,-mbig-obj -g ${CMAKE_CXX_FLAGS}")
+      SET(CMAKE_CXX_FLAGS "-fvisibility=hidden -fno-strict-aliasing -Wall -Wno-long-long -Wa,-mbig-obj -g ${CMAKE_CXX_FLAGS}")
     ELSE()
-      SET(CMAKE_CXX_FLAGS "-fvisibility=hidden -fno-strict-aliasing -Wno-dangling-reference -Wall -Wno-long-long -Wa,-mbig-obj -O3 ${CMAKE_CXX_FLAGS}")
+      SET(CMAKE_CXX_FLAGS "-fvisibility=hidden -fno-strict-aliasing -Wall -Wno-long-long -Wa,-mbig-obj -O3 ${CMAKE_CXX_FLAGS}")
     ENDIF()
     SET(CMAKE_C_FLAGS "-fno-strict-aliasing ${CMAKE_C_FLAGS}")
 ENDIF()
@@ -330,7 +330,7 @@ ENDIF()
 
 IF (ASSIMP_COVERALLS)
   MESSAGE(STATUS "Coveralls enabled")
-
+  
   INCLUDE(Coveralls)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
@@ -338,7 +338,7 @@ ENDIF()
 
 IF (ASSIMP_ASAN)
   MESSAGE(STATUS "AddressSanitizer enabled")
-
+  
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fsanitize=address")
 ENDIF()
@@ -722,6 +722,10 @@ IF ( ASSIMP_BUILD_SAMPLES )
     ADD_SUBDIRECTORY( samples/SimpleTexturedDirectx11 )
   ENDIF ()
   ADD_SUBDIRECTORY( samples/SimpleOpenGL/ )
+ENDIF ()
+
+IF ( ASSIMP_BUILD_TESTS )
+  ADD_SUBDIRECTORY( test/ )
 ENDIF ()
 
 # Generate a pkg-config .pc, revision.h, and config.h for the Assimp library.

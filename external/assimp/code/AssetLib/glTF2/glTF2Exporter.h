@@ -49,7 +49,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assimp/material.h>
 #include <assimp/types.h>
-#include <assimp/defs.h>
 
 #include <map>
 #include <memory>
@@ -143,7 +142,6 @@ private:
     std::map<std::string, unsigned int> mTexturesByPath;
     std::shared_ptr<glTF2::Asset> mAsset;
     std::vector<unsigned char> mBodyData;
-    ai_real configEpsilon;
 };
 
 } // namespace Assimp
