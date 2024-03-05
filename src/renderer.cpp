@@ -414,9 +414,6 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
                     bone_id = sk->bone_count;
                     sk->bone[bone_id].name = str_cpy(&name, assets);
                     sk->bone[bone_id].offset = read_assimp_mat(mesh->mBones[i]->mOffsetMatrix);
-                    if (bone_id == 1) {
-                        printf("bone: %u, %.*s\n", bone_id, name.len, name.ptr);
-                    }
                     sk->bone_count++;
                 }
 
@@ -528,10 +525,10 @@ Animation load_animation(const char* path, Arena* assets)
     assert(scene && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && scene->mRootNode);
 
     aiAnimation* animation = scene->mAnimations[0];
-    float duration = animation->mDuration;
-    float tps = animation->mTicksPerSecond;
 
     Animation anim = {};
+    anim.duration = animation->mDuration;
+    anim.tps = animation->mTicksPerSecond;
     anim.bone_count = animation->mNumChannels;
     anim.bone = (Bone*) push_size(assets, sizeof(Bone) * anim.bone_count);
 
@@ -558,7 +555,7 @@ Animation load_animation(const char* path, Arena* assets)
             key.type = KeyType_Pos;
             key.timestamp = channel->mPositionKeys[i].mTime;
             aiVector3D pos = channel->mPositionKeys[i].mValue;
-            key.v3 = v3(pos.x, pos.z, pos.y);
+            key.v3 = v3(pos.x, pos.y, pos.z);
 
             anim.key[current_key] = key;
             current_key++;
@@ -584,7 +581,7 @@ Animation load_animation(const char* path, Arena* assets)
             key.timestamp = channel->mScalingKeys[i].mTime;
 
             aiVector3D scale = channel->mScalingKeys[i].mValue;
-            key.v3 = v3(scale.x, scale.z, scale.y);
+            key.v3 = v3(scale.x, scale.y, scale.z);
 
             anim.key[current_key] = key;
             current_key++;
@@ -636,7 +633,7 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
                     continue;
                 }
 
-                if (key->timestamp >= time && (!pos_to || pos_to->timestamp < key->timestamp)) {
+                if (key->timestamp >= time && (!pos_to || pos_to->timestamp > key->timestamp)) {
                     pos_to = key;
                     continue;
                 }
@@ -648,7 +645,7 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
                     continue;
                 }
 
-                if (key->timestamp >= time && (!rot_to || rot_to->timestamp < key->timestamp)) {
+                if (key->timestamp >= time && (!rot_to || rot_to->timestamp > key->timestamp)) {
                     rot_to = key;
                     continue;
                 }
@@ -660,7 +657,7 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
                     continue;
                 }
 
-                if (key->timestamp >= time && (!scale_to || scale_to->timestamp < key->timestamp)) {
+                if (key->timestamp >= time && (!scale_to || scale_to->timestamp > key->timestamp)) {
                     scale_to = key;
                     continue;
                 }
@@ -670,30 +667,60 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
         // TODO: Clean this part up
         Mat4 trans_pos;
         {
-            V3 pos;
-            if (pos_from && pos_to) {
-                float t = (time - pos_from->timestamp) / (pos_to->timestamp - pos_from->timestamp);
-                pos = lerp(pos_from->v3, pos_to->v3, t);
-            } else if (pos_from) {
-                pos = pos_from->v3;
+            V3 start_pos;
+            V3 end_pos;
+            float start;
+            float end;
+
+            if (pos_from) {
+                start = pos_from->timestamp;
+                start_pos = pos_from->v3;
             } else {
-                pos = v3(0);
+                start = 0;
+                start_pos = v3(0);
             }
+
+            if (pos_to) {
+                end = pos_to->timestamp;
+                end_pos = pos_to->v3;
+                printf("pos to: %f %f %f\n", end_pos.x, end_pos.y, end_pos.z);
+            } else {
+                end = anim->duration;
+                end_pos = v3(0);
+            }
+
+            float t = (time - start) / (end - start);
+            V3 pos = lerp(start_pos, end_pos, t);
             trans_pos = glm::translate(glm::mat4(1), glm::vec3(pos.x, pos.y, pos.z));
         }
 
         Mat4 trans_rot;
         {
-            if (!rot_from) {
-                trans_rot = glm::toMat4(glm::normalize(rot_to->rot));
-            } else if (!rot_to) {
-                trans_rot = glm::toMat4(glm::normalize(rot_from->rot));
-            } else {
-                float t = (time - rot_from->timestamp) / (rot_to->timestamp - rot_from->timestamp);
-                Quat rot = glm::slerp(rot_from->rot, rot_to->rot, t);
-                rot = glm::normalize(rot);
-                trans_rot = glm::toMat4(rot);
+            Quat start_rot;
+            Quat end_rot;
+            float start;
+            float end;
+
+            if (rot_from) {
+                start = rot_from->timestamp;
+                start_rot = rot_from->rot;
+            }  else {
+                start = 0;
+                start_rot = glm::quat(1, 0, 0, 0);
             }
+
+            if (rot_to) {
+                end = rot_to->timestamp;
+                end_rot = rot_to->rot;
+            }  else {
+                end = anim->duration;
+                end_rot = glm::quat(1, 0, 0, 0);
+            }
+
+            float t = (time - start) / (end - start);
+            Quat rot = glm::slerp(start_rot, end_rot, t);
+            rot = glm::normalize(rot);
+            trans_rot = glm::toMat4(rot);
         }
 
         Mat4 trans_scale;
@@ -718,7 +745,6 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
     for (u32 i = 0; i < sk->bone_count; ++i) {
         BoneInfo* info = sk->bone + i;
         if (str_equals(node->name, info->name)) {
-            // final[i] = sk->inverse_trans * global_trans * info->offset;
             final[i] = sk->inverse_trans * global_trans * info->offset;
             break;
         }
@@ -729,12 +755,12 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
     }
 }
 
-Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena)
+Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena, float t)
 {
     LogEntryInfo info = start_log(LogTarget_InterpolatePose);
 
     Mat4* res = (Mat4*) push_size(arena, sizeof(Mat4) * skeleton->bone_count);
-    do_node_trans(animation, skeleton, 0, glm::mat4(1), res, 0.0);
+    do_node_trans(animation, skeleton, 0, glm::mat4(1), res, t);
 
     end_log(info);
 

@@ -18,6 +18,7 @@ RiggedModelHandle player_model;
 ModelHandle camera_model;
 
 Animation capoeira;
+float anim_timer = 0;
 
 Arena assets;
 
@@ -266,7 +267,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
                     game->reset_stage = true;
                 }
             }
-        }else{
+        } else{
             //Old deprecated code for enemies seeing players.
             //Deprecated because it doesn't work with mirrors.
     #ifdef DEBUG
@@ -304,6 +305,14 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
 
     if (level_completed){
         game->next_stage = true;
+    }
+
+    if (inputs & 1) {
+        anim_timer = 0;
+    }
+    anim_timer += 0.2 * delta * capoeira.tps;
+    if (anim_timer >= capoeira.duration) {
+        anim_timer = 0;
     }
 }
 
@@ -352,10 +361,10 @@ void game_render(Game* game, RenderGroup* default, RenderGroup* transparent, Ren
 
     begin_tmp(&assets);
 
-    Mat4* player_pose = interpolate_pose(&capoeira, &player_model.skeleton, &assets);
+    Mat4* player_pose = interpolate_pose(&capoeira, &player_model.skeleton, &assets, anim_timer);
     // Mat4* player_pose = default_pose(&player_model.skeleton, &assets);
-    push_rigged_model(default, &player_model, player_pose, v3(0, 0, 5), v3(1));
-    push_debug_pose(dbg, &player_model.skeleton, player_pose, v3(0, 0, 5), v3(1));
+    push_rigged_model(default, &player_model, player_pose, v3(5, 5, 10), v3(1));
+    push_debug_pose(dbg, &player_model.skeleton, player_pose, v3(5, 5, 10), v3(1));
 
     end_tmp(&assets);
 }

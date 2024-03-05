@@ -266,11 +266,14 @@ struct Animation
 
     u32 key_count;
     AnimationKey* key;
+
+    float duration;
+    float tps;
 };
 
 Animation load_animation(const char* path, Arena* assets);
 
 Mat4* default_pose(Skeleton* skeleton, Arena* arena);
-Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena);
+Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena, float t);
 
 #endif
