@@ -50,17 +50,23 @@ void game_load_assets()
     opengl_load_texture(&load_glass_wall);
     free_texture_load_op(&load_glass_wall);
 
-    ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &tmp);
+    Mat3 editor_trans = mat3(0);
+    editor_trans.v[0] = 1;
+    editor_trans.v[5] = 1;
+    editor_trans.v[7] = 1;
+
+    ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &tmp, editor_trans);
     opengl_load_model(&load_camera);
 
     // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &tmp, &assets);
     // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/RiggedSimple.gltf", &tmp, &assets);
-    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp, &assets);
+    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp, 
+                                               &assets, editor_trans);
     opengl_load_model(&load_player);
 
     // capoeira = load_animation("assets/maincharacter/ninja.gltf", &assets);
     // capoeira = load_animation("assets/test/RiggedSimple.gltf", &assets);
-    capoeira = load_animation("assets/animations/alien.gltf", &assets);
+    capoeira = load_animation("assets/animations/alien.gltf", &assets, editor_trans);
 
     dispose(&tmp);
 };
@@ -307,9 +313,6 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
         game->next_stage = true;
     }
 
-    if (inputs & 1) {
-        anim_timer = 0;
-    }
     anim_timer += delta * capoeira.tps;
     if (anim_timer >= capoeira.duration) {
         anim_timer = 0;

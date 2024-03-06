@@ -240,13 +240,11 @@ void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 sc
 
         glm::vec4 tmp = bone_trans * glm::vec4(0, 0, 0, 1); 
 
-        // TODO: Need to divide by tmp.w? - No? 
         V3 pos = v3(tmp.x, tmp.y, tmp.z);
-
-        V3 p0 = v3(pos.x - size * right.x, pos.y - size * right.y, pos.z - size * right.z);
-        V3 p1 = v3(pos.x + size * up.x, pos.y + size * up.y, pos.z + size * up.z);
-        V3 p2 = v3(pos.x - size * up.x, pos.y - size * up.y, pos.z - size * up.z);
-        V3 p3 = v3(pos.x + size * right.x, pos.y + size * right.y, pos.z + size * right.z);
+        V3 p0 = pos - right * size;
+        V3 p1 = pos + up * size;
+        V3 p2 = pos - up * size;
+        V3 p3 = pos + right * size;
 
         push_rect(group, 
                   p0, v2(0, 0),
@@ -259,13 +257,11 @@ void push_debug_pose(RenderGroup* group, Skeleton* sk, Mat4* pose, V3 pos, V3 sc
     {
         glm::vec4 tmp = trans * glm::vec4(0, 0, 0, 1); 
 
-        // TODO: Need to divide by tmp.w? - No? 
         V3 pos = v3(tmp.x, tmp.y, tmp.z);
-
-        V3 p0 = v3(pos.x - size * right.x, pos.y - size * right.y, pos.z - size * right.z);
-        V3 p1 = v3(pos.x + size * up.x, pos.y + size * up.y, pos.z + size * up.z);
-        V3 p2 = v3(pos.x - size * up.x, pos.y - size * up.y, pos.z - size * up.z);
-        V3 p3 = v3(pos.x + size * right.x, pos.y + size * right.y, pos.z + size * right.z);
+        V3 p0 = pos - right * size;
+        V3 p1 = pos + up * size;
+        V3 p2 = pos - up * size;
+        V3 p3 = pos + right * size;
 
         push_rect(group, 
                   p0, v2(0, 0),
@@ -287,10 +283,10 @@ void push_line(RenderGroup* group, V3 start, V3 end, V3 color)
     V3 dir = norm(v3(end.x - start.x, end.y - start.y, end.z - start.z));
     V3 side = norm(cross(dir, up));
 
-    V3 p0 = v3(start.x - width * side.x, start.y - width * side.y, start.z - width * side.z);
-    V3 p1 = v3(start.x + width * side.x, start.y + width * side.y, start.z + width * side.z);
-    V3 p2 = v3(end.x - width * side.x, end.y - width * side.y, end.z - width * side.z);
-    V3 p3 = v3(end.x + width * side.x, end.y + width * side.y, end.z + width * side.z);
+    V3 p0 = start - side * width;
+    V3 p1 = start + side * width;
+    V3 p2 = end - side * width;
+    V3 p3 = end + side * width;
 
     push_rect(group, 
               p0, v2(0, 0),
@@ -347,8 +343,10 @@ Mat4 read_assimp_mat(aiMatrix4x4 mat)
 }
 
 void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op, Skeleton* sk,
-                        Arena* tmp, Arena* assets)
+                        Arena* tmp, Arena* assets, Mat3 editor)
 {
+    Mat4 ed_mat = mat4(editor);
+
     for (u32 i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]]; 
         MeshInfo info = {};
@@ -373,8 +371,8 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
 
         for (u32 i = 0; i < info.vertex_count; ++i) {
             MeshVertex vert;
-            vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-            vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+            vert.pos = /* editor * */ v3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+            vert.norm = /* editor * */ v3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
             vert.color = color.rgb;
 
             for (u32 i = 0; i < MAX_BONE_INFLUENCE; ++i) {
@@ -391,9 +389,10 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
 
         for (u32 i = 0; i < mesh->mNumFaces; ++i) {
             aiFace face = mesh->mFaces[i];
+            // TODO: Fix this workaround
             info.index_buffer[3 * i + 0] = face.mIndices[0];
-            info.index_buffer[3 * i + 1] = face.mIndices[1];
-            info.index_buffer[3 * i + 2] = face.mIndices[2];
+            info.index_buffer[3 * i + 1] = face.mIndices[2];
+            info.index_buffer[3 * i + 2] = face.mIndices[1];
         }  
 
         if (info.flags & MODEL_FLAGS_RIGGED) {
@@ -413,6 +412,7 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
                     assert(sk->bone_count < sk->bone_cap);
                     bone_id = sk->bone_count;
                     sk->bone[bone_id].name = str_cpy(&name, assets);
+                    // sk->bone[bone_id].offset = ed_mat * read_assimp_mat(mesh->mBones[i]->mOffsetMatrix);
                     sk->bone[bone_id].offset = read_assimp_mat(mesh->mBones[i]->mOffsetMatrix);
                     sk->bone_count++;
                 }
@@ -440,12 +440,12 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
     }
 
     for (u32 i = 0; i < node->mNumChildren; ++i) {
-        process_scene_node(node->mChildren[i], scene, load_op, sk, tmp, assets);
+        process_scene_node(node->mChildren[i], scene, load_op, sk, tmp, assets, editor);
     }
 }  
 
 ModelLoadOp load_model(ModelHandle* handle, Skeleton* skeleton, const char* path, Arena* tmp, 
-                       Arena* assets)
+                       Arena* assets, Mat3 editor)
 {
     Assimp::Importer importer;
 
@@ -461,28 +461,23 @@ ModelLoadOp load_model(ModelHandle* handle, Skeleton* skeleton, const char* path
     load_op.mesh_cap = scene->mNumMeshes;
     load_op.meshes = (MeshInfo*) push_size(tmp, sizeof(MeshInfo) * load_op.mesh_cap);
 
-    if (skeleton) {
-        skeleton->inverse_trans = glm::inverse(read_assimp_mat(scene->mRootNode->mTransformation));
-    }
-
-    process_scene_node(scene->mRootNode, scene, &load_op, skeleton, tmp, assets);
+    process_scene_node(scene->mRootNode, scene, &load_op, skeleton, tmp, assets, editor);
 
     return load_op;
 }
 
-ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp)
+ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp, Mat3 editor)
 {
-    return load_model(handle, NULL, path, tmp, NULL);
+    return load_model(handle, NULL, path, tmp, NULL, editor);
 }
 
-ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, 
-                             Arena* tmp, Arena* assets)
+ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, Arena* tmp, Arena* assets,
+                             Mat3 editor)
 {
     *handle = {};
     handle->skeleton.bone_cap = 64;
-    handle->skeleton.bone = (BoneInfo*) 
-        push_size(assets, sizeof(BoneInfo) * handle->skeleton.bone_cap);
-    return load_model(&handle->model, &handle->skeleton, path, tmp, assets);
+    handle->skeleton.bone = (BoneInfo*) push_size(assets, sizeof(BoneInfo) * handle->skeleton.bone_cap);
+    return load_model(&handle->model, &handle->skeleton, path, tmp, assets, editor);
 }
 
 u32 count_nodes(aiNode* node)
@@ -518,8 +513,10 @@ void process_skeleton_node(aiNode* node, Animation* anim, Arena* assets, u32 ind
     }
 }
 
-Animation load_animation(const char* path, Arena* assets)
+Animation load_animation(const char* path, Arena* assets, Mat3 editor)
 {
+    Quat ed_quat = quat(editor);
+
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, 0); 
     assert(scene && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && scene->mRootNode);
@@ -555,6 +552,7 @@ Animation load_animation(const char* path, Arena* assets)
             key.type = KeyType_Pos;
             key.timestamp = channel->mPositionKeys[i].mTime;
             aiVector3D pos = channel->mPositionKeys[i].mValue;
+            // key.v3 = editor * v3(pos.x, pos.y, pos.z);
             key.v3 = v3(pos.x, pos.y, pos.z);
 
             anim.key[current_key] = key;
@@ -569,6 +567,7 @@ Animation load_animation(const char* path, Arena* assets)
             float x = channel->mRotationKeys[i].mValue.x;
             float y = channel->mRotationKeys[i].mValue.y;
             float z = channel->mRotationKeys[i].mValue.z;
+            // key.rot = ed_quat * glm::quat(w, x, y, z);
             key.rot = glm::quat(w, x, y, z);
 
             anim.key[current_key] = key;
@@ -581,6 +580,7 @@ Animation load_animation(const char* path, Arena* assets)
             key.timestamp = channel->mScalingKeys[i].mTime;
 
             aiVector3D scale = channel->mScalingKeys[i].mValue;
+            // key.v3 = editor * v3(scale.x, scale.y, scale.z);
             key.v3 = v3(scale.x, scale.y, scale.z);
 
             anim.key[current_key] = key;
@@ -758,7 +758,6 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
     for (u32 i = 0; i < sk->bone_count; ++i) {
         BoneInfo* info = sk->bone + i;
         if (str_equals(node->name, info->name)) {
-            // TODO: Figure this out
             final[i] = /* sk->inverse_trans * */ global_trans * info->offset;
             break;
         }

@@ -53,6 +53,10 @@ union V3
     };
 
     float v[3];
+
+    V3 operator+(V3 other);
+    V3 operator-(V3 other);
+    V3 operator*(float f);
 };
 
 union V4
@@ -75,6 +79,19 @@ union V4
         V3 rgb;
     };
 };
+
+// NOTE: Column major
+struct Mat3
+{
+    float v[9];
+
+    V3 operator*(V3 vec);
+};
+
+inline Mat3 mat3(float f)
+{
+    return { f, 0, 0, 0, f, 0, 0, 0, f };
+}
 
 inline V2 v2(float x, float y)
 {
@@ -107,6 +124,9 @@ inline V4 v4(float x)
 }
 
 Mat4 mat4(V3 pos, V3 scale);
+Mat4 mat4(Mat3 mat);
+
+Quat quat(Mat3 mat);
 
 struct Str
 {

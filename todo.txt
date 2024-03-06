@@ -1,7 +1,13 @@
 animation
     fix asset import rotation
-    animator
+    animator (and animation looping)
     cleanup (CommandEntryDrawRiggedModel, Interpolation code)
+
+anime toon shader
+    materials
+    pbr
+    outlines?
+    rim lighting?
 
 why are lines depth tested?
 
@@ -15,17 +21,10 @@ cleanup
     think about if bindless textures were worth it
 
 rendering fixes
-    proper material handling
     correct editor transform
     fix peter panning?
     fix camera jump
     order independant transparency
-
-anime toon shader
-    outlines
-    posterization?
-    blinn phong
-    rim lighting
 
 entity system
     generational entity allocator

@@ -48,7 +48,6 @@ struct Skeleton
     u32 bone_count;
     u32 bone_cap;
     BoneInfo* bone;
-    Mat4 inverse_trans;
 };
 
 struct TextureHandle
@@ -211,9 +210,9 @@ void push_spotlight(CommandBuffer* buffer, V3 pos, V3 dir, float fov, float far_
 
 TextureLoadOp texture_load_op(TextureHandle* handle, const char* path);
 void free_texture_load_op(TextureLoadOp* load_op);
-ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp);
-ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, 
-                                 Arena* tmp, Arena* assets);
+ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp, Mat3 editor);
+ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, Arena* tmp, Arena* assets,
+                             Mat3 editor);
 inline bool equal_settings(RenderSettings* a, RenderSettings* b) 
 {
     return (a->width == b->width) && (a->height == b->height);
@@ -271,7 +270,7 @@ struct Animation
     float tps;
 };
 
-Animation load_animation(const char* path, Arena* assets);
+Animation load_animation(const char* path, Arena* assets, Mat3 editor);
 
 Mat4* default_pose(Skeleton* skeleton, Arena* arena);
 Mat4* interpolate_pose(Animation* animation, Skeleton* skeleton, Arena* arena, float t);
