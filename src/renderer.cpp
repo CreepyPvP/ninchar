@@ -683,7 +683,6 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
             if (pos_to) {
                 end = pos_to->timestamp;
                 end_pos = pos_to->v3;
-                printf("pos to: %f %f %f\n", end_pos.x, end_pos.y, end_pos.z);
             } else {
                 end = anim->duration;
                 end_pos = v3(0);
@@ -725,15 +724,29 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
 
         Mat4 trans_scale;
         {
-            V3 scale;
-            if (scale_from && scale_to) {
-                float t = (time - scale_from->timestamp) / (scale_to->timestamp - scale_from->timestamp);
-                scale = lerp(scale_from->v3, scale_to->v3, t);
-            } else if (scale_from) {
-                scale = scale_from->v3;
+            V3 start_scale;
+            V3 end_scale;
+            float start;
+            float end;
+            
+            if (scale_from) {
+                start = scale_from->timestamp;
+                start_scale = scale_from->v3;
             } else {
-                scale = v3(1);
+                start = 0;
+                start_scale = v3(1);
             }
+
+            if (scale_to) {
+                end = scale_to->timestamp;
+                end_scale = scale_to->v3;
+            } else {
+                end = anim->duration;
+                end_scale = scale_to->v3;
+            }
+
+            float t = (time - start) / (end - start);
+            V3 scale = lerp(start_scale, end_scale, t);
             trans_scale = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
         }
 
@@ -745,7 +758,8 @@ void do_node_trans(Animation* anim, Skeleton* sk, u32 id, Mat4 parent, Mat4* fin
     for (u32 i = 0; i < sk->bone_count; ++i) {
         BoneInfo* info = sk->bone + i;
         if (str_equals(node->name, info->name)) {
-            final[i] = sk->inverse_trans * global_trans * info->offset;
+            // TODO: Figure this out
+            final[i] = /* sk->inverse_trans * */ global_trans * info->offset;
             break;
         }
     }

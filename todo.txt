@@ -1,16 +1,16 @@
-fix bone rotation
-remove unnecessary assets
-fix bone displays
-fix recursive profiling
+animation
+    fix asset import rotation
+    animator
+    cleanup (CommandEntryDrawRiggedModel, Interpolation code)
 
 why are lines depth tested?
 
 ui rendering
 hot reload
+fix recursive profiling
 
 cleanup
     remove render groups
-    animation cleanup (CommandEntryDrawRiggedModel, Interpolation code)
     operator overloading for vector
     think about if bindless textures were worth it
 

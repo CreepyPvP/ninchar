@@ -54,13 +54,13 @@ void game_load_assets()
     opengl_load_model(&load_camera);
 
     // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &tmp, &assets);
-    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/RiggedSimple.gltf", &tmp, &assets);
-    // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp, &assets);
+    // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/RiggedSimple.gltf", &tmp, &assets);
+    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp, &assets);
     opengl_load_model(&load_player);
 
-    // capoeira = load_animation("assets/animations/alien.fbx", &assets);
     // capoeira = load_animation("assets/maincharacter/ninja.gltf", &assets);
-    capoeira = load_animation("assets/test/RiggedSimple.gltf", &assets);
+    // capoeira = load_animation("assets/test/RiggedSimple.gltf", &assets);
+    capoeira = load_animation("assets/animations/alien.gltf", &assets);
 
     dispose(&tmp);
 };
@@ -310,7 +310,7 @@ void game_update(Game* game, u8 inputs, float delta, RenderGroup* group, RenderG
     if (inputs & 1) {
         anim_timer = 0;
     }
-    anim_timer += 0.2 * delta * capoeira.tps;
+    anim_timer += delta * capoeira.tps;
     if (anim_timer >= capoeira.duration) {
         anim_timer = 0;
     }
