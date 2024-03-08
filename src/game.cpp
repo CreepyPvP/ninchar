@@ -52,8 +52,8 @@ void game_load_assets()
 
     Mat3 editor_trans = mat3(0);
     editor_trans.v[0] = 1;
-    editor_trans.v[5] = 1;
-    editor_trans.v[7] = 1;
+    editor_trans.v[4] = 1;
+    editor_trans.v[8] = 1;
 
     ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &tmp, editor_trans);
     opengl_load_model(&load_camera);
