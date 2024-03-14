@@ -9,6 +9,17 @@ anime toon shader
     outlines?
     rim lighting?
 
+    hemisphere lighting
+
+    Some techniques:
+       per character lighting
+       smoothstep
+       baked in "ambient occlusion" threshold
+       manual normal vectors
+       sample from tint map for nonlit areas
+       limited animations
+       per character lighting
+
 why are lines depth tested?
 
 ui rendering

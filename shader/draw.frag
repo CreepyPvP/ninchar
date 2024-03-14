@@ -23,6 +23,29 @@ out vec4 out_Color;
 
 vec3 l = normalize(vec3(1, 2, 3));
 
+
+// Start PBR
+
+// vec3 brdf(vec3 l, vec3 v, vec3 color, vec3 f0, float metallic, float roughness) 
+// {
+//     vec3 h = normalize(v + l);
+//
+//     float ndf = distr_ggx(n, h, roughness);
+//     float g = geometry_smith(n, v, l, rougness);
+//     vec3 f = fresnel(max(dot(h, v), 0), f0);
+//
+//     vec3 ks = f;
+//     vec3 kd = vec3(1) - ks;
+//     kd *= 1.0 - metallic;
+//
+//     vec3 numerator = ndf * g * f;
+//     float denominator = 4 * max(dot(n, v), 0) * max(dot(n, l), 0) + 0.0001;
+//     vec3 specular = numerator / denominator;
+// }
+
+// End PBR
+
+
 float shadow_calc(vec4 light_space_pos, sampler2D shadowmap) {
     vec3 proj_coords = light_space_pos.xyz / light_space_pos.w;
     proj_coords = proj_coords * 0.5 + 0.5;

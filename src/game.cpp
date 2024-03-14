@@ -50,23 +50,17 @@ void game_load_assets()
     opengl_load_texture(&load_glass_wall);
     free_texture_load_op(&load_glass_wall);
 
-    Mat3 editor_trans = mat3(0);
-    editor_trans.v[0] = 1;
-    editor_trans.v[4] = 1;
-    editor_trans.v[8] = 1;
-
-    ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &tmp, editor_trans);
+    ModelLoadOp load_camera = model_load_op(&camera_model, "assets/cam.obj", &tmp);
     opengl_load_model(&load_camera);
 
-    // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &tmp, &assets);
+    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/maincharacter/ninja.gltf", &tmp, &assets);
     // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/RiggedSimple.gltf", &tmp, &assets);
-    ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp, 
-                                               &assets, editor_trans);
+    // ModelLoadOp load_player = sk_model_load_op(&player_model, "assets/test/alien.fbx", &tmp);
     opengl_load_model(&load_player);
 
-    // capoeira = load_animation("assets/maincharacter/ninja.gltf", &assets);
+    capoeira = load_animation("assets/maincharacter/ninja.gltf", &assets);
     // capoeira = load_animation("assets/test/RiggedSimple.gltf", &assets);
-    capoeira = load_animation("assets/animations/alien.gltf", &assets, editor_trans);
+    // capoeira = load_animation("assets/animations/alien.gltf", &assets);
 
     dispose(&tmp);
 };

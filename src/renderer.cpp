@@ -342,10 +342,8 @@ Mat4 read_assimp_mat(aiMatrix4x4 mat)
 }
 
 void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op, Skeleton* sk,
-                        Arena* tmp, Arena* assets, Mat3 editor)
+                        Arena* tmp, Arena* assets)
 {
-    Mat4 ed_mat = mat4(editor);
-
     for (u32 i = 0; i < node->mNumMeshes; ++i) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]]; 
         MeshInfo info = {};
@@ -370,8 +368,8 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
 
         for (u32 i = 0; i < info.vertex_count; ++i) {
             MeshVertex vert;
-            vert.pos = editor * v3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-            vert.norm = editor * v3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+            vert.pos = v3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+            vert.norm = v3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
             vert.color = color.rgb;
 
             for (u32 i = 0; i < MAX_BONE_INFLUENCE; ++i) {
@@ -410,7 +408,7 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
                     assert(sk->bone_count < sk->bone_cap);
                     bone_id = sk->bone_count;
                     sk->bone[bone_id].name = str_cpy(&name, assets);
-                    sk->bone[bone_id].offset = ed_mat * read_assimp_mat(mesh->mBones[i]->mOffsetMatrix);
+                    sk->bone[bone_id].offset = read_assimp_mat(mesh->mBones[i]->mOffsetMatrix);
                     sk->bone_count++;
                 }
 
@@ -437,12 +435,12 @@ void process_scene_node(aiNode *node, const aiScene *scene, ModelLoadOp* load_op
     }
 
     for (u32 i = 0; i < node->mNumChildren; ++i) {
-        process_scene_node(node->mChildren[i], scene, load_op, sk, tmp, assets, editor);
+        process_scene_node(node->mChildren[i], scene, load_op, sk, tmp, assets);
     }
 }  
 
 ModelLoadOp load_model(ModelHandle* handle, Skeleton* skeleton, const char* path, Arena* tmp, 
-                       Arena* assets, Mat3 editor)
+                       Arena* assets)
 {
     Assimp::Importer importer;
 
@@ -458,23 +456,22 @@ ModelLoadOp load_model(ModelHandle* handle, Skeleton* skeleton, const char* path
     load_op.mesh_cap = scene->mNumMeshes;
     load_op.meshes = (MeshInfo*) push_size(tmp, sizeof(MeshInfo) * load_op.mesh_cap);
 
-    process_scene_node(scene->mRootNode, scene, &load_op, skeleton, tmp, assets, editor);
+    process_scene_node(scene->mRootNode, scene, &load_op, skeleton, tmp, assets);
 
     return load_op;
 }
 
-ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp, Mat3 editor)
+ModelLoadOp model_load_op(ModelHandle* handle, const char* path, Arena* tmp)
 {
-    return load_model(handle, NULL, path, tmp, NULL, editor);
+    return load_model(handle, NULL, path, tmp, NULL);
 }
 
-ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, Arena* tmp, Arena* assets,
-                             Mat3 editor)
+ModelLoadOp sk_model_load_op(RiggedModelHandle* handle, const char* path, Arena* tmp, Arena* assets)
 {
     *handle = {};
     handle->skeleton.bone_cap = 64;
     handle->skeleton.bone = (BoneInfo*) push_size(assets, sizeof(BoneInfo) * handle->skeleton.bone_cap);
-    return load_model(&handle->model, &handle->skeleton, path, tmp, assets, editor);
+    return load_model(&handle->model, &handle->skeleton, path, tmp, assets);
 }
 
 u32 count_nodes(aiNode* node)
@@ -486,15 +483,16 @@ u32 count_nodes(aiNode* node)
     return count;
 }
 
-void process_skeleton_node(aiNode* node, Animation* anim, Arena* assets, u32 index, u32* node_count, 
-                           Mat4 editor)
+void process_skeleton_node(aiNode* node, Animation* anim, Arena* assets, u32 index, u32* node_count)
 {
     AnimationNode entry;
     entry.name = from_c_str(node->mName.C_Str(), assets);
     entry.first_child = *node_count;
     entry.child_count = node->mNumChildren;
-    entry.trans = editor * read_assimp_mat(node->mTransformation);
+    entry.trans = read_assimp_mat(node->mTransformation);
     entry.bone = -1;
+
+    printf("node name: %.*s\n", entry.name.len, entry.name.ptr);
 
     for (u32 i = 0; i < anim->bone_count; ++i) {
         if (str_equals(entry.name, anim->bone[i].name)) {
@@ -507,15 +505,12 @@ void process_skeleton_node(aiNode* node, Animation* anim, Arena* assets, u32 ind
     (*node_count) += node->mNumChildren;
 
     for (u32 i = 0; i < node->mNumChildren; ++i) {
-        process_skeleton_node(node->mChildren[i], anim, assets, entry.first_child + i, node_count, editor);
+        process_skeleton_node(node->mChildren[i], anim, assets, entry.first_child + i, node_count);
     }
 }
 
-Animation load_animation(const char* path, Arena* assets, Mat3 editor)
+Animation load_animation(const char* path, Arena* assets)
 {
-    Mat4 ed_mat = mat4(editor);
-    Quat ed_quat = quat(editor);
-
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, 0); 
     assert(scene && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && scene->mRootNode);
@@ -551,7 +546,7 @@ Animation load_animation(const char* path, Arena* assets, Mat3 editor)
             key.type = KeyType_Pos;
             key.timestamp = channel->mPositionKeys[i].mTime;
             aiVector3D pos = channel->mPositionKeys[i].mValue;
-            key.v3 = editor * v3(pos.x, pos.y, pos.z);
+            key.v3 = v3(pos.x, pos.y, pos.z);
 
             anim.key[current_key] = key;
             current_key++;
@@ -577,7 +572,7 @@ Animation load_animation(const char* path, Arena* assets, Mat3 editor)
             key.timestamp = channel->mScalingKeys[i].mTime;
 
             aiVector3D scale = channel->mScalingKeys[i].mValue;
-            key.v3 = editor * v3(scale.x, scale.y, scale.z);
+            key.v3 = v3(scale.x, scale.y, scale.z);
 
             anim.key[current_key] = key;
             current_key++;
@@ -589,7 +584,7 @@ Animation load_animation(const char* path, Arena* assets, Mat3 editor)
     anim.node_count = count_nodes(scene->mRootNode);
     anim.node = (AnimationNode*) push_size(assets, sizeof(AnimationNode) * anim.node_count);
     u32 count = 1;
-    process_skeleton_node(scene->mRootNode, &anim, assets, 0, &count, ed_mat);
+    process_skeleton_node(scene->mRootNode, &anim, assets, 0, &count);
 
     return anim;
 }
