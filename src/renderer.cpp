@@ -492,8 +492,6 @@ void process_skeleton_node(aiNode* node, Animation* anim, Arena* assets, u32 ind
     entry.trans = read_assimp_mat(node->mTransformation);
     entry.bone = -1;
 
-    printf("node name: %.*s\n", entry.name.len, entry.name.ptr);
-
     for (u32 i = 0; i < anim->bone_count; ++i) {
         if (str_equals(entry.name, anim->bone[i].name)) {
             entry.bone = i;

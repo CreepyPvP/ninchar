@@ -18,6 +18,7 @@
 #include "include/profiler.h"
 #include "include/game_math.h"
 #include "include/game.h"
+#include "include/asset_loader.h"
 
 struct GameWindow {
     GLFWwindow* handle;
@@ -115,6 +116,8 @@ i32 main()
 
     Arena arena;
     init_arena(&arena, &pool);
+
+    load_model("assets/parser_test.txt", &arena);
 
     CommandBuffer cmd;
     u32 entry_size = 10000;

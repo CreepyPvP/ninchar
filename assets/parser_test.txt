@@ -1,0 +1,9 @@
+{
+	"asset":{
+		"generator":"Khronos glTF Blender I/O v4.0.44",
+		"version":"2.0"
+	},
+	"scene":0,
+    "test":2.0e-4,
+    "for good measure":true
+}
