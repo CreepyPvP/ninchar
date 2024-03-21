@@ -56,12 +56,11 @@ struct BoolToken
     bool value;
 };
 
-struct TokenBuffer
+struct SimpleArena
 {
     u8* ptr; 
     u32 current; 
     u32 cap;
-    u32 token_count;
 };
 
 struct Node
@@ -69,39 +68,50 @@ struct Node
     u32 type;
     u32 size;
     Str name;
-
-    union {
-        float number;
-        Str string;
-        bool boolean;
-
-        struct {
-            u32 offset;
-            u32 child_count;
-        } container;
-
-    };
 };
+
+struct StringNode
+{
+    Node info;
+    Str value;
+};
+
+struct NumberNode
+{
+    Node info;
+    float value;
+};
+
+struct BoolNode
+{
+    Node info;
+    bool value;
+};
+
+struct ObjectNode
+{
+    Node info;
+    u32 child_count;
+    Node* child;
+};
+
+u8* alloc(SimpleArena* buffer, u32 size) 
+{
+    u32 curr = buffer->current;
+    assert(buffer->current + size < buffer->cap);
+    buffer->current += size;
+
+    return buffer->ptr + curr;
+}
 
 bool is_number(char c) 
 {
     return (c >= '0' && c <= '9') || c == '-' || c == '+';
 }
 
-u8* push_token(TokenBuffer* buffer, u32 size)
+SimpleArena json_lexer(char* content, Arena* arena)
 {
-    u32 curr = buffer->current;
-    assert(buffer->current + size < buffer->cap);
-    buffer->current += size;
-
-    buffer->token_count++;
-
-    return buffer->ptr + curr;
-}
-
-TokenBuffer json_lexer(char* content, Arena* arena)
-{
-    TokenBuffer buffer = {};
+    SimpleArena buffer = {};
     buffer.cap = 10000;
     buffer.ptr = (u8*) push_size(arena, buffer.cap);
 
@@ -113,7 +123,7 @@ TokenBuffer json_lexer(char* content, Arena* arena)
         }
 
         if (*curr == '"') {
-            StringToken* token = (StringToken*) push_token(&buffer, sizeof(StringToken));
+            StringToken* token = (StringToken*) alloc(&buffer, sizeof(StringToken));
 
             curr++;
             token->type = Token_String;
@@ -131,7 +141,7 @@ TokenBuffer json_lexer(char* content, Arena* arena)
         }
 
         if (*curr == 't' || *curr == 'T' || *curr == 'f' || *curr == 'F') {
-            BoolToken* token = (BoolToken*) push_token(&buffer, sizeof(BoolToken));
+            BoolToken* token = (BoolToken*) alloc(&buffer, sizeof(BoolToken));
             token->type = Token_Bool;
             token->value = *curr == 't' || *curr == 'T';
             // NOTE: "true" has 4 letters, "false"  has 5 letters
@@ -144,7 +154,7 @@ TokenBuffer json_lexer(char* content, Arena* arena)
         }
 
         if (is_number(*curr)) {
-            NumberToken* token = (NumberToken*) push_token(&buffer, sizeof(NumberToken));
+            NumberToken* token = (NumberToken*) alloc(&buffer, sizeof(NumberToken));
             token->type = Token_Number;
             token->value = atof(curr);
             while (is_number(*curr) || *curr == '.' || *curr == 'e') {
@@ -153,7 +163,7 @@ TokenBuffer json_lexer(char* content, Arena* arena)
             continue;
         }
 
-        SimpleToken* token = (SimpleToken*) push_token(&buffer, sizeof(SimpleToken));
+        SimpleToken* token = (SimpleToken*) alloc(&buffer, sizeof(SimpleToken));
 
         if (*curr == '{') {
             token->type = Token_BrackOpen;
@@ -176,7 +186,7 @@ TokenBuffer json_lexer(char* content, Arena* arena)
         curr++;
     }
 
-    SimpleToken* eof_token = (SimpleToken*) push_token(&buffer, sizeof(SimpleToken));
+    SimpleToken* eof_token = (SimpleToken*) alloc(&buffer, sizeof(SimpleToken));
     eof_token->type = Token_EOF;
 
     return buffer;
@@ -194,14 +204,14 @@ inline void expect(SimpleToken** curr, u32 type, u32 size)
     advance(curr, size);
 }
 
-void parse_block(SimpleToken** curr, Node* nodes, u32* node_count, Node* node);
+void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node);
 
-void parse_field(SimpleToken** curr, Node* nodes, u32* node_count)
+Node* parse_field(SimpleToken** curr, SimpleArena* nodes)
 {
     StringToken* str = (StringToken*) *curr;
 
-    Node* node = nodes + *node_count;
-    (*node_count)++;
+    // Node* node = nodes + *node_count;
+    // TODO: Fix this function
 
     *node = {};
     node->name = str->value;
@@ -235,27 +245,34 @@ void parse_field(SimpleToken** curr, Node* nodes, u32* node_count)
         } break;
 
         case Token_BrackOpen: {
-            parse_block(curr, nodes, node_count, node);
+            parse_block(curr, nodes, node);
         } break;
 
         default: {
             assert(false || "Arrays not implemented");
         }
     }
+
+    return node;
 }
 
-void parse_block(SimpleToken** curr, Node* nodes, u32* node_count, Node* node)
+void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node)
 {
     expect(curr, Token_BrackOpen, sizeof(SimpleToken));
 
+    node->size = sizeof(ObjectNode);
     node->type = Node_Object;
-    node->container.offset = *node_count;
-    node->container.child_count = 0;
+    node->child_count = 0;
 
     bool comma = true;
     while ((*curr)->type == Token_String && comma) {
-        parse_field(curr, nodes, node_count);
-        node->container.child_count++;
+        Node* child = parse_field(curr, nodes, node_count);
+        node->child_count++;
+        node->size += child->size;
+
+        if (!node->child) {
+            node->child = child;
+        }
 
         if ((*curr)->type == Token_Comma) {
             (*curr)++;
@@ -263,8 +280,6 @@ void parse_block(SimpleToken** curr, Node* nodes, u32* node_count, Node* node)
             comma = false;
         }
     }
-
-    node->size = node->container.child_count + 1;
 
     expect(curr, Token_BrackClose, sizeof(SimpleToken));
 }
@@ -301,19 +316,26 @@ void load_model(const char* file, Arena* arena)
     char* content = read_file(file, NULL, arena);
     assert(content);
 
-    TokenBuffer tokens = json_lexer(content, arena);
-    u32 node_count = 1;
+    SimpleArena tokens = json_lexer(content, arena);
+    SimpleArena nodes = {};
+    nodes.cap = 10000;
+    nodes.ptr = (u8*) push_size(arena, nodes.cap);
     Node* nodes = (Node*) push_size(arena, sizeof(Node) * tokens.token_count);
 
     SimpleToken* curr = (SimpleToken*) tokens.ptr;
-    Node* root = nodes;
+    ObjectNode* root = (ObjectNode*) alloc(&nodes, *root);
     *root = {};
+
     parse_block(&curr, nodes, &node_count, root);
 
-    // ArrayNode* scene_nodes = (ArrayNode*) find_child(doc, "nodes", NODE_ARRAY);
+    // ArrayNode* scene_nodes = (ArrayNode*) find_child(doc, "nodes", Node_Array);
     // scene_nodes->child_count;
     // ArrayNode* quat_node = (ArrayNode) find_child(obj_node, "rot", NODE_ARRAY);
     // assert(qut_node->child_count == 4);
+    // get_children(scene_nodes, children);
+    // for (u32 i = 0; i < scene_nodes->child_count; ++i) {
+    //     do_smth(children[i]);
+    // }
 
     print_node(root, nodes);
 

@@ -1,3 +1,9 @@
+own gltf importer
+    arrays
+    simpler arenas?
+remove cap from strings. thats kinda stupid anyways
+
+
 animation
     fix asset import rotation
     animator (and animation looping)
@@ -46,7 +52,6 @@ player acceleration
     0.4 (max speed => 0)
     0.2 (left to right)
 
-get rid of assimp
 get rid of glm
 
 
