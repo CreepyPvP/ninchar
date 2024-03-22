@@ -47,9 +47,9 @@ StringNode* find_child_string(ObjectNode* node, const char* name);
 NumberNode* find_child_number(ObjectNode* node, const char* name);
 BoolNode* find_child_bool(ObjectNode* node, const char* name);
 
-Node* find_child(ObjectNode* node, u32 index);
-ObjectNode* find_child_object(ObjectNode* node, u32 index);
-ArrayNode* find_child_array(ObjectNode* node, u32 index);
-StringNode* find_child_string(ObjectNode* node, u32 index);
-NumberNode* find_child_number(ObjectNode* node, u32 index);
-BoolNode* find_child_bool(ObjectNode* node, u32 index);
+Node* get_child(ObjectNode* node, u32 index);
+ObjectNode* get_child_object(ObjectNode* node, u32 index);
+ArrayNode* get_child_array(ObjectNode* node, u32 index);
+StringNode* get_child_string(ObjectNode* node, u32 index);
+NumberNode* get_child_number(ObjectNode* node, u32 index);
+BoolNode* get_child_bool(ObjectNode* node, u32 index);
