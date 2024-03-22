@@ -297,7 +297,7 @@ void parse_container(SimpleToken** curr, SimpleArena* nodes, ContainerNode* node
 
 Node* assert_type(Node* header, NodeType type) 
 {
-    if (header && header->type == Node_Object) {
+    if (header && header->type == type) {
         return header;
     }
     return NULL;

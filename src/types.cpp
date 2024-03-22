@@ -46,7 +46,7 @@ bool str_equals(Str* a, const char* str)
         }
     }
 
-    if (str[a->len + 1] != 0) {
+    if (str[a->len] != 0) {
         return false;
     }
 
