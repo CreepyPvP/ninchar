@@ -1,5 +1,4 @@
 own gltf importer
-    arrays
     simpler arenas?
 remove cap from strings. thats kinda stupid anyways
 
