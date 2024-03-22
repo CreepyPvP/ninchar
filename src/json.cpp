@@ -80,7 +80,7 @@ bool is_number(char c)
 SimpleArena json_lexer(char* content, Arena* arena)
 {
     SimpleArena buffer = {};
-    buffer.cap = 10000;
+    buffer.cap = 100000;
     buffer.ptr = (u8*) push_size(arena, buffer.cap);
 
     char* curr = content;
@@ -103,6 +103,7 @@ SimpleArena json_lexer(char* content, Arena* arena)
                 curr++;
                 token->value.len++;
             }
+            token->value.cap = token->value.len;
 
             curr++;
             continue;
@@ -294,6 +295,14 @@ void parse_container(SimpleToken** curr, SimpleArena* nodes, ContainerNode* node
     expect(curr, close_token, sizeof(SimpleToken));
 }
 
+Node* assert_type(Node* header, NodeType type) 
+{
+    if (header && header->type == Node_Object) {
+        return header;
+    }
+    return NULL;
+}
+
 Node* find_child(ObjectNode* node, const char* name)
 {
     Node* header = node->child;
@@ -307,49 +316,68 @@ Node* find_child(ObjectNode* node, const char* name)
     return NULL;
 }
 
+Node* find_child(ContainerNode* node, u32 index)
+{
+    if (index > node->child_count) {
+        return NULL;
+    }
+
+    Node* header = node->child;
+    for (u32 i = 0; i < index; ++i) {
+        advance(&header, header->size);
+    }
+
+    return header;
+}
+
 ObjectNode* find_child_object(ObjectNode* node, const char* name) 
 {
-    Node* header = find_child(node, name);
-    if (header && header->type == Node_Object) {
-        return (ObjectNode*) header;
-    }
-    return NULL;
+    return (ObjectNode*) assert_type(find_child(node, name), Node_Object); 
 }
 
 ArrayNode* find_child_array(ObjectNode* node, const char* name) 
 {
-    Node* header = find_child(node, name);
-    if (header && header->type == Node_Array) {
-        return (ArrayNode*) header;
-    }
-    return NULL;
+    return (ArrayNode*) assert_type(find_child(node, name), Node_Array); 
 }
 
 StringNode* find_child_string(ObjectNode* node, const char* name) 
 {
-    Node* header = find_child(node, name);
-    if (header && header->type == Node_String) {
-        return (StringNode*) header;
-    }
-    return NULL;
+    return (StringNode*) assert_type(find_child(node, name), Node_String); 
 }
 
 NumberNode* find_child_number(ObjectNode* node, const char* name) 
 {
-    Node* header = find_child(node, name);
-    if (header && header->type == Node_Number) {
-        return (NumberNode*) header;
-    }
-    return NULL;
+    return (NumberNode*) assert_type(find_child(node, name), Node_Number); 
 }
 
 BoolNode* find_child_bool(ObjectNode* node, const char* name) 
 {
-    Node* header = find_child(node, name);
-    if (header && header->type == Node_Bool) {
-        return (BoolNode*) header;
-    }
-    return NULL;
+    return (BoolNode*) assert_type(find_child(node, name), Node_Bool); 
+}
+
+ObjectNode* find_child_object(ObjectNode* node, u32 index) 
+{
+    return (ObjectNode*) assert_type(find_child(node, index), Node_Object); 
+}
+
+ArrayNode* find_child_array(ObjectNode* node, u32 index) 
+{
+    return (ArrayNode*) assert_type(find_child(node, index), Node_Array); 
+}
+
+StringNode* find_child_string(ObjectNode* node, u32 index) 
+{
+    return (StringNode*) assert_type(find_child(node, index), Node_String); 
+}
+
+NumberNode* find_child_number(ObjectNode* node, u32 index) 
+{
+    return (NumberNode*) assert_type(find_child(node, index), Node_Number); 
+}
+
+BoolNode* find_child_bool(ObjectNode* node, u32 index) 
+{
+    return (BoolNode*) assert_type(find_child(node, index), Node_Bool); 
 }
 
 ObjectNode* parse_file(const char* file, Arena* arena)
@@ -359,7 +387,7 @@ ObjectNode* parse_file(const char* file, Arena* arena)
 
     SimpleArena tokens = json_lexer(content, arena);
     SimpleArena nodes = {};
-    nodes.cap = 10000;
+    nodes.cap = 100000;
     nodes.ptr = (u8*) push_size(arena, nodes.cap);
 
     SimpleToken* curr = (SimpleToken*) tokens.ptr;

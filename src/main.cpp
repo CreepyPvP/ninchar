@@ -117,7 +117,7 @@ i32 main()
     Arena arena;
     init_arena(&arena, &pool);
 
-    load_model("assets/parser_test.txt", &arena);
+    load_model("assets/maincharacter/ninja.gltf", &arena);
 
     CommandBuffer cmd;
     u32 entry_size = 10000;
