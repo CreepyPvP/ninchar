@@ -210,41 +210,50 @@ Node* parse_field(SimpleToken** curr, SimpleArena* nodes)
 {
     StringToken* str = (StringToken*) *curr;
 
-    // Node* node = nodes + *node_count;
-    // TODO: Fix this function
+    Node* header;
 
-    *node = {};
-    node->name = str->value;
+
     advance(curr, sizeof(StringToken));
-
     expect(curr, Token_Colon, sizeof(SimpleToken));
 
     switch ((*curr)->type) {
         case Token_Number: {
+            NumberNode* node = (NumberNode*) alloc(nodes, sizeof(*node));
+            *node = {};
             NumberToken* num = (NumberToken*) *curr;
-            node->type = Node_Number;
-            node->number = num->value;
-            node->size = 1;
+            node->value = num->value;
+            header = (Node*) node;
+            header->type = Node_Number;
+            header->size = sizeof(*node);
             advance(curr, sizeof(NumberToken));
         } break;
 
         case Token_String: {
+            StringNode* node = (StringNode*) alloc(nodes, sizeof(*node));
+            *node = {};
             StringToken* str = (StringToken*) *curr;
-            node->type = Node_String;
-            node->string = str->value;
-            node->size = 1;
+            node->value = str->value;
+            header = (Node*) node;
+            header->type = Node_String;
+            header->size = sizeof(*node);
             advance(curr, sizeof(StringToken));
         } break;
 
         case Token_Bool: {
+            BoolNode* node = (BoolNode*) alloc(nodes, sizeof(*node));
+            *node = {};
             BoolToken* boolean = (BoolToken*) *curr;
-            node->type = Node_Bool;
-            node->boolean = boolean->value;
-            node->size = 1;
+            node->value = boolean->value;
+            header = (Node*) node;
+            header->type = Node_Bool;
+            header->size = sizeof(*node);
             advance(curr, sizeof(BoolToken));
         } break;
 
         case Token_BrackOpen: {
+            ObjectNode* node = (ObjectNode*) alloc(nodes, sizeof(*node));
+            *node = {};
+            header = (Node*) node;
             parse_block(curr, nodes, node);
         } break;
 
@@ -253,22 +262,24 @@ Node* parse_field(SimpleToken** curr, SimpleArena* nodes)
         }
     }
 
-    return node;
+    header->name = str->value;
+
+    return header;
 }
 
 void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node)
 {
     expect(curr, Token_BrackOpen, sizeof(SimpleToken));
 
-    node->size = sizeof(ObjectNode);
-    node->type = Node_Object;
+    node->info.size = sizeof(*node);
+    node->info.type = Node_Object;
     node->child_count = 0;
 
     bool comma = true;
     while ((*curr)->type == Token_String && comma) {
-        Node* child = parse_field(curr, nodes, node_count);
+        Node* child = parse_field(curr, nodes);
         node->child_count++;
-        node->size += child->size;
+        node->info.size += child->size;
 
         if (!node->child) {
             node->child = child;
@@ -284,29 +295,26 @@ void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node)
     expect(curr, Token_BrackClose, sizeof(SimpleToken));
 }
 
-void print_node(Node* node, Node* nodes)
+void print_node(Node* header)
 {
-    if (node->name.ptr) {
-        printf("Got name: %.*s\n", node->name.len, node->name.ptr);
+    if (header->name.ptr) {
+        printf("Got name: %.*s\n", header->name.len, header->name.ptr);
     }
 
-    switch (node->type) {
+    switch (header->type) {
         case Node_String: {
-            printf("Value string: %.*s\n", node->string.len, node->string.ptr);
+            StringNode* node = (StringNode*) header;
+            printf("Value string: %.*s\n", node->value.len, node->value.ptr);
         } break;
 
         case Node_Number: {
-            printf("Value number: %f\n", node->number);
+            NumberNode* node = (NumberNode*) header;
+            printf("Value number: %f\n", node->value);
         } break;
 
         case Node_Object: {
-            printf("Object: child_count %u {\n", node->container.child_count);
-            u32 child_ptr = node->container.offset;
-            for (u32 i = 0; i < node->container.child_count; ++i) {
-                print_node(nodes + child_ptr, nodes);
-                child_ptr += nodes[child_ptr].size;
-            }
-            printf("}\n");
+            ObjectNode* node = (ObjectNode*) header;
+            printf("Object: child_count %u\n", node->child_count);
         } break;
     }
 }
@@ -320,13 +328,12 @@ void load_model(const char* file, Arena* arena)
     SimpleArena nodes = {};
     nodes.cap = 10000;
     nodes.ptr = (u8*) push_size(arena, nodes.cap);
-    Node* nodes = (Node*) push_size(arena, sizeof(Node) * tokens.token_count);
 
     SimpleToken* curr = (SimpleToken*) tokens.ptr;
-    ObjectNode* root = (ObjectNode*) alloc(&nodes, *root);
+    ObjectNode* root = (ObjectNode*) alloc(&nodes, sizeof(*root));
     *root = {};
 
-    parse_block(&curr, nodes, &node_count, root);
+    parse_block(&curr, &nodes, root);
 
     // ArrayNode* scene_nodes = (ArrayNode*) find_child(doc, "nodes", Node_Array);
     // scene_nodes->child_count;
@@ -337,7 +344,7 @@ void load_model(const char* file, Arena* arena)
     //     do_smth(children[i]);
     // }
 
-    print_node(root, nodes);
+    print_node((Node*) root);
 
     // DEBUG
     // u32 offset = 0;

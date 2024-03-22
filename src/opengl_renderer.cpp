@@ -21,8 +21,12 @@ void APIENTRY debug_output(GLenum source,
                            const char *message, 
                            const void *userParam)
 {
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) {
+    if (id == 131169 || id == 131185 || id == 131218 || id == 131204) {
         return; 
+    }
+
+    if (severity == GL_DEBUG_SEVERITY_LOW) {
+        return;
     }
 
     printf("---------------\n");
