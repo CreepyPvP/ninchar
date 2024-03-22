@@ -6,5 +6,13 @@
 	"scene":0,
     "test":2.0e-4,
     "for good measure":true,
-    "todo":"Remove string cap"
+    "todo":"Remove string cap",
+    "an_array": [
+        1,
+        2,
+        3,
+        {
+            "unity": "sucks"
+        }
+    ]
 }

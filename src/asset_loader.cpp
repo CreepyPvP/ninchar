@@ -88,12 +88,15 @@ struct BoolNode
     bool value;
 };
 
-struct ObjectNode
+struct ContainerNode
 {
     Node info;
     u32 child_count;
     Node* child;
 };
+
+typedef ContainerNode ObjectNode;
+typedef ContainerNode ArrayNode;
 
 u8* alloc(SimpleArena* buffer, u32 size) 
 {
@@ -200,21 +203,26 @@ inline void advance(SimpleToken** curr, u32 size)
 
 inline void expect(SimpleToken** curr, u32 type, u32 size) 
 {
-    assert((*curr)->type == type);
+    u32 read = (*curr)->type;
+    if (read != type) {
+        printf("Expected token %u, got token %u instead\n", type, read);
+        assert(false);
+    }
     advance(curr, size);
 }
 
 void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node);
+void parse_array(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node);
 
-Node* parse_field(SimpleToken** curr, SimpleArena* nodes)
+Node* parse_field(SimpleToken** curr, SimpleArena* nodes, bool expect_name)
 {
+    Node* header;
     StringToken* str = (StringToken*) *curr;
 
-    Node* header;
-
-
-    advance(curr, sizeof(StringToken));
-    expect(curr, Token_Colon, sizeof(SimpleToken));
+    if (expect_name) {
+        advance(curr, sizeof(StringToken));
+        expect(curr, Token_Colon, sizeof(SimpleToken));
+    }
 
     switch ((*curr)->type) {
         case Token_Number: {
@@ -257,12 +265,21 @@ Node* parse_field(SimpleToken** curr, SimpleArena* nodes)
             parse_block(curr, nodes, node);
         } break;
 
+        case Token_ArrayOpen: {
+            ArrayNode* node = (ArrayNode*) alloc(nodes, sizeof(*node));
+            *node = {};
+            header = (Node*) node;
+            parse_array(curr, nodes, node);
+        }
+
         default: {
-            assert(false || "Arrays not implemented");
+            assert(false || "Unsupported token");
         }
     }
 
-    header->name = str->value;
+    if (expect_name) {
+        header->name = str->value;
+    }
 
     return header;
 }
@@ -277,7 +294,7 @@ void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node)
 
     bool comma = true;
     while ((*curr)->type == Token_String && comma) {
-        Node* child = parse_field(curr, nodes);
+        Node* child = parse_field(curr, nodes, true);
         node->child_count++;
         node->info.size += child->size;
 
@@ -293,6 +310,35 @@ void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node)
     }
 
     expect(curr, Token_BrackClose, sizeof(SimpleToken));
+}
+
+// TODO: merge this with parse block?
+void parse_array(SimpleToken** curr, SimpleArena* nodes, ArrayNode* node)
+{
+    expect(curr, Token_ArrayOpen, sizeof(SimpleToken));
+
+    node->info.size = sizeof(*node);
+    node->info.type = Node_Array;
+    node->child_count = 0;
+
+    bool comma = true;
+    while ((*curr)->type != Token_ArrayClose && comma) {
+        Node* child = parse_field(curr, nodes, false);
+        node->child_count++;
+        node->info.size += child->size;
+
+        if (!node->child) {
+            node->child = child;
+        }
+
+        if ((*curr)->type == Token_Comma) {
+            (*curr)++;
+        } else {
+            comma = false;
+        }
+    }
+
+    expect(curr, Token_ArrayClose, sizeof(SimpleToken));
 }
 
 void print_node(Node* header)
