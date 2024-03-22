@@ -201,6 +201,12 @@ inline void advance(SimpleToken** curr, u32 size)
     *curr = (SimpleToken*) (ptr + size);
 }
 
+inline void advance(Node** curr, u32 size) 
+{
+    u8* ptr = (u8*) *curr;
+    *curr = (Node*) (ptr + size);
+}
+
 inline void expect(SimpleToken** curr, u32 type, u32 size) 
 {
     u32 read = (*curr)->type;
@@ -211,8 +217,7 @@ inline void expect(SimpleToken** curr, u32 type, u32 size)
     advance(curr, size);
 }
 
-void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node);
-void parse_array(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node);
+void parse_container(SimpleToken** curr, SimpleArena* nodes, ContainerNode* node, bool is_block);
 
 Node* parse_field(SimpleToken** curr, SimpleArena* nodes, bool expect_name)
 {
@@ -262,14 +267,14 @@ Node* parse_field(SimpleToken** curr, SimpleArena* nodes, bool expect_name)
             ObjectNode* node = (ObjectNode*) alloc(nodes, sizeof(*node));
             *node = {};
             header = (Node*) node;
-            parse_block(curr, nodes, node);
+            parse_container(curr, nodes, node, true);
         } break;
 
         case Token_ArrayOpen: {
             ArrayNode* node = (ArrayNode*) alloc(nodes, sizeof(*node));
             *node = {};
             header = (Node*) node;
-            parse_array(curr, nodes, node);
+            parse_container(curr, nodes, node, false);
         }
 
         default: {
@@ -284,17 +289,29 @@ Node* parse_field(SimpleToken** curr, SimpleArena* nodes, bool expect_name)
     return header;
 }
 
-void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node)
+void parse_container(SimpleToken** curr, SimpleArena* nodes, ContainerNode* node, bool is_block)
 {
-    expect(curr, Token_BrackOpen, sizeof(SimpleToken));
-
     node->info.size = sizeof(*node);
-    node->info.type = Node_Object;
     node->child_count = 0;
 
+    TokenType open_token;
+    TokenType close_token;
+
+    if (is_block) {
+        node->info.type = Node_Object;
+        open_token = Token_BrackOpen;
+        close_token = Token_BrackClose;
+    } else {
+        node->info.type = Node_Array;
+        open_token = Token_ArrayOpen;
+        close_token = Token_ArrayClose;
+    }
+
+    expect(curr, open_token, sizeof(SimpleToken));
+
     bool comma = true;
-    while ((*curr)->type == Token_String && comma) {
-        Node* child = parse_field(curr, nodes, true);
+    while ((*curr)->type != close_token && comma) {
+        Node* child = parse_field(curr, nodes, is_block);
         node->child_count++;
         node->info.size += child->size;
 
@@ -309,60 +326,65 @@ void parse_block(SimpleToken** curr, SimpleArena* nodes, ObjectNode* node)
         }
     }
 
-    expect(curr, Token_BrackClose, sizeof(SimpleToken));
+    expect(curr, close_token, sizeof(SimpleToken));
 }
 
-// TODO: merge this with parse block?
-void parse_array(SimpleToken** curr, SimpleArena* nodes, ArrayNode* node)
+Node* find_child(ObjectNode* node, const char* name)
 {
-    expect(curr, Token_ArrayOpen, sizeof(SimpleToken));
-
-    node->info.size = sizeof(*node);
-    node->info.type = Node_Array;
-    node->child_count = 0;
-
-    bool comma = true;
-    while ((*curr)->type != Token_ArrayClose && comma) {
-        Node* child = parse_field(curr, nodes, false);
-        node->child_count++;
-        node->info.size += child->size;
-
-        if (!node->child) {
-            node->child = child;
+    Node* header = node->child;
+    for (u32 i = 0; i < node->child_count; ++i) {
+        if (str_equals(&header->name, name)) {
+            return header;
         }
-
-        if ((*curr)->type == Token_Comma) {
-            (*curr)++;
-        } else {
-            comma = false;
-        }
+        advance(&header, header->size);
     }
 
-    expect(curr, Token_ArrayClose, sizeof(SimpleToken));
+    return NULL;
 }
 
-void print_node(Node* header)
+ObjectNode* find_child_object(ObjectNode* node, char* name) 
 {
-    if (header->name.ptr) {
-        printf("Got name: %.*s\n", header->name.len, header->name.ptr);
+    Node* header = find_child(node, name);
+    if (header && header->type == Node_Object) {
+        return (ObjectNode*) header;
     }
+    return NULL;
+}
 
-    switch (header->type) {
-        case Node_String: {
-            StringNode* node = (StringNode*) header;
-            printf("Value string: %.*s\n", node->value.len, node->value.ptr);
-        } break;
-
-        case Node_Number: {
-            NumberNode* node = (NumberNode*) header;
-            printf("Value number: %f\n", node->value);
-        } break;
-
-        case Node_Object: {
-            ObjectNode* node = (ObjectNode*) header;
-            printf("Object: child_count %u\n", node->child_count);
-        } break;
+ArrayNode* find_child_array(ObjectNode* node, char* name) 
+{
+    Node* header = find_child(node, name);
+    if (header && header->type == Node_Array) {
+        return (ArrayNode*) header;
     }
+    return NULL;
+}
+
+StringNode* find_child_string(ObjectNode* node, char* name) 
+{
+    Node* header = find_child(node, name);
+    if (header && header->type == Node_String) {
+        return (StringNode*) header;
+    }
+    return NULL;
+}
+
+NumberNode* find_child_number(ObjectNode* node, char* name) 
+{
+    Node* header = find_child(node, name);
+    if (header && header->type == Node_Number) {
+        return (NumberNode*) header;
+    }
+    return NULL;
+}
+
+BoolNode* find_child_bool(ObjectNode* node, char* name) 
+{
+    Node* header = find_child(node, name);
+    if (header && header->type == Node_Bool) {
+        return (BoolNode*) header;
+    }
+    return NULL;
 }
 
 void load_model(const char* file, Arena* arena)
@@ -379,68 +401,10 @@ void load_model(const char* file, Arena* arena)
     ObjectNode* root = (ObjectNode*) alloc(&nodes, sizeof(*root));
     *root = {};
 
-    parse_block(&curr, &nodes, root);
+    parse_container(&curr, &nodes, root, true);
 
-    // ArrayNode* scene_nodes = (ArrayNode*) find_child(doc, "nodes", Node_Array);
-    // scene_nodes->child_count;
-    // ArrayNode* quat_node = (ArrayNode) find_child(obj_node, "rot", NODE_ARRAY);
-    // assert(qut_node->child_count == 4);
-    // get_children(scene_nodes, children);
-    // for (u32 i = 0; i < scene_nodes->child_count; ++i) {
-    //     do_smth(children[i]);
-    // }
-
-    print_node((Node*) root);
-
-    // DEBUG
-    // u32 offset = 0;
-    // while (offset < tokens.current) {
-    //     u32* type = (u32*) (tokens.ptr + offset);
-    //     u32 size = sizeof(SimpleToken);
-    //     switch (*type) {
-    //         case Token_BrackOpen: {
-    //             printf("Token_BrackOpen\n");
-    //         } break;
-    //         case Token_BrackClose: {
-    //             printf("Token_BrackClose\n");
-    //         } break;
-    //         case Token_ArrayOpen: {
-    //             printf("Token_ArrayOpen\n");
-    //         } break;
-    //         case Token_ArrayClose: {
-    //             printf("Token_ArrayClose\n");
-    //         } break;
-    //         case Token_Colon: {
-    //             printf("Token_Colon\n");
-    //         } break;
-    //         case Token_Comma: {
-    //             printf("Token_Comma\n");
-    //         } break;
-    //         case Token_EOF: {
-    //             printf("EOF\n");
-    //         } break;
-    //         case Token_Error: {
-    //             printf("Error\n");
-    //         } break;
-    //         case Token_String: {
-    //             StringToken* token = (StringToken*) type;
-    //             printf("Token_String: %.*s\n", token->value.len, token->value.ptr);
-    //             size = sizeof(StringToken);
-    //         } break;
-    //         case Token_Number: {
-    //             printf("Token_Number\n");
-    //             size = sizeof(NumberToken);
-    //         } break;
-    //         case Token_Bool: {
-    //             printf("Token_Bool\n");
-    //             size = sizeof(BoolToken);
-    //         } break;
-    //         default: {
-    //             assert(false);
-    //         }
-    //     }
-    //     offset += size;
-    // }
+    ArrayNode* arr = find_child_array(root, "an_array");
+    printf("Child count: %u\n", arr->child_count);
 }
 
 

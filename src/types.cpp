@@ -38,6 +38,21 @@ Str str_cpy(Str* str, Arena* arena)
     return res;
 }
 
+bool str_equals(Str* a, const char* str)
+{
+    for (u32 i = 0; i < a->len; ++i) {
+        if (a->ptr[i] != str[i]) {
+            return false;
+        }
+    }
+
+    if (str[a->len + 1] != 0) {
+        return false;
+    }
+
+    return true;
+}
+
 bool str_equals(Str a, Str b)
 {
     if (a.len != b.len) {
