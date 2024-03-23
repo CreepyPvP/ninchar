@@ -303,7 +303,7 @@ Node* assert_type(Node* header, NodeType type)
     return NULL;
 }
 
-Node* find_child(ObjectNode* node, const char* name)
+Node* get(ObjectNode* node, const char* name)
 {
     Node* header = node->child;
     for (u32 i = 0; i < node->child_count; ++i) {
@@ -316,7 +316,7 @@ Node* find_child(ObjectNode* node, const char* name)
     return NULL;
 }
 
-Node* get_child(ContainerNode* node, u32 index)
+Node* at(ContainerNode* node, u32 index)
 {
     if (index > node->child_count) {
         return NULL;
@@ -330,54 +330,83 @@ Node* get_child(ContainerNode* node, u32 index)
     return header;
 }
 
-ObjectNode* find_child_object(ObjectNode* node, const char* name) 
+ObjectNode* get_object(ObjectNode* node, const char* name) 
 {
-    return (ObjectNode*) assert_type(find_child(node, name), Node_Object); 
+    return (ObjectNode*) assert_type(get(node, name), Node_Object); 
 }
 
-ArrayNode* find_child_array(ObjectNode* node, const char* name) 
+ArrayNode* get_array(ObjectNode* node, const char* name) 
 {
-    return (ArrayNode*) assert_type(find_child(node, name), Node_Array); 
+    return (ArrayNode*) assert_type(get(node, name), Node_Array); 
 }
 
-StringNode* find_child_string(ObjectNode* node, const char* name) 
+StringNode* get_string(ObjectNode* node, const char* name) 
 {
-    return (StringNode*) assert_type(find_child(node, name), Node_String); 
+    return (StringNode*) assert_type(get(node, name), Node_String); 
 }
 
-NumberNode* find_child_number(ObjectNode* node, const char* name) 
+NumberNode* get_number(ObjectNode* node, const char* name) 
 {
-    return (NumberNode*) assert_type(find_child(node, name), Node_Number); 
+    return (NumberNode*) assert_type(get(node, name), Node_Number); 
 }
 
-BoolNode* find_child_bool(ObjectNode* node, const char* name) 
+BoolNode* get_bool(ObjectNode* node, const char* name) 
 {
-    return (BoolNode*) assert_type(find_child(node, name), Node_Bool); 
+    return (BoolNode*) assert_type(get(node, name), Node_Bool); 
 }
 
-ObjectNode* get_child_object(ObjectNode* node, u32 index) 
+ObjectNode* at_object(ObjectNode* node, u32 index) 
 {
-    return (ObjectNode*) assert_type(get_child(node, index), Node_Object); 
+    return (ObjectNode*) assert_type(at(node, index), Node_Object); 
 }
 
-ArrayNode* get_child_array(ObjectNode* node, u32 index) 
+ArrayNode* at_array(ObjectNode* node, u32 index) 
 {
-    return (ArrayNode*) assert_type(get_child(node, index), Node_Array); 
+    return (ArrayNode*) assert_type(at(node, index), Node_Array); 
 }
 
-StringNode* get_child_string(ObjectNode* node, u32 index) 
+StringNode* at_string(ObjectNode* node, u32 index) 
 {
-    return (StringNode*) assert_type(get_child(node, index), Node_String); 
+    return (StringNode*) assert_type(at(node, index), Node_String); 
 }
 
-NumberNode* get_child_number(ObjectNode* node, u32 index) 
+NumberNode* at_number(ObjectNode* node, u32 index) 
 {
-    return (NumberNode*) assert_type(get_child(node, index), Node_Number); 
+    return (NumberNode*) assert_type(at(node, index), Node_Number); 
 }
 
-BoolNode* get_child_bool(ObjectNode* node, u32 index) 
+BoolNode* at_bool(ObjectNode* node, u32 index) 
 {
-    return (BoolNode*) assert_type(get_child(node, index), Node_Bool); 
+    return (BoolNode*) assert_type(at(node, index), Node_Bool); 
+}
+
+u32 list(ContainerNode* node, Node** arr, u32 max_nodes, NodeType type)
+{
+    Node* header = node->child;
+    u32 matches = 0;
+    for (u32 i = 0; i < node->child_count; ++i) {
+        if (matches >= max_nodes) {
+            return matches;
+        }
+
+        if (header->type == type) {
+            arr[matches] = header;
+            matches++;
+        }
+
+        advance(&header, header->size);
+    }
+    return matches;
+}
+
+u32 list_object(ContainerNode* node, ObjectNode** arr, u32 max_nodes)
+{
+    return list(node, (Node**) arr, max_nodes, Node_Object);
+}
+
+u32 list_number(ContainerNode* node, NumberNode** arr, u32 max_nodes)
+{
+    return list(node, (Node**) arr, max_nodes, Node_Number);
 }
 
 ObjectNode* parse_file(const char* file, Arena* arena)
@@ -395,8 +424,6 @@ ObjectNode* parse_file(const char* file, Arena* arena)
     *root = {};
 
     parse_container(&curr, &nodes, root, true);
-    // ArrayNode* arr = find_child_array(root, "an_array");
-    // printf("Child count: %u\n", arr->child_count);
     return root;
 }
 
